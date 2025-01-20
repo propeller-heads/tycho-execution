@@ -1,66 +1,42 @@
-## Foundry
+# Tycho Router
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+Contain the TychoRouter contracts.
 
-Foundry consists of:
+Currently, there are only contracts for the Ethereum Virtual Machine.
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+## Setup
 
-## Documentation
-
-https://book.getfoundry.sh/
-
-## Usage
-
-### Build
-
-```shell
-$ forge build
+Install foudryup and foundry
+```
+$ curl -L https://foundry.paradigm.xyz | bash
+$ foundryup
 ```
 
-### Test
-
-```shell
-$ forge test
+Also install hardhat & dependencies. 
+Node version v20.1.0 working with hardhat@2.16.1 is a confirmed setup. 
+[Hardhat](https://github.com/nodejs/release#release-schedule) documentation of node support.
+```
+yarn
 ```
 
-### Format
+## Running tests
 
-```shell
-$ forge fmt
+```
+$ forge test -vvv --fork-url <RPC URL>
 ```
 
-### Gas Snapshots
-
-```shell
-$ forge snapshot
+some usefull flags :
+```
+--v -> --vvvvv (the more "v" you add, the more information will be displayed)
+--match-contract <regex pattern> (will run all the tests the contains the regex i.e: --match-contract testMultiswapV3_1)
+--match-test <regex pattern> (will run all the tests the contains the regex. i.e: --match-test uniswapV2Call will run (test_uniswapV2Call_authorized(),test_uniswapV2Call_reject_non_usv2_caller(),test_uniswapV2Call_reject_unknown_sender())
+--debug <function name>
 ```
 
-### Anvil
+https://book.getfoundry.sh/reference/forge/forge-test
 
-```shell
-$ anvil
-```
 
-### Deploy
+## Code formatting
 
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
+Run `forge fmt`.
 
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```

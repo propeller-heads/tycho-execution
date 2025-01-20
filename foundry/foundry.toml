@@ -15,5 +15,3 @@ mainnet = "${RPC_URL}"
 [fmt]
 line_length = 80
 
-[profile.default.remappings]
-"@uniswap/" = "lib/permit2/src/"
