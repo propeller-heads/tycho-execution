@@ -126,6 +126,7 @@ impl From<TychoCoreChain> for ChainId {
             TychoCoreChain::ZkSync => ChainId(324),
             TychoCoreChain::Arbitrum => ChainId(42161),
             TychoCoreChain::Starknet => ChainId(0),
+            TychoCoreChain::Base => ChainId(8453),
         }
     }
 }
