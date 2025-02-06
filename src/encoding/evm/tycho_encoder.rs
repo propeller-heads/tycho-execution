@@ -19,6 +19,7 @@ use crate::encoding::{
 /// * `router_address`: Bytes, the address of the router to use to execute the swaps.
 /// * `native_address`: Address of the chain's native token
 /// * `wrapped_address`: Address of the chain's wrapped native token
+#[derive(Clone)]
 pub struct EVMTychoEncoder<S: StrategyEncoderRegistry> {
     strategy_registry: S,
     router_address: Bytes,
@@ -169,7 +170,7 @@ mod tests {
     impl StrategyEncoderRegistry for MockStrategyRegistry {
         fn new(
             _chain: Chain,
-            _executors_file_path: &str,
+            _executors_file_path: Option<&str>,
             _signer_pk: Option<String>,
         ) -> Result<MockStrategyRegistry, EncodingError> {
             Ok(Self { strategy: Box::new(MockStrategy) })
@@ -183,6 +184,7 @@ mod tests {
         }
     }
 
+    #[derive(Clone)]
     struct MockStrategy;
 
     impl StrategyEncoder for MockStrategy {
@@ -202,10 +204,13 @@ mod tests {
         fn get_swap_encoder(&self, _protocol_system: &str) -> Option<&Box<dyn SwapEncoder>> {
             None
         }
+        fn clone_box(&self) -> Box<dyn StrategyEncoder> {
+            Box::new(self.clone())
+        }
     }
 
     fn get_mocked_tycho_encoder() -> EVMTychoEncoder<MockStrategyRegistry> {
-        let strategy_registry = MockStrategyRegistry::new(eth_chain(), "", None).unwrap();
+        let strategy_registry = MockStrategyRegistry::new(eth_chain(), None, None).unwrap();
         EVMTychoEncoder::new(
             strategy_registry,
             "0x1234567890abcdef1234567890abcdef12345678".to_string(),
