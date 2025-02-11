@@ -76,6 +76,13 @@ contract TychoRouter is
     }
 
     /**
+     * @dev Pauses the contract
+     */
+    function pause() external onlyRole(PAUSER_ROLE) {
+        _pause();
+    }
+
+    /**
      * @dev Unpauses the contract
      */
     function unpause() external onlyRole(UNPAUSER_ROLE) {
@@ -248,13 +255,6 @@ contract TychoRouter is
         (uint256 amountOwed, address tokenOwed) = _callVerifyCallback(msgData);
 
         IERC20(tokenOwed).safeTransfer(msg.sender, amountOwed);
-    }
-
-    /**
-     * @dev Pauses the contract
-     */
-    function pause() external onlyRole(PAUSER_ROLE) {
-        _pause();
     }
 
     /**
