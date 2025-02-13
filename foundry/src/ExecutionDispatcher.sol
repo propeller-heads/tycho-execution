@@ -79,4 +79,29 @@ contract ExecutionDispatcher {
 
         calculatedAmount = abi.decode(result, (uint256));
     }
+
+    function _handleCallback(bytes calldata data) internal {
+        // Take last 20 bytes (excluding the final byte)
+        address executor =
+            address(bytes20(data[data.length - 21:data.length - 1]));
+
+        if (!executors[executor]) {
+            revert ExecutionDispatcher__UnapprovedExecutor();
+        }
+
+        // slither-disable-next-line controlled-delegatecall,low-level-calls
+        (bool success, bytes memory result) = executor.delegatecall(
+            abi.encodeWithSelector(IExecutor.handleCallback.selector, data)
+        );
+
+        if (!success) {
+            revert(
+                string(
+                    result.length > 0
+                        ? result
+                        : abi.encodePacked("Callback failed")
+                )
+            );
+        }
+    }
 }

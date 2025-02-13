@@ -33,6 +33,11 @@ contract UniswapV2Executor is IExecutor {
         }
     }
 
+    function handleCallback(bytes calldata data)
+        external
+        returns (bytes memory result)
+    {}
+
     function _decodeData(bytes calldata data)
         internal
         pure

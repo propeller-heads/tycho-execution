@@ -59,6 +59,11 @@ contract BalancerV2Executor is IExecutor {
             IVault(VAULT).swap(singleSwap, funds, limit, block.timestamp);
     }
 
+    function handleCallback(bytes calldata data)
+        external
+        returns (bytes memory result)
+    {}
+
     function _decodeData(bytes calldata data)
         internal
         pure
