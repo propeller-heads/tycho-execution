@@ -9,6 +9,7 @@ import "@interfaces/ICallback.sol";
 
 error UniswapV3Executor__InvalidDataLength();
 error UniswapV3Executor__InvalidFactory();
+error UniswapV3Executor__InvalidTarget();
 
 contract UniswapV3Executor is IExecutor, ICallback {
     using SafeERC20 for IERC20;
@@ -42,6 +43,11 @@ contract UniswapV3Executor is IExecutor, ICallback {
             address target,
             bool zeroForOne
         ) = _decodeData(data);
+
+        if (target != _computePairAddress(tokenIn, tokenOut, fee)) {
+            revert UniswapV3Executor__InvalidTarget();
+        }
+
         int256 amount0;
         int256 amount1;
         IUniswapV3Pool pool = IUniswapV3Pool(target);
@@ -144,6 +150,29 @@ contract UniswapV3Executor is IExecutor, ICallback {
     {
         return abi.encodePacked(
             tokenIn, tokenOut, fee, self, ICallback.handleCallback.selector
+        );
+    }
+
+    function _computePairAddress(address tokenA, address tokenB, uint24 fee)
+        internal
+        view
+        returns (address pool)
+    {
+        (address token0, address token1) =
+            tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
+        pool = address(
+            uint160(
+                uint256(
+                    keccak256(
+                        abi.encodePacked(
+                            hex"ff",
+                            factory,
+                            keccak256(abi.encode(token0, token1, fee)),
+                            hex"e34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54"
+                        )
+                    )
+                )
+            )
         );
     }
 }

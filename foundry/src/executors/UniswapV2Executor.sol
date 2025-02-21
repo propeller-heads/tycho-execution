@@ -27,7 +27,7 @@ contract UniswapV2Executor is IExecutor {
 
         (tokenIn, target, receiver, zeroForOne) = _decodeData(data);
 
-        if (target != _computePairAddress(target, FACTORY)) {
+        if (target != _computePairAddress(target)) {
             revert UniswapV2Executor__InvalidTarget();
         }
         calculatedAmount = _getAmountOut(target, givenAmount, zeroForOne);
@@ -83,7 +83,7 @@ contract UniswapV2Executor is IExecutor {
         amount = numerator / denominator;
     }
 
-    function _computePairAddress(address target, address factory)
+    function _computePairAddress(address target)
         internal
         view
         returns (address pair)
@@ -97,7 +97,7 @@ contract UniswapV2Executor is IExecutor {
                     keccak256(
                         abi.encodePacked(
                             hex"ff",
-                            factory,
+                            FACTORY,
                             salt,
                             hex"96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f"
                         )
