@@ -22,15 +22,6 @@ contract UniswapV3ExecutorExposed is UniswapV3Executor {
     {
         return _decodeData(data);
     }
-
-    function verifyPairAddress(
-        address tokenA,
-        address tokenB,
-        uint24 fee,
-        address target
-    ) external view {
-        _verifyPairAddress(tokenA, tokenB, fee, target);
-    }
 }
 
 contract UniswapV3ExecutorTest is Test, Constants {
@@ -78,10 +69,12 @@ contract UniswapV3ExecutorTest is Test, Constants {
         uniswapV3Exposed.decodeData(invalidParams);
     }
 
-    function testVerifyPairAddress() public view {
-        uniswapV3Exposed.verifyPairAddress(
-            WETH_ADDR, DAI_ADDR, 3000, DAI_WETH_USV3
-        );
+    function testVerifyCallbackFailure() public {
+        vm.startPrank(DUMMY); // contract with minimal code
+        bytes memory data = abi.encodePacked(WETH_ADDR, DAI_ADDR, uint24(3000));
+        vm.expectRevert();
+        uniswapV3Exposed.verifyCallback(data);
+        vm.stopPrank();
     }
 
     function testUSV3Callback() public {
@@ -143,7 +136,7 @@ contract UniswapV3ExecutorTest is Test, Constants {
             zeroForOne
         );
 
-        vm.expectRevert(UniswapV3Executor__InvalidTarget.selector);
+        vm.expectRevert();
         uniswapV3Exposed.swap(amountIn, protocolData);
     }
 
