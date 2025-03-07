@@ -38,11 +38,8 @@ contract UniswapV2Executor is IExecutor {
         IERC20 tokenIn;
 
         (tokenIn, target, receiver, zeroForOne) = _decodeData(data);
-
         _verifyPairAddress(target);
-
         calculatedAmount = _getAmountOut(target, givenAmount, zeroForOne);
-        tokenIn.safeTransfer(target, givenAmount);
 
         IUniswapV2Pair pool = IUniswapV2Pair(target);
         if (zeroForOne) {
