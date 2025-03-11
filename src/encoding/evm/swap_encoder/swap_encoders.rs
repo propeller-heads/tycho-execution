@@ -258,6 +258,50 @@ impl SwapEncoder for BalancerV2SwapEncoder {
     }
 }
 
+/// Encodes a swap on a EulerSwap pool through the given executor address.
+///
+/// # Fields
+/// * `executor_address` - The address of the executor contract that will perform the swap.
+#[derive(Clone)]
+pub struct EulerSwapEncoder {
+    executor_address: String,
+}
+
+impl SwapEncoder for EulerSwapEncoder {
+    fn new(executor_address: String) -> Self {
+        Self { executor_address }
+    }
+
+    fn encode_swap(
+        &self,
+        swap: Swap,
+        encoding_context: EncodingContext,
+    ) -> Result<Vec<u8>, EncodingError> {
+        let token_in_address = bytes_to_address(&swap.token_in)?;
+        let token_out_address = bytes_to_address(&swap.token_out)?;
+
+        let component_id = Address::from_str(&swap.component.id)
+            .map_err(|_| EncodingError::FatalError("Invalid EulerSwap component id".to_string()))?;
+
+        let args = (
+            token_in_address,
+            token_out_address,
+            component_id,
+            bytes_to_address(&encoding_context.receiver)?
+        );
+
+        Ok(args.abi_encode_packed())
+    }
+
+    fn executor_address(&self) -> &str {
+        &self.executor_address
+    }
+
+    fn clone_box(&self) -> Box<dyn SwapEncoder> {
+        Box::new(self.clone())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
@@ -633,6 +677,48 @@ mod tests {
                 "000bb8",
                 // - tick spacing
                 "00003c"
+            ))
+        );
+    }
+    #[test]
+    fn test_encode_eulerswap() {
+        let eulerswap_pool = ProtocolComponent {
+            id: String::from("0x2bFED8dBEb8e6226a15300AC77eE9130E52410fE"),
+            ..Default::default()
+        };
+
+        let token_in = Bytes::from("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
+        let token_out = Bytes::from("0xdAC17F958D2ee523a2206206994597C13D831ec7");
+        let swap = Swap {
+            component: eulerswap_pool,
+            token_in: token_in.clone(),
+            token_out: token_out.clone(),
+            split: 0f64,
+        };
+        let encoding_context = EncodingContext {
+            receiver: Bytes::from("0x0000000000000000000000000000000000000001"),
+            exact_out: false,
+            router_address: Bytes::zero(20),
+            group_token_in: token_in.clone(),
+            group_token_out: token_out.clone(),
+        };
+        let encoder =
+            EulerSwapEncoder::new(String::from("0x813D74E832b3d9E9451d8f0E871E877edf2a5A5f"));
+        let encoded_swap = encoder
+            .encode_swap(swap, encoding_context)
+            .unwrap();
+        let hex_swap = encode(&encoded_swap);
+        assert_eq!(
+            hex_swap,
+            String::from(concat!(
+                // in token
+                "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+                // out token
+                "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+                // component id
+                "88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
+                // receiver
+                "0000000000000000000000000000000000000001"
             ))
         );
     }
