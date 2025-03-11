@@ -142,9 +142,14 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
         bool unwrapEth,
         uint256 nTokens,
         address receiver,
+//        address inputReceiver,
         bytes calldata swaps
     ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
+
         IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
+//        if (inputReceiver != address(0)) {
+//            IERC20(tokenIn).safeTransferFrom(msg.sender, inputReceiver, amountIn);
+//        }
         return _swapChecked(
             amountIn,
             tokenIn,
@@ -254,23 +259,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
             tokenIn = address(_weth);
         }
 
-        uint256 initialBalance = tokenIn == address(0)
-            ? address(this).balance
-            : IERC20(tokenIn).balanceOf(address(this));
-
         amountOut = _swap(amountIn, nTokens, swaps);
-
-        uint256 currentBalance = tokenIn == address(0)
-            ? address(this).balance
-            : IERC20(tokenIn).balanceOf(address(this));
-
-        uint256 amountConsumed = initialBalance - currentBalance;
-
-        if (amountConsumed != amountIn) {
-            revert TychoRouter__AmountInDiffersFromConsumed(
-                amountIn, amountConsumed
-            );
-        }
 
         if (fee > 0) {
             uint256 feeAmount = (amountOut * fee) / 10000;
