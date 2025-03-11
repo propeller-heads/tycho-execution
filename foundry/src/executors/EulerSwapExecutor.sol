@@ -30,7 +30,9 @@ contract EulerSwapExecutor is IExecutor {
         IERC20 tokenOut;
         (tokenIn, tokenOut, target, receiver) = _decodeData(data);
 
-        calculatedAmount = IEulerSwapPeriphery(periphery).quoteExactInput(target, address(tokenIn), address(tokenOut), givenAmount);
+        calculatedAmount = IEulerSwapPeriphery(periphery).quoteExactInput(
+            target, address(tokenIn), address(tokenOut), givenAmount
+        );
         tokenIn.safeTransfer(target, givenAmount);
 
         bool isAsset0In = tokenIn < tokenOut;
@@ -81,7 +83,12 @@ interface IEulerSwap {
     /// address, invokes `uniswapV2Call` callback on `to` (if `data` was provided),
     /// and then verifies that a sufficient amount of tokens were transferred to
     /// satisfy the swapping curve invariant.
-    function swap(uint256 amount0Out, uint256 amount1Out, address to, bytes calldata data) external;
+    function swap(
+        uint256 amount0Out,
+        uint256 amount1Out,
+        address to,
+        bytes calldata data
+    ) external;
 
     /// @notice Approves the vaults to access the EulerSwap instance's tokens, and enables
     /// vaults as collateral. Can be invoked by anybody, and is harmless if invoked again.
@@ -91,7 +98,10 @@ interface IEulerSwap {
     /// @notice Function that defines the shape of the swapping curve. Returns true iff
     /// the specified reserve amounts would be acceptable (ie it is above and to-the-right
     /// of the swapping curve).
-    function verify(uint256 newReserve0, uint256 newReserve1) external view returns (bool);
+    function verify(uint256 newReserve0, uint256 newReserve1)
+        external
+        view
+        returns (bool);
 
     /// @notice Returns the address of the Ethereum Vault Connector (EVC) used by this contract.
     /// @return The address of the EVC contract.
@@ -112,7 +122,10 @@ interface IEulerSwap {
     /// @return reserve0 The amount of asset0 in the pool
     /// @return reserve1 The amount of asset1 in the pool
     /// @return status The status of the pool (0 = unactivated, 1 = unlocked, 2 = locked)
-    function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 status);
+    function getReserves()
+        external
+        view
+        returns (uint112 reserve0, uint112 reserve1, uint32 status);
 
     // Curve Accessors
 
@@ -124,25 +137,42 @@ interface IEulerSwap {
 
 interface IEulerSwapPeriphery {
     /// @notice Swap `amountIn` of `tokenIn` for `tokenOut`, with at least `amountOutMin` received.
-    function swapExactIn(address eulerSwap, address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOutMin)
-        external;
+    function swapExactIn(
+        address eulerSwap,
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 amountOutMin
+    ) external;
 
     /// @notice Swap `amountOut` of `tokenOut` for `tokenIn`, with at most `amountInMax` paid.
-    function swapExactOut(address eulerSwap, address tokenIn, address tokenOut, uint256 amountOut, uint256 amountInMax)
-        external;
+    function swapExactOut(
+        address eulerSwap,
+        address tokenIn,
+        address tokenOut,
+        uint256 amountOut,
+        uint256 amountInMax
+    ) external;
 
     /// @notice How much `tokenOut` can I get for `amountIn` of `tokenIn`?
-    function quoteExactInput(address eulerSwap, address tokenIn, address tokenOut, uint256 amountIn)
-        external
-        view
-        returns (uint256);
+    function quoteExactInput(
+        address eulerSwap,
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn
+    ) external view returns (uint256);
 
     /// @notice How much `tokenIn` do I need to get `amountOut` of `tokenOut`?
-    function quoteExactOutput(address eulerSwap, address tokenIn, address tokenOut, uint256 amountOut)
-        external
-        view
-        returns (uint256);
+    function quoteExactOutput(
+        address eulerSwap,
+        address tokenIn,
+        address tokenOut,
+        uint256 amountOut
+    ) external view returns (uint256);
 
     /// @notice Max amount the pool can buy of tokenIn and sell of tokenOut
-    function getLimits(address eulerSwap, address tokenIn, address tokenOut) external view returns (uint256, uint256);
+    function getLimits(address eulerSwap, address tokenIn, address tokenOut)
+        external
+        view
+        returns (uint256, uint256);
 }

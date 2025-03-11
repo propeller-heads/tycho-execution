@@ -35,8 +35,10 @@ contract FakeUniswapV2Pool {
 contract EulerSwapExecutorTest is Test, Constants {
     using SafeERC20 for IERC20;
 
-    address public constant EULERSWAP_PERIPHERY = 0x813D74E832b3d9E9451d8f0E871E877edf2a5A5f;
-    address public constant USDC_USDT_POOL = 0x2bFED8dBEb8e6226a15300AC77eE9130E52410fE;
+    address public constant EULERSWAP_PERIPHERY =
+        0x813D74E832b3d9E9451d8f0E871E877edf2a5A5f;
+    address public constant USDC_USDT_POOL =
+        0x2bFED8dBEb8e6226a15300AC77eE9130E52410fE;
 
     EulerSwapExecutorExposed eulerswapExposed;
     IERC20 USDC = IERC20(USDC_ADDR);
@@ -56,7 +58,7 @@ contract EulerSwapExecutorTest is Test, Constants {
             eulerswapExposed.decodeParams(params);
 
         assertEq(address(tokenIn), address(USDC));
-        assertEq(address(tokenOut), address(USDT)); 
+        assertEq(address(tokenOut), address(USDT));
         assertEq(target, address(3));
         assertEq(receiver, address(4));
     }
@@ -65,10 +67,11 @@ contract EulerSwapExecutorTest is Test, Constants {
         bytes memory invalidParams =
             abi.encodePacked(USDC_ADDR, USDT_ADDR, address(3));
 
-        vm.expectRevert(EulerSwapExecutor.EulerSwapExecutor__InvalidDataLength.selector);
+        vm.expectRevert(
+            EulerSwapExecutor.EulerSwapExecutor__InvalidDataLength.selector
+        );
         eulerswapExposed.decodeParams(invalidParams);
     }
-
 
     function testSwap() public {
         uint256 amountIn = 5e6;
