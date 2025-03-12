@@ -54,11 +54,18 @@ contract Constants is Test, BaseConstants {
     address USDC_WETH_USV3 = 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640; // 0.05% fee
     address USDC_WETH_USV3_2 = 0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8; // 0.3% fee
 
+    // Curve
+    address TRICRYPTO_USDC_WBTC_WETH =
+        0x7F86Bf177Dd4F3494b841a37e810A34dD56c829B;
+
     // Uniswap universal router
     address UNIVERSAL_ROUTER = 0x66a9893cC07D91D95644AEDD05D03f95e1dBA8Af;
 
     // Permit2
     address PERMIT2_ADDRESS = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
+
+    // Curve router
+    address CURVE_ROUTER = 0x16C6521Dff6baB339122a0FE25a9116693265353;
 
     /**
      * @dev Deploys a dummy contract with non-empty bytecode
