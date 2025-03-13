@@ -101,14 +101,14 @@ contract UniswapV3Executor is IExecutor, ICallback, ExecutorTransferMethods {
             "InvalidTransferMethod"
         );
         TransferMethod method = TransferMethod(uint8(msgData[171]));
+        address sender = address(bytes20(msgData[172:192]));
 
         verifyCallback(msgData[128:]);
 
         uint256 amountOwed =
             amount0Delta > 0 ? uint256(amount0Delta) : uint256(amount1Delta);
 
-        // TODO This must never be a safeTransfer. Figure out how to ensure this.
-        _transfer(IERC20(tokenIn), msg.sender, amountOwed, method);
+        _transfer(IERC20(tokenIn), sender, msg.sender, amountOwed, method);
 
         return abi.encode(amountOwed, tokenIn);
     }
@@ -166,7 +166,9 @@ contract UniswapV3Executor is IExecutor, ICallback, ExecutorTransferMethods {
         uint24 fee,
         TransferMethod method
     ) internal view returns (bytes memory) {
-        return abi.encodePacked(tokenIn, tokenOut, fee, uint8(method), self);
+        return abi.encodePacked(
+            tokenIn, tokenOut, fee, uint8(method), msg.sender, self
+        );
     }
 
     function _verifyPairAddress(
