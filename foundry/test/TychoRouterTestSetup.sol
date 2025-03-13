@@ -61,7 +61,7 @@ contract TychoRouterTestSetup is Test, Constants {
         vm.stopPrank();
 
         usv2Executor = new UniswapV2Executor(factoryV2, PERMIT2_ADDRESS);
-        usv3Executor = new UniswapV3Executor(factoryV3);
+        usv3Executor = new UniswapV3Executor(factoryV3, PERMIT2_ADDRESS);
         usv4Executor = new UniswapV4Executor(poolManager);
         vm.startPrank(EXECUTOR_SETTER);
         address[] memory executors = new address[](3);
