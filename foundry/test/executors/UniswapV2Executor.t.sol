@@ -2,11 +2,14 @@
 pragma solidity ^0.8.26;
 
 import "@src/executors/UniswapV2Executor.sol";
+import "@src/executors/ExecutorTransferMethods.sol";
 import {Test} from "../../lib/forge-std/src/Test.sol";
 import {Constants} from "../Constants.sol";
 
 contract UniswapV2ExecutorExposed is UniswapV2Executor {
-    constructor(address _factory) UniswapV2Executor(_factory) {}
+    constructor(address _factory, address _permit2)
+        UniswapV2Executor(_factory, _permit2)
+    {}
 
     function decodeParams(bytes calldata data)
         external
@@ -15,7 +18,8 @@ contract UniswapV2ExecutorExposed is UniswapV2Executor {
             IERC20 inToken,
             address target,
             address receiver,
-            bool zeroForOne
+            bool zeroForOne,
+            TransferMethod method
         )
     {
         return _decodeData(data);
@@ -54,20 +58,30 @@ contract UniswapV2ExecutorTest is Test, Constants {
     function setUp() public {
         uint256 forkBlock = 17323404;
         vm.createSelectFork(vm.rpcUrl("mainnet"), forkBlock);
-        uniswapV2Exposed = new UniswapV2ExecutorExposed(USV2_FACTORY_ETHEREUM);
+        uniswapV2Exposed =
+            new UniswapV2ExecutorExposed(USV2_FACTORY_ETHEREUM, PERMIT2_ADDRESS);
     }
 
     function testDecodeParams() public view {
         bytes memory params =
             abi.encodePacked(WETH_ADDR, address(2), address(3), false);
 
-        (IERC20 tokenIn, address target, address receiver, bool zeroForOne) =
-            uniswapV2Exposed.decodeParams(params);
+        (
+            IERC20 tokenIn,
+            address target,
+            address receiver,
+            bool zeroForOne,
+            ExecutorTransferMethods.TransferMethod method
+        ) = uniswapV2Exposed.decodeParams(params);
 
         assertEq(address(tokenIn), WETH_ADDR);
         assertEq(target, address(2));
         assertEq(receiver, address(3));
         assertEq(zeroForOne, false);
+        assertEq(
+            uint8(ExecutorTransferMethods.TransferMethod.TRANSFER),
+            uint8(method)
+        );
     }
 
     function testDecodeParamsInvalidDataLength() public {
@@ -125,13 +139,20 @@ contract UniswapV2ExecutorTest is Test, Constants {
         bytes memory protocolData =
             hex"c02aaa39b223fe8d0a0e5c4f27ead9083c756cc288e6a0c2ddd26feeb64f039a2c41296fcb3f5640000000000000000000000000000000000000000100";
 
-        (IERC20 tokenIn, address target, address receiver, bool zeroForOne) =
-            uniswapV2Exposed.decodeParams(protocolData);
+        (
+            IERC20 tokenIn,
+            address target,
+            address receiver,
+            bool zeroForOne,
+            ExecutorTransferMethods.TransferMethod method
+        ) = uniswapV2Exposed.decodeParams(protocolData);
 
         assertEq(address(tokenIn), WETH_ADDR);
         assertEq(target, 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640);
         assertEq(receiver, 0x0000000000000000000000000000000000000001);
         assertEq(zeroForOne, false);
+        // TRANSFER = 0
+        assertEq(0, uint8(method));
     }
 
     function testSwapIntegration() public {

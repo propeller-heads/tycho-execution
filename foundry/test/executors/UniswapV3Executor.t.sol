@@ -6,7 +6,9 @@ import {Test} from "../../lib/forge-std/src/Test.sol";
 import {Constants} from "../Constants.sol";
 
 contract UniswapV3ExecutorExposed is UniswapV3Executor {
-    constructor(address _factory) UniswapV3Executor(_factory) {}
+    constructor(address _factory, address _permit2)
+        UniswapV3Executor(_factory, _permit2)
+    {}
 
     function decodeData(bytes calldata data)
         external
@@ -17,7 +19,8 @@ contract UniswapV3ExecutorExposed is UniswapV3Executor {
             uint24 fee,
             address receiver,
             address target,
-            bool zeroForOne
+            bool zeroForOne,
+            TransferMethod method
         )
     {
         return _decodeData(data);
@@ -44,7 +47,8 @@ contract UniswapV3ExecutorTest is Test, Constants {
         uint256 forkBlock = 17323404;
         vm.createSelectFork(vm.rpcUrl("mainnet"), forkBlock);
 
-        uniswapV3Exposed = new UniswapV3ExecutorExposed(USV3_FACTORY_ETHEREUM);
+        uniswapV3Exposed =
+            new UniswapV3ExecutorExposed(USV3_FACTORY_ETHEREUM, PERMIT2_ADDRESS);
     }
 
     function testDecodeParams() public view {
@@ -59,7 +63,8 @@ contract UniswapV3ExecutorTest is Test, Constants {
             uint24 fee,
             address receiver,
             address target,
-            bool zeroForOne
+            bool zeroForOne,
+            ExecutorTransferMethods.TransferMethod method
         ) = uniswapV3Exposed.decodeData(data);
 
         assertEq(tokenIn, WETH_ADDR);
@@ -68,6 +73,10 @@ contract UniswapV3ExecutorTest is Test, Constants {
         assertEq(receiver, address(2));
         assertEq(target, address(3));
         assertEq(zeroForOne, false);
+        assertEq(
+            uint8(method),
+            uint8(ExecutorTransferMethods.TransferMethod.TRANSFER)
+        );
     }
 
     function testDecodeParamsInvalidDataLength() public {
@@ -101,7 +110,9 @@ contract UniswapV3ExecutorTest is Test, Constants {
             int256(0), // amount1Delta
             dataOffset,
             dataLength,
-            protocolData
+            protocolData,
+            uint8(ExecutorTransferMethods.TransferMethod.TRANSFER),
+            address(uniswapV3Exposed) // transferFrom sender (irrelevant in this case)
         );
         uniswapV3Exposed.handleCallback(callbackData);
         vm.stopPrank();

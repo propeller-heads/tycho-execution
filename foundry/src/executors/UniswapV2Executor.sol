@@ -4,12 +4,13 @@ pragma solidity ^0.8.26;
 import "@interfaces/IExecutor.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@uniswap-v2/contracts/interfaces/IUniswapV2Pair.sol";
+import "./ExecutorTransferMethods.sol";
 
 error UniswapV2Executor__InvalidDataLength();
 error UniswapV2Executor__InvalidTarget();
 error UniswapV2Executor__InvalidFactory();
 
-contract UniswapV2Executor is IExecutor {
+contract UniswapV2Executor is IExecutor, ExecutorTransferMethods {
     using SafeERC20 for IERC20;
 
     bytes32 internal constant POOL_INIT_CODE_HASH =
@@ -18,7 +19,9 @@ contract UniswapV2Executor is IExecutor {
     address public immutable factory;
     address private immutable self;
 
-    constructor(address _factory) {
+    constructor(address _factory, address _permit2)
+        ExecutorTransferMethods(_permit2)
+    {
         if (_factory == address(0)) {
             revert UniswapV2Executor__InvalidFactory();
         }
@@ -32,17 +35,18 @@ contract UniswapV2Executor is IExecutor {
         payable
         returns (uint256 calculatedAmount)
     {
+        IERC20 tokenIn;
         address target;
         address receiver;
         bool zeroForOne;
-        IERC20 tokenIn;
+        TransferMethod method;
 
-        (tokenIn, target, receiver, zeroForOne) = _decodeData(data);
+        (tokenIn, target, receiver, zeroForOne, method) = _decodeData(data);
 
         _verifyPairAddress(target);
 
         calculatedAmount = _getAmountOut(target, givenAmount, zeroForOne);
-        tokenIn.safeTransfer(target, givenAmount);
+        _transfer(tokenIn, msg.sender, target, givenAmount, method);
 
         IUniswapV2Pair pool = IUniswapV2Pair(target);
         if (zeroForOne) {
@@ -59,7 +63,8 @@ contract UniswapV2Executor is IExecutor {
             IERC20 inToken,
             address target,
             address receiver,
-            bool zeroForOne
+            bool zeroForOne,
+            TransferMethod method
         )
     {
         if (data.length != 61) {
@@ -69,6 +74,8 @@ contract UniswapV2Executor is IExecutor {
         target = address(bytes20(data[20:40]));
         receiver = address(bytes20(data[40:60]));
         zeroForOne = uint8(data[60]) > 0;
+        // TODO properly decode, assume encoded using just 1 byte.
+        method = TransferMethod.TRANSFER;
     }
 
     function _getAmountOut(address target, uint256 amountIn, bool zeroForOne)
