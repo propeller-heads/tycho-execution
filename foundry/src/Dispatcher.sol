@@ -3,6 +3,7 @@ pragma solidity ^0.8.26;
 
 import "@interfaces/IExecutor.sol";
 import "@interfaces/ICallback.sol";
+import "forge-std/Console.sol";
 
 error Dispatcher__UnapprovedExecutor();
 error Dispatcher__NonContractExecutor();
@@ -58,6 +59,7 @@ contract Dispatcher {
         uint256 amount,
         bytes calldata data
     ) internal returns (uint256 calculatedAmount) {
+        console.logAddress(executor);
         if (!executors[executor]) {
             revert Dispatcher__UnapprovedExecutor();
         }
