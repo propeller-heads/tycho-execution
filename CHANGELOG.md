@@ -1,3 +1,38 @@
+## [0.66.0](https://github.com/propeller-heads/tycho-execution/compare/0.65.1...0.66.0) (2025-03-14)
+
+
+### Features
+
+* Add check to don't support cyclical swaps with native actions ([27c9c53](https://github.com/propeller-heads/tycho-execution/commit/27c9c53889687b890bb4e4e01329f6a67ae7957c))
+* Add validation for cyclical trades ([f62a9d2](https://github.com/propeller-heads/tycho-execution/commit/f62a9d28c0683490d841439d6a0543370d238387))
+
+
+### Bug Fixes
+
+* Add individual tests for each case ([e96bcdf](https://github.com/propeller-heads/tycho-execution/commit/e96bcdfd0f7f1951ef711efe8a3e45c5bb18fc8b))
+* In test asset, use 0 for the last split, and not 0.5 ([0aba7ed](https://github.com/propeller-heads/tycho-execution/commit/0aba7edf830da0f0efaa465c8069484b62fb7a4d))
+
+## [0.65.1](https://github.com/propeller-heads/tycho-execution/compare/0.65.0...0.65.1) (2025-03-13)
+
+
+### Reverts
+
+* Revert "feat: Add validation for cyclical trades" ([3d7dcef](https://github.com/propeller-heads/tycho-execution/commit/3d7dcef1bd01db283d787f0bc86b4e9cfc28bbaa))
+
+## [0.65.0](https://github.com/propeller-heads/tycho-execution/compare/0.64.0...0.65.0) (2025-03-13)
+
+
+### Features
+
+* Add validation for cyclical trades ([55ffa4e](https://github.com/propeller-heads/tycho-execution/commit/55ffa4eb457ea8dd1ed57cdaac01f45880d34b0f))
+
+## [0.64.0](https://github.com/propeller-heads/tycho-execution/compare/0.63.0...0.64.0) (2025-03-13)
+
+
+### Features
+
+* update tycho-core to 0.61.1 ([53b8c6a](https://github.com/propeller-heads/tycho-execution/commit/53b8c6afee6efdb2a878e2535a8daadfb29d91be))
+
 ## [0.63.0](https://github.com/propeller-heads/tycho-execution/compare/0.62.0...0.63.0) (2025-03-10)
 
 
