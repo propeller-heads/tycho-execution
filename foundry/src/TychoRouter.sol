@@ -133,7 +133,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
      *
      * @return amountOut The total amount of the output token received by the receiver, after deducting fees if applicable.
      */
-    function swap(
+    function splitSwap(
         uint256 amountIn,
         address tokenIn,
         address tokenOut,
@@ -145,7 +145,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
         bytes calldata swaps
     ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
         IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
-        return _swapChecked(
+        return _splitSwapChecked(
             amountIn,
             tokenIn,
             tokenOut,
@@ -185,7 +185,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
      *
      * @return amountOut The total amount of the output token received by the receiver, after deducting fees if applicable.
      */
-    function swapPermit2(
+    function splitSwapPermit2(
         uint256 amountIn,
         address tokenIn,
         address tokenOut,
@@ -209,7 +209,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
             );
         }
 
-        return _swapChecked(
+        return _splitSwapChecked(
             amountIn,
             tokenIn,
             tokenOut,
@@ -223,14 +223,14 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
     }
 
     /**
-     * @notice Internal implementation of the core swap logic shared between swap() and swapPermit2().
+     * @notice Internal implementation of the core swap logic shared between splitSwap() and splitSwapPermit2().
      *
      * @notice This function centralizes the swap execution logic.
      * @notice For detailed documentation on parameters and behavior, see the documentation for
-     * swap() and swapPermit2() functions.
+     * splitSwap() and splitSwapPermit2() functions.
      *
      */
-    function _swapChecked(
+    function _splitSwapChecked(
         uint256 amountIn,
         address tokenIn,
         address tokenOut,
@@ -258,7 +258,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
             ? address(this).balance
             : IERC20(tokenIn).balanceOf(address(this));
 
-        amountOut = _swap(amountIn, nTokens, swaps);
+        amountOut = _splitSwap(amountIn, nTokens, swaps);
         uint256 currentBalance = tokenIn == address(0)
             ? address(this).balance
             : IERC20(tokenIn).balanceOf(address(this));
@@ -314,10 +314,11 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
      *
      * @return The total amount of the buy token obtained after all swaps have been executed.
      */
-    function _swap(uint256 amountIn, uint256 nTokens, bytes calldata swaps_)
-        internal
-        returns (uint256)
-    {
+    function _splitSwap(
+        uint256 amountIn,
+        uint256 nTokens,
+        bytes calldata swaps_
+    ) internal returns (uint256) {
         if (swaps_.length == 0) {
             revert TychoRouter__EmptySwaps();
         }
