@@ -39,6 +39,11 @@ contract Constants is Test, BaseConstants {
     address USDE_ADDR = address(0x4c9EDD5852cd905f086C759E8383e09bff1E68B3);
     address USDT_ADDR = address(0xdAC17F958D2ee523a2206206994597C13D831ec7);
     address PEPE_ADDR = address(0x6982508145454Ce325dDbE47a25d4ec3d2311933);
+    address GHO_ADDR = address(0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f);
+
+    // Maverick v2
+    address MAVERICK_V2_FACTORY = 0x0A7e848Aca42d879EF06507Fca0E7b33A0a63c1e;
+    address GHO_USDC_POOL = 0x14Cf6D2Fe3E1B326114b07d22A6F6bb59e346c67;
 
     // Uniswap v2
     address WETH_DAI_POOL = 0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11;
