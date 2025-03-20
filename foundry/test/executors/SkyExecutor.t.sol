@@ -6,9 +6,7 @@ import {Test, console} from "../../lib/forge-std/src/Test.sol";
 import {Constants} from "../Constants.sol";
 
 contract SkyExecutorExposed is SkyExecutor {
-    function decodeData(
-        bytes calldata data
-    )
+    function decodeData(bytes calldata data)
         external
         pure
         returns (
@@ -23,9 +21,11 @@ contract SkyExecutorExposed is SkyExecutor {
         return _decodeData(data);
     }
 
-    function determineComponentType(
-        address componentAddress
-    ) external pure returns (uint8) {
+    function determineComponentType(address componentAddress)
+        external
+        pure
+        returns (uint8)
+    {
         return _determineComponentType(componentAddress);
     }
 }
@@ -36,7 +36,6 @@ contract SkyExecutorTest is Test, Constants {
     SkyExecutorExposed skyExecutorExposed;
     SkyExecutor skyExecutor;
 
-    // Sky protocol addresses
     address constant SDAI_VAULT_ADDRESS =
         0x83F20F44975D03b1b09e64809B757c47f942BEeA;
     address constant DAI_USDS_CONVERTER_ADDRESS =
@@ -49,7 +48,6 @@ contract SkyExecutorTest is Test, Constants {
     address constant MKR_SKY_CONVERTER_ADDRESS =
         0xBDcFCA946b6CDd965f99a839e4435Bcdc1bc470B;
 
-    // Token addresses
     address constant USDS_ADDR = 0xdC035D45d973E3EC169d2276DDab16f1e407384F;
     address constant MKR_ADDR = 0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2;
     address constant SKY_ADDR = 0x56072C95FAA701256059aa122697B133aDEd9279;
@@ -58,11 +56,9 @@ contract SkyExecutorTest is Test, Constants {
         uint256 forkBlock = 21678075;
         vm.createSelectFork(vm.rpcUrl("mainnet"), forkBlock);
 
-
         skyExecutorExposed = new SkyExecutorExposed();
         skyExecutor = new SkyExecutor();
 
-        // Label addresses for better error messages
         vm.label(SDAI_VAULT_ADDRESS, "sDAI Vault");
         vm.label(DAI_USDS_CONVERTER_ADDRESS, "DAI-USDS Converter");
         vm.label(DAI_LITE_PSM_ADDRESS, "DAI Lite PSM");
@@ -73,38 +69,31 @@ contract SkyExecutorTest is Test, Constants {
 
     function testDetermineComponentTypes() public view {
         assertEq(
-            skyExecutorExposed.determineComponentType(SDAI_VAULT_ADDRESS),
-            1
-        ); // COMPONENT_TYPE_VAULT
-        assertEq(skyExecutorExposed.determineComponentType(SUSDS_ADDRESS), 1); // COMPONENT_TYPE_VAULT
+            skyExecutorExposed.determineComponentType(SDAI_VAULT_ADDRESS), 1
+        );
+        assertEq(skyExecutorExposed.determineComponentType(SUSDS_ADDRESS), 1);
         assertEq(
             skyExecutorExposed.determineComponentType(
                 DAI_USDS_CONVERTER_ADDRESS
             ),
             2
-        ); // COMPONENT_TYPE_CONVERTER
+        );
         assertEq(
-            skyExecutorExposed.determineComponentType(
-                MKR_SKY_CONVERTER_ADDRESS
-            ),
+            skyExecutorExposed.determineComponentType(MKR_SKY_CONVERTER_ADDRESS),
             2
-        ); // COMPONENT_TYPE_CONVERTER
+        );
         assertEq(
-            skyExecutorExposed.determineComponentType(DAI_LITE_PSM_ADDRESS),
-            3
-        ); // COMPONENT_TYPE_PSM
+            skyExecutorExposed.determineComponentType(DAI_LITE_PSM_ADDRESS), 3
+        );
         assertEq(
             skyExecutorExposed.determineComponentType(USDS_PSM_WRAPPER_ADDRESS),
             3
-        ); // COMPONENT_TYPE_PSM
+        );
     }
 
     function testDecodeDataBasic() public view {
         bytes memory data = abi.encodePacked(
-            DAI_ADDR, // tokenIn
-            USDS_ADDR, // tokenOut
-            DAI_USDS_CONVERTER_ADDRESS, // component
-            BOB // receiver
+            DAI_ADDR, USDS_ADDR, DAI_USDS_CONVERTER_ADDRESS, BOB
         );
 
         (
@@ -120,18 +109,13 @@ contract SkyExecutorTest is Test, Constants {
         assertEq(address(tokenOut), USDS_ADDR);
         assertEq(componentAddress, DAI_USDS_CONVERTER_ADDRESS);
         assertEq(receiver, BOB);
-        assertEq(componentType, 2); // CONVERTER type
+        assertEq(componentType, 2);
         assertEq(extraData.length, 0);
     }
 
     function testDecodeDataWithExtraData() public view {
-        // Test vault deposit with isDeposit flag
         bytes memory depositData = abi.encodePacked(
-            DAI_ADDR, // tokenIn
-            SDAI_VAULT_ADDRESS, // tokenOut
-            SDAI_VAULT_ADDRESS, // component
-            BOB, // receiver
-            bytes1(0x01) // isDeposit flag
+            DAI_ADDR, SDAI_VAULT_ADDRESS, SDAI_VAULT_ADDRESS, BOB, bytes1(0x01)
         );
 
         (
@@ -147,16 +131,15 @@ contract SkyExecutorTest is Test, Constants {
         assertEq(address(tokenOut), SDAI_VAULT_ADDRESS);
         assertEq(componentAddress, SDAI_VAULT_ADDRESS);
         assertEq(receiver, BOB);
-        assertEq(componentType, 1); // VAULT type
+        assertEq(componentType, 1);
         assertEq(extraData.length, 1);
         assertEq(uint8(extraData[0]), 1); // isDeposit = true
 
-        // Test PSM with fee parameter
         bytes memory psmData = abi.encodePacked(
-            DAI_ADDR, // tokenIn
-            USDC_ADDR, // tokenOut
-            DAI_LITE_PSM_ADDRESS, // component
-            BOB, // receiver
+            DAI_ADDR,
+            USDC_ADDR,
+            DAI_LITE_PSM_ADDRESS,
+            BOB,
             bytes3(0x000064) // fee (100 = 1%)
         );
 
@@ -173,15 +156,12 @@ contract SkyExecutorTest is Test, Constants {
         assertEq(address(tokenOut2), USDC_ADDR);
         assertEq(componentAddress2, DAI_LITE_PSM_ADDRESS);
         assertEq(receiver2, BOB);
-        assertEq(componentType2, 3); // PSM type
+        assertEq(componentType2, 3);
         assertEq(extraData2.length, 3);
     }
 
     function testDecodeDataInvalidLength() public {
-        bytes memory invalidData = abi.encodePacked(
-            DAI_ADDR, // tokenIn
-            USDS_ADDR // tokenOut (missing component address and receiver)
-        );
+        bytes memory invalidData = abi.encodePacked(DAI_ADDR, USDS_ADDR);
 
         vm.expectRevert(SkyExecutor__InvalidDataLength.selector);
         skyExecutorExposed.decodeData(invalidData);
@@ -190,61 +170,44 @@ contract SkyExecutorTest is Test, Constants {
     function testVaultSwap() public {
         uint256 amountIn = 100 * 10 ** 18; // 100 DAI
 
-        // Create data for sDAI vault deposit
         bytes memory depositData = abi.encodePacked(
-            DAI_ADDR, // tokenIn
-            SDAI_VAULT_ADDRESS, // tokenOut
-            SDAI_VAULT_ADDRESS, // component
-            address(this), // receiver
-            bytes1(0x01) // isDeposit flag
+            DAI_ADDR,
+            SDAI_VAULT_ADDRESS,
+            SDAI_VAULT_ADDRESS,
+            address(this),
+            bytes1(0x01)
         );
 
-        // Give this contract some DAI
         deal(DAI_ADDR, address(this), amountIn);
 
-        // Approve the executor to spend our tokens
         IERC20(DAI_ADDR).approve(address(skyExecutor), amountIn);
 
-        // Mock the deposit function (since we can't really execute it in the test)
         vm.mockCall(
             SDAI_VAULT_ADDRESS,
             abi.encodeWithSignature(
-                "deposit(uint256,address)",
-                amountIn,
-                address(this)
+                "deposit(uint256,address)", amountIn, address(this)
             ),
-            abi.encode(amountIn) // 1:1 for simplicity
+            abi.encode(amountIn)
         );
 
-        // Execute the swap
         uint256 amountOut = skyExecutor.swap(amountIn, depositData);
 
-        // Verify the result
         assertEq(
-            amountOut,
-            amountIn,
-            "Incorrect output amount for vault deposit"
+            amountOut, amountIn, "Incorrect output amount for vault deposit"
         );
     }
 
     function testConverterSwap() public {
         uint256 amountIn = 100 * 10 ** 18; // 100 DAI
 
-        // Create data for DAI-USDS conversion
         bytes memory converterData = abi.encodePacked(
-            DAI_ADDR, // tokenIn
-            USDS_ADDR, // tokenOut
-            DAI_USDS_CONVERTER_ADDRESS, // component
-            address(this) // receiver
+            DAI_ADDR, USDS_ADDR, DAI_USDS_CONVERTER_ADDRESS, address(this)
         );
 
-        // Give this contract some DAI
         deal(DAI_ADDR, address(this), amountIn);
 
-        // Approve the executor to spend our tokens
         IERC20(DAI_ADDR).approve(address(skyExecutor), amountIn);
 
-        // Mock the converter function
         vm.mockCall(
             DAI_USDS_CONVERTER_ADDRESS,
             abi.encodeWithSignature(
@@ -254,17 +217,13 @@ contract SkyExecutorTest is Test, Constants {
                 amountIn,
                 address(this)
             ),
-            abi.encode(amountIn) // 1:1 conversion
+            abi.encode(amountIn)
         );
 
-        // Execute the swap
         uint256 amountOut = skyExecutor.swap(amountIn, converterData);
 
-        // Verify the result
         assertEq(
-            amountOut,
-            amountIn,
-            "Incorrect output amount for converter swap"
+            amountOut, amountIn, "Incorrect output amount for converter swap"
         );
     }
 
@@ -273,22 +232,18 @@ contract SkyExecutorTest is Test, Constants {
         uint24 fee = 100; // 1% fee
         uint256 expectedOut = amountIn - ((amountIn * fee) / 10000); // Subtract 1% fee
 
-        // Create data for DAI-USDC PSM swap with fee
         bytes memory psmData = abi.encodePacked(
-            DAI_ADDR, // tokenIn
-            USDC_ADDR, // tokenOut
-            DAI_LITE_PSM_ADDRESS, // component
-            address(this), // receiver
+            DAI_ADDR,
+            USDC_ADDR,
+            DAI_LITE_PSM_ADDRESS,
+            address(this),
             bytes3(uint24(fee))
         );
 
-        // Give this contract some DAI
         deal(DAI_ADDR, address(this), amountIn);
 
-        // Approve the executor to spend our tokens
         IERC20(DAI_ADDR).approve(address(skyExecutor), amountIn);
 
-        // Mock the PSM function with fee
         vm.mockCall(
             DAI_LITE_PSM_ADDRESS,
             abi.encodeWithSignature(
@@ -302,10 +257,8 @@ contract SkyExecutorTest is Test, Constants {
             abi.encode(expectedOut)
         );
 
-        // Execute the swap
         uint256 amountOut = skyExecutor.swap(amountIn, psmData);
 
-        // Verify the result
         assertEq(
             amountOut,
             expectedOut,
@@ -316,12 +269,8 @@ contract SkyExecutorTest is Test, Constants {
     function testIntegrationWithSkySwapEncoder() public view {
         console.log("BOB address:", BOB);
 
-        // For a converter component (DAI-USDS Converter)
         bytes memory converterEncoding = abi.encodePacked(
-            DAI_ADDR, // tokenIn
-            USDS_ADDR, // tokenOut
-            DAI_USDS_CONVERTER_ADDRESS, // component
-            BOB // receiver
+            DAI_ADDR, USDS_ADDR, DAI_USDS_CONVERTER_ADDRESS, BOB
         );
 
         (
@@ -337,16 +286,11 @@ contract SkyExecutorTest is Test, Constants {
         assertEq(address(tokenOut1), USDS_ADDR);
         assertEq(componentAddress1, DAI_USDS_CONVERTER_ADDRESS);
         assertEq(receiver1, BOB);
-        assertEq(componentType1, 2); // COMPONENT_TYPE_CONVERTER
+        assertEq(componentType1, 2);
         assertEq(extraData1.length, 0);
 
-        // For a vault deposit
         bytes memory vaultDepositEncoding = abi.encodePacked(
-            DAI_ADDR, // tokenIn
-            SDAI_VAULT_ADDRESS, // tokenOut
-            SDAI_VAULT_ADDRESS, // component
-            BOB, // receiver
-            bytes1(0x01) // isDeposit flag
+            DAI_ADDR, SDAI_VAULT_ADDRESS, SDAI_VAULT_ADDRESS, BOB, bytes1(0x01)
         );
 
         (
@@ -362,16 +306,15 @@ contract SkyExecutorTest is Test, Constants {
         assertEq(address(tokenOut2), SDAI_VAULT_ADDRESS);
         assertEq(componentAddress2, SDAI_VAULT_ADDRESS);
         assertEq(receiver2, BOB);
-        assertEq(componentType2, 1); // COMPONENT_TYPE_VAULT
+        assertEq(componentType2, 1);
         assertEq(extraData2.length, 1);
-        assertEq(uint8(extraData2[0]), 1); // isDeposit = true
+        assertEq(uint8(extraData2[0]), 1);
 
-        // For a PSM with fee
         bytes memory psmEncoding = abi.encodePacked(
-            DAI_ADDR, // tokenIn
-            USDC_ADDR, // tokenOut
-            DAI_LITE_PSM_ADDRESS, // component
-            BOB, // receiver
+            DAI_ADDR,
+            USDC_ADDR,
+            DAI_LITE_PSM_ADDRESS,
+            BOB,
             bytes3(0x000064) // fee (100 = 1%)
         );
 
@@ -388,15 +331,13 @@ contract SkyExecutorTest is Test, Constants {
         assertEq(address(tokenOut3), USDC_ADDR);
         assertEq(componentAddress3, DAI_LITE_PSM_ADDRESS);
         assertEq(receiver3, BOB);
-        assertEq(componentType3, 3); // COMPONENT_TYPE_PSM
+        assertEq(componentType3, 3);
         assertEq(extraData3.length, 3);
     }
 
-    // This test verifies the format of data from the SkySwapEncoder
     function testExtraDataFormat() public view {
-        // Based on the Rust encoder test_encode_sky_swap for PSM component with fee
-        bytes
-            memory encodedPSMData = hex"6b175474e89094c44da98b954eedeac495271d0fa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48f6e72db5454dd049d0788e411b06cfaf168530421d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e000064";
+        bytes memory encodedPSMData =
+            hex"6b175474e89094c44da98b954eedeac495271d0fa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48f6e72db5454dd049d0788e411b06cfaf168530421d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e000064";
 
         (
             IERC20 tokenIn,
@@ -412,10 +353,372 @@ contract SkyExecutorTest is Test, Constants {
         assertEq(address(tokenOut), USDC_ADDR);
         assertEq(componentAddress, DAI_LITE_PSM_ADDRESS);
         assertEq(receiver, BOB);
-        assertEq(componentType, 3); // COMPONENT_TYPE_PSM
+        assertEq(componentType, 3);
 
         // Important: verify the format of the fee data
         assertEq(extraData.length, 3);
         assertEq(uint24(bytes3(extraData)), 100); // Fee should be 100 (1%)
+    }
+
+    function testVaultWithdraw() public {
+        uint256 amountIn = 100 * 10 ** 18; // 100 sDAI
+
+        bytes memory withdrawData = abi.encodePacked(
+            SDAI_VAULT_ADDRESS,
+            DAI_ADDR,
+            SDAI_VAULT_ADDRESS,
+            address(this),
+            bytes1(0x00) // isDeposit flag = false (withdraw)
+        );
+
+        deal(SDAI_VAULT_ADDRESS, address(this), amountIn);
+        IERC20(SDAI_VAULT_ADDRESS).approve(address(skyExecutor), amountIn);
+
+        vm.mockCall(
+            SDAI_VAULT_ADDRESS,
+            abi.encodeWithSignature(
+                "withdraw(uint256,address,address)",
+                amountIn,
+                address(this),
+                address(skyExecutor)
+            ),
+            abi.encode(amountIn)
+        );
+
+        uint256 amountOut = skyExecutor.swap(amountIn, withdrawData);
+        assertEq(
+            amountOut, amountIn, "Incorrect output amount for vault withdrawal"
+        );
+    }
+
+    function testSUSdsVaultDeposit() public {
+        uint256 amountIn = 100 * 10 ** 18; // 100 USDS
+
+        bytes memory depositData = abi.encodePacked(
+            USDS_ADDR,
+            SUSDS_ADDRESS,
+            SUSDS_ADDRESS,
+            address(this),
+            bytes1(0x01) // isDeposit flag = true
+        );
+
+        deal(USDS_ADDR, address(this), amountIn);
+        IERC20(USDS_ADDR).approve(address(skyExecutor), amountIn);
+
+        vm.mockCall(
+            SUSDS_ADDRESS,
+            abi.encodeWithSignature(
+                "deposit(uint256,address)", amountIn, address(this)
+            ),
+            abi.encode(amountIn)
+        );
+
+        uint256 amountOut = skyExecutor.swap(amountIn, depositData);
+        assertEq(
+            amountOut, amountIn, "Incorrect output amount for sUSDS deposit"
+        );
+    }
+
+    function testSUSdsVaultWithdraw() public {
+        uint256 amountIn = 100 * 10 ** 18; // 100 sUSDS
+
+        bytes memory withdrawData = abi.encodePacked(
+            SUSDS_ADDRESS,
+            USDS_ADDR,
+            SUSDS_ADDRESS,
+            address(this),
+            bytes1(0x00) // isDeposit flag = false (withdraw)
+        );
+
+        deal(SUSDS_ADDRESS, address(this), amountIn);
+        IERC20(SUSDS_ADDRESS).approve(address(skyExecutor), amountIn);
+
+        vm.mockCall(
+            SUSDS_ADDRESS,
+            abi.encodeWithSignature(
+                "withdraw(uint256,address,address)",
+                amountIn,
+                address(this),
+                address(skyExecutor)
+            ),
+            abi.encode(amountIn)
+        );
+
+        uint256 amountOut = skyExecutor.swap(amountIn, withdrawData);
+        assertEq(
+            amountOut, amountIn, "Incorrect output amount for sUSDS withdrawal"
+        );
+    }
+
+    function testConverterSwapReverse() public {
+        uint256 amountIn = 100 * 10 ** 18; // 100 USDS
+
+        bytes memory converterData = abi.encodePacked(
+            USDS_ADDR, DAI_ADDR, DAI_USDS_CONVERTER_ADDRESS, address(this)
+        );
+
+        deal(USDS_ADDR, address(this), amountIn);
+        IERC20(USDS_ADDR).approve(address(skyExecutor), amountIn);
+
+        vm.mockCall(
+            DAI_USDS_CONVERTER_ADDRESS,
+            abi.encodeWithSignature(
+                "swapExactInput(address,address,uint256,address)",
+                USDS_ADDR,
+                DAI_ADDR,
+                amountIn,
+                address(this)
+            ),
+            abi.encode(amountIn)
+        );
+
+        uint256 amountOut = skyExecutor.swap(amountIn, converterData);
+        assertEq(
+            amountOut,
+            amountIn,
+            "Incorrect output amount for reverse converter swap"
+        );
+    }
+
+    function testMkrSkyConverterToSky() public {
+        uint256 amountIn = 1 * 10 ** 18; // 1 MKR
+        uint256 expectedOut = 24000 * 10 ** 18; // 24,000 SKY
+
+        bytes memory converterData = abi.encodePacked(
+            MKR_ADDR, SKY_ADDR, MKR_SKY_CONVERTER_ADDRESS, address(this)
+        );
+
+        deal(MKR_ADDR, address(this), amountIn);
+        IERC20(MKR_ADDR).approve(address(skyExecutor), amountIn);
+
+        vm.mockCall(
+            MKR_SKY_CONVERTER_ADDRESS,
+            abi.encodeWithSignature(
+                "swapExactInput(address,address,uint256,address)",
+                MKR_ADDR,
+                SKY_ADDR,
+                amountIn,
+                address(this)
+            ),
+            abi.encode(expectedOut)
+        );
+
+        uint256 amountOut = skyExecutor.swap(amountIn, converterData);
+        assertEq(
+            amountOut,
+            expectedOut,
+            "Incorrect output amount for MKR to SKY conversion"
+        );
+    }
+
+    function testMkrSkyConverterToMkr() public {
+        uint256 amountIn = 24000 * 10 ** 18; // 24,000 SKY
+        uint256 expectedOut = 1 * 10 ** 18; // 1 MKR
+
+        bytes memory converterData = abi.encodePacked(
+            SKY_ADDR, MKR_ADDR, MKR_SKY_CONVERTER_ADDRESS, address(this)
+        );
+
+        deal(SKY_ADDR, address(this), amountIn);
+        IERC20(SKY_ADDR).approve(address(skyExecutor), amountIn);
+
+        vm.mockCall(
+            MKR_SKY_CONVERTER_ADDRESS,
+            abi.encodeWithSignature(
+                "swapExactInput(address,address,uint256,address)",
+                SKY_ADDR,
+                MKR_ADDR,
+                amountIn,
+                address(this)
+            ),
+            abi.encode(expectedOut)
+        );
+
+        uint256 amountOut = skyExecutor.swap(amountIn, converterData);
+        assertEq(
+            amountOut,
+            expectedOut,
+            "Incorrect output amount for SKY to MKR conversion"
+        );
+    }
+
+    function testPSMSwapReverse() public {
+        uint256 amountIn = 100 * 10 ** 6; // 100 USDC (6 decimals)
+        uint24 fee = 100; // 1% fee
+        uint256 expectedOut =
+            (amountIn * 10 ** 12) - ((amountIn * 10 ** 12 * fee) / 10000); // Convert to 18 decimals and subtract fee
+
+        bytes memory psmData = abi.encodePacked(
+            USDC_ADDR,
+            DAI_ADDR,
+            DAI_LITE_PSM_ADDRESS,
+            address(this),
+            bytes3(uint24(fee))
+        );
+
+        deal(USDC_ADDR, address(this), amountIn);
+        IERC20(USDC_ADDR).approve(address(skyExecutor), amountIn);
+
+        vm.mockCall(
+            DAI_LITE_PSM_ADDRESS,
+            abi.encodeWithSignature(
+                "swapWithFee(address,address,uint256,address,uint24)",
+                USDC_ADDR,
+                DAI_ADDR,
+                amountIn,
+                address(this),
+                fee
+            ),
+            abi.encode(expectedOut)
+        );
+
+        uint256 amountOut = skyExecutor.swap(amountIn, psmData);
+        assertEq(
+            amountOut,
+            expectedOut,
+            "Incorrect output amount for USDC to DAI PSM swap"
+        );
+    }
+
+    function testUSDSPSMWrapperToUSDC() public {
+        uint256 amountIn = 100 * 10 ** 18; // 100 USDS (18 decimals)
+        uint24 fee = 50; // 0.5% fee
+        uint256 expectedOut =
+            (amountIn / 10 ** 12) - (((amountIn / 10 ** 12) * fee) / 10000); // Convert to 6 decimals and subtract fee
+
+        bytes memory psmData = abi.encodePacked(
+            USDS_ADDR,
+            USDC_ADDR,
+            USDS_PSM_WRAPPER_ADDRESS,
+            address(this),
+            bytes3(uint24(fee))
+        );
+
+        deal(USDS_ADDR, address(this), amountIn);
+        IERC20(USDS_ADDR).approve(address(skyExecutor), amountIn);
+
+        vm.mockCall(
+            USDS_PSM_WRAPPER_ADDRESS,
+            abi.encodeWithSignature(
+                "swapWithFee(address,address,uint256,address,uint24)",
+                USDS_ADDR,
+                USDC_ADDR,
+                amountIn,
+                address(this),
+                fee
+            ),
+            abi.encode(expectedOut)
+        );
+
+        uint256 amountOut = skyExecutor.swap(amountIn, psmData);
+        assertEq(
+            amountOut,
+            expectedOut,
+            "Incorrect output amount for USDS to USDC PSM swap"
+        );
+    }
+
+    function testUSDSPSMWrapperToUSDS() public {
+        uint256 amountIn = 100 * 10 ** 6; // 100 USDC (6 decimals)
+        uint24 fee = 50; // 0.5% fee
+        uint256 expectedOut =
+            (amountIn * 10 ** 12) - ((amountIn * 10 ** 12 * fee) / 10000); // Convert to 18 decimals and subtract fee
+
+        bytes memory psmData = abi.encodePacked(
+            USDC_ADDR,
+            USDS_ADDR,
+            USDS_PSM_WRAPPER_ADDRESS,
+            address(this),
+            bytes3(uint24(fee))
+        );
+
+        deal(USDC_ADDR, address(this), amountIn);
+        IERC20(USDC_ADDR).approve(address(skyExecutor), amountIn);
+
+        vm.mockCall(
+            USDS_PSM_WRAPPER_ADDRESS,
+            abi.encodeWithSignature(
+                "swapWithFee(address,address,uint256,address,uint24)",
+                USDC_ADDR,
+                USDS_ADDR,
+                amountIn,
+                address(this),
+                fee
+            ),
+            abi.encode(expectedOut)
+        );
+
+        uint256 amountOut = skyExecutor.swap(amountIn, psmData);
+        assertEq(
+            amountOut,
+            expectedOut,
+            "Incorrect output amount for USDC to USDS PSM swap"
+        );
+    }
+
+    function testZeroAmountFail() public {
+        uint256 amountIn = 0;
+        bytes memory converterData = abi.encodePacked(
+            DAI_ADDR, USDS_ADDR, DAI_USDS_CONVERTER_ADDRESS, address(this)
+        );
+
+        IERC20(DAI_ADDR).approve(address(skyExecutor), amountIn);
+
+        vm.mockCall(
+            DAI_USDS_CONVERTER_ADDRESS,
+            abi.encodeWithSignature(
+                "swapExactInput(address,address,uint256,address)",
+                DAI_ADDR,
+                USDS_ADDR,
+                amountIn,
+                address(this)
+            ),
+            abi.encode(0) // Zero output, should trigger the error
+        );
+
+        vm.expectRevert(SkyExecutor__OperationFailed.selector);
+        skyExecutor.swap(amountIn, converterData);
+    }
+
+    function testInvalidComponentType() public {
+        uint256 amountIn = 100 * 10 ** 18;
+
+        bytes memory invalidData =
+            abi.encodePacked(DAI_ADDR, USDS_ADDR, ALICE, address(this));
+
+        deal(DAI_ADDR, address(this), amountIn);
+        IERC20(DAI_ADDR).approve(address(skyExecutor), amountIn);
+
+        vm.mockCall(
+            DAI_ADDR,
+            abi.encodeWithSignature(
+                "transferFrom(address,address,uint256)",
+                address(this),
+                address(skyExecutor),
+                amountIn
+            ),
+            abi.encode(true)
+        );
+
+        vm.mockCall(
+            DAI_ADDR,
+            abi.encodeWithSignature("approve(address,uint256)", ALICE, amountIn),
+            abi.encode(true)
+        );
+
+        vm.mockCall(
+            ALICE,
+            abi.encodeWithSignature(
+                "swapExactInput(address,address,uint256,address)",
+                DAI_ADDR,
+                USDS_ADDR,
+                amountIn,
+                address(this)
+            ),
+            abi.encode(0)
+        );
+
+        vm.expectRevert(SkyExecutor__OperationFailed.selector);
+        skyExecutor.swap(amountIn, invalidData);
     }
 }
