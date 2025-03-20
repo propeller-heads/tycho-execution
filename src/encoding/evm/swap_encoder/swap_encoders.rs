@@ -775,11 +775,10 @@ mod tests {
     }
 
     #[test]
-    fn test_encode_sky_swap() {
+    fn test_encode_sky_converter_swap() {
         // Test for DAI-USDS Converter component
         let sky_component = ProtocolComponent {
-            id: String::from("0x3225737a9Bbb6473CB4a45b7244ACa2BeFdB276A"), /* DAI-USDS Converter
-                                                                             * address */
+            id: String::from("0x3225737a9Bbb6473CB4a45b7244ACa2BeFdB276A"), // DAI-USDS Converter address
             protocol_system: String::from("vm:sky"),
             ..Default::default()
         };
@@ -824,8 +823,11 @@ mod tests {
                 "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e"
             ))
         );
+    }
 
-        // Test for sDAI Vault component
+    #[test]
+    fn test_encode_sky_vault_deposit() {
+        // Test for sDAI Vault component - deposit operation
         let sdai_component = ProtocolComponent {
             id: String::from("0x83F20F44975D03b1b09e64809B757c47f942BEeA"), // sDAI Vault address
             protocol_system: String::from("vm:sky"),
@@ -837,7 +839,7 @@ mod tests {
 
         // Test deposit (DAI -> sDAI)
         let deposit_swap = Swap {
-            component: sdai_component.clone(),
+            component: sdai_component,
             token_in: dai_token.clone(),
             token_out: sdai_token.clone(),
             split: 0f64,
@@ -847,10 +849,12 @@ mod tests {
             receiver: Bytes::from("0x1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e"),
             exact_out: false,
             router_address: Bytes::zero(20),
-            group_token_in: dai_token.clone(),
-            group_token_out: sdai_token.clone(),
+            group_token_in: dai_token,
+            group_token_out: sdai_token,
         };
 
+        let encoder =
+            SkySwapEncoder::new(String::from("0xBDcFCA946b6CDd965f99a839e4435Bcdc1bc470B"));
         let encoded_deposit = encoder
             .encode_swap(deposit_swap, deposit_context)
             .unwrap();
@@ -872,6 +876,19 @@ mod tests {
                 "01"
             ))
         );
+    }
+
+    #[test]
+    fn test_encode_sky_vault_withdraw() {
+        // Test for sDAI Vault component - withdraw operation
+        let sdai_component = ProtocolComponent {
+            id: String::from("0x83F20F44975D03b1b09e64809B757c47f942BEeA"), // sDAI Vault address
+            protocol_system: String::from("vm:sky"),
+            ..Default::default()
+        };
+
+        let dai_token = Bytes::from("0x6B175474E89094C44Da98b954EedeAC495271d0F"); // DAI
+        let sdai_token = Bytes::from("0x83F20F44975D03b1b09e64809B757c47f942BEeA"); // sDAI (same as vault address)
 
         // Test withdraw (sDAI -> DAI)
         let withdraw_swap = Swap {
@@ -889,6 +906,8 @@ mod tests {
             group_token_out: dai_token,
         };
 
+        let encoder =
+            SkySwapEncoder::new(String::from("0xBDcFCA946b6CDd965f99a839e4435Bcdc1bc470B"));
         let encoded_withdraw = encoder
             .encode_swap(withdraw_swap, withdraw_context)
             .unwrap();
@@ -910,7 +929,10 @@ mod tests {
                 "00"
             ))
         );
+    }
 
+    #[test]
+    fn test_encode_sky_psm_with_fee() {
         // Test for DAI Lite PSM component with fee
         let mut static_attributes: HashMap<String, Bytes> = HashMap::new();
         let fee = BigInt::from(100); // 1% fee
@@ -942,6 +964,8 @@ mod tests {
             group_token_out: usdc_token,
         };
 
+        let encoder =
+            SkySwapEncoder::new(String::from("0xBDcFCA946b6CDd965f99a839e4435Bcdc1bc470B"));
         let encoded_psm = encoder
             .encode_swap(psm_swap, psm_context)
             .unwrap();
@@ -961,6 +985,59 @@ mod tests {
                 "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
                 // fee (1%)
                 "000064"
+            ))
+        );
+    }
+
+    #[test]
+    fn test_encode_sky_psm_without_fee() {
+        // Test for DAI Lite PSM component without specifying a fee
+        let psm_component = ProtocolComponent {
+            id: String::from("0xf6e72Db5454dd049d0788e411b06CfAF16853042"), // DAI Lite PSM address
+            protocol_system: String::from("vm:sky"),
+            ..Default::default() // No static_attributes, so no fee
+        };
+
+        let dai_token = Bytes::from("0x6B175474E89094C44Da98b954EedeAC495271d0F"); // DAI
+        let usdc_token = Bytes::from("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"); // USDC
+
+        // Test DAI -> USDC swap
+        let psm_swap = Swap {
+            component: psm_component,
+            token_in: dai_token.clone(),
+            token_out: usdc_token.clone(),
+            split: 0f64,
+        };
+
+        let psm_context = EncodingContext {
+            receiver: Bytes::from("0x1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e"),
+            exact_out: false,
+            router_address: Bytes::zero(20),
+            group_token_in: dai_token,
+            group_token_out: usdc_token,
+        };
+
+        let encoder =
+            SkySwapEncoder::new(String::from("0xBDcFCA946b6CDd965f99a839e4435Bcdc1bc470B"));
+        let encoded_psm = encoder
+            .encode_swap(psm_swap, psm_context)
+            .unwrap();
+        let hex_psm = encode(&encoded_psm);
+
+        // For a PSM component without specified fee, we expect default 0 fee
+        assert_eq!(
+            hex_psm,
+            String::from(concat!(
+                // token in (DAI)
+                "6b175474e89094c44da98b954eedeac495271d0f",
+                // token out (USDC)
+                "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                // component id (DAI Lite PSM)
+                "f6e72db5454dd049d0788e411b06cfaf16853042",
+                // receiver
+                "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
+                // default fee (0%)
+                "000000"
             ))
         );
     }

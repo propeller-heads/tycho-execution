@@ -54,16 +54,10 @@ contract SkyExecutorTest is Test, Constants {
     address constant MKR_ADDR = 0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2;
     address constant SKY_ADDR = 0x56072C95FAA701256059aa122697B133aDEd9279;
 
-    // Forks and testing
-    uint256 mainnetFork;
-
     function setUp() public {
-        // Fork mainnet for testing real contracts
-        mainnetFork = vm.createFork(vm.rpcUrl("mainnet"));
-        vm.selectFork(mainnetFork);
+        uint256 forkBlock = 21678075;
+        vm.createSelectFork(vm.rpcUrl("mainnet"), forkBlock);
 
-        // Use a recent block number where the SkySwap contracts are deployed
-        vm.rollFork(18000000);
 
         skyExecutorExposed = new SkyExecutorExposed();
         skyExecutor = new SkyExecutor();
