@@ -22,16 +22,23 @@ contract TychoRouterExposed is TychoRouter {
         return _unwrapETH(amount);
     }
 
-    function exposedSwap(
+    function exposedSplitSwap(
         uint256 amountIn,
         uint256 nTokens,
         bytes calldata swaps
     ) external returns (uint256) {
-        return _swap(amountIn, nTokens, swaps);
+        return _splitSwap(amountIn, nTokens, swaps);
+    }
+
+    function exposedSequentialSwap(uint256 amountIn, bytes calldata swaps)
+        external
+        returns (uint256)
+    {
+        return _sequentialSwap(amountIn, swaps);
     }
 }
 
-contract TychoRouterTestSetup is Test, Constants {
+contract TychoRouterTestSetup is Constants {
     TychoRouterExposed tychoRouter;
     address tychoRouterAddr;
     UniswapV2Executor public usv2Executor;
@@ -183,7 +190,23 @@ contract TychoRouterTestSetup is Test, Constants {
         }
     }
 
-    function encodeSwap(
+    function encodeSingleSwap(address executor, bytes memory protocolData)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        return abi.encodePacked(executor, protocolData);
+    }
+
+    function encodeSequentialSwap(address executor, bytes memory protocolData)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        return abi.encodePacked(executor, protocolData);
+    }
+
+    function encodeSplitSwap(
         uint8 tokenInIndex,
         uint8 tokenOutIndex,
         uint24 split,
