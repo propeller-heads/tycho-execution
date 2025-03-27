@@ -10,6 +10,7 @@ import "@src/TychoRouter.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {WETH} from "../lib/permit2/lib/solmate/src/tokens/WETH.sol";
 import {PoolManager} from "@uniswap/v4-core/src/PoolManager.sol";
+import "../src/executors/EkuboExecutor.sol";
 
 contract TychoRouterExposed is TychoRouter {
     constructor(address _permit2, address weth) TychoRouter(_permit2, weth) {}
@@ -37,10 +38,11 @@ contract TychoRouterTestSetup is Test, Constants {
     UniswapV2Executor public usv2Executor;
     UniswapV3Executor public usv3Executor;
     UniswapV4Executor public usv4Executor;
+    EkuboExecutor public ekuboExecutor;
     MockERC20[] tokens;
 
     function setUp() public {
-        uint256 forkBlock = 21817316;
+        uint256 forkBlock = 22082754;
         vm.createSelectFork(vm.rpcUrl("mainnet"), forkBlock);
 
         vm.startPrank(ADMIN);
@@ -49,6 +51,8 @@ contract TychoRouterTestSetup is Test, Constants {
         bytes32 initCodeV2 = USV2_POOL_CODE_INIT_HASH;
         bytes32 initCodeV3 = USV3_POOL_CODE_INIT_HASH;
         address poolManagerAddress = 0x000000000004444c5dc75cB358380D2e3dE08A90;
+        ICore ekuboCore = ICore(0xe0e0e08A6A4b9Dc7bD67BCB7aadE5cF48157d444);
+
         IPoolManager poolManager = IPoolManager(poolManagerAddress);
         tychoRouter = new TychoRouterExposed(PERMIT2_ADDRESS, WETH_ADDR);
         tychoRouterAddr = address(tychoRouter);
@@ -65,11 +69,13 @@ contract TychoRouterTestSetup is Test, Constants {
         usv2Executor = new UniswapV2Executor(factoryV2, initCodeV2);
         usv3Executor = new UniswapV3Executor(factoryV3, initCodeV3);
         usv4Executor = new UniswapV4Executor(poolManager);
+        ekuboExecutor = new EkuboExecutor(ekuboCore);
         vm.startPrank(EXECUTOR_SETTER);
-        address[] memory executors = new address[](3);
+        address[] memory executors = new address[](4);
         executors[0] = address(usv2Executor);
         executors[1] = address(usv3Executor);
         executors[2] = address(usv4Executor);
+        executors[3] = address(ekuboExecutor);
         tychoRouter.setExecutors(executors);
         vm.stopPrank();
 
