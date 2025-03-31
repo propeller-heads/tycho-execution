@@ -543,8 +543,6 @@ mod tests {
                 "6982508145454ce325ddbe47a25d4ec3d2311933",
                 // zero for one
                 "00",
-                // executor address
-                "042c0ebbeab9d9987c2f64ee05f2b3aeb86eaf70",
                 // first pool intermediary token (ETH)
                 "0000000000000000000000000000000000000000",
                 // fee
@@ -984,9 +982,9 @@ mod tests {
 
         let expected_swaps = String::from(concat!(
             // length of ple encoded swaps without padding
-            "000000000000000000000000000000000000000000000000000000000000008c",
+            "0000000000000000000000000000000000000000000000000000000000000078",
             // ple encoded swaps
-            "008a",   // Swap length
+            "0076",   // Swap length
             "00",     // token in index
             "01",     // token out index
             "000000", // split
@@ -996,7 +994,6 @@ mod tests {
             "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // group token in
             "6982508145454ce325ddbe47a25d4ec3d2311933", // group token in
             "00",                                       // zero2one
-            "042c0ebbeab9d9987c2f64ee05f2b3aeb86eaf70", // executor address
             // First pool params
             "0000000000000000000000000000000000000000", // intermediary token (ETH)
             "000bb8",                                   // fee
@@ -1005,13 +1002,14 @@ mod tests {
             "6982508145454ce325ddbe47a25d4ec3d2311933", // intermediary token (PEPE)
             "0061a8",                                   // fee
             "0001f4",                                   // tick spacing
-            "0000000000000000000000000000000000000000"  // padding
+            "0000000000000000"                          // padding
         ));
 
         let hex_calldata = encode(&calldata);
 
         assert_eq!(hex_calldata[..520], expected_input);
         assert_eq!(hex_calldata[1288..], expected_swaps);
+        println!("{}", hex_calldata);
     }
 
     #[test]
