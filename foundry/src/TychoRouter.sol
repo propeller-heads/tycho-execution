@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.26;
 
+import "lib/forge-std/src/console.sol";
 import "../lib/IWETH.sol";
 import "../lib/bytes/LibPrefixLengthEncodedByteArray.sol";
 
@@ -262,10 +263,14 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
             : IERC20(tokenIn).balanceOf(address(this));
 
         amountOut = _swap(amountIn, nTokens, swaps);
+        console.log("amountOut: %s", amountOut);
+        console.log("tokenIn: %s", tokenIn);
+        console.log("tokenOut: %s", tokenOut);
+        console.log("initialBalance: %s", initialBalance);
         uint256 currentBalance = tokenIn == address(0)
             ? address(this).balance
             : IERC20(tokenIn).balanceOf(address(this));
-
+        console.log("currentBalance: %s", currentBalance);
         uint256 amountConsumed = initialBalance - currentBalance;
 
         if (tokenIn != tokenOut && amountConsumed != amountIn) {

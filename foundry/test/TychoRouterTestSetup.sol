@@ -43,7 +43,7 @@ contract TychoRouterTestSetup is Test, Constants {
     MockERC20[] tokens;
 
     function setUp() public {
-        uint256 forkBlock = 21817316;
+        uint256 forkBlock = 22082754;
         vm.createSelectFork(vm.rpcUrl("mainnet"), forkBlock);
 
         vm.startPrank(ADMIN);
