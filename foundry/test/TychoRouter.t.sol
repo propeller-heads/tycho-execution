@@ -753,6 +753,39 @@ contract TychoRouterTest is TychoRouterTestSetup {
         assertGe(finalBalance, expAmountOut);
     }
 
+    function testSwapSinglePancakeV3() public {
+        // Trade 1 WETH for USDT with 1 swap on Pancakeswap V3
+        // 1 WETH    ->    USDT
+        //       (PancakeV3)
+        uint256 amountIn = 10 ** 18;
+        deal(WETH_ADDR, tychoRouterAddr, amountIn);
+
+        uint256 expAmountOut = 2659_567519; //Swap 1 WETH for 1205.12 DAI
+        bool zeroForOne = true;
+        bytes memory protocolData = encodeUniswapV3Swap(
+            WETH_ADDR,
+            USDT_ADDR,
+            tychoRouterAddr,
+            PANCAKESWAPV3_WETH_USDT_POOL,
+            zeroForOne
+        );
+        bytes memory swap = encodeSwap(
+            uint8(0),
+            uint8(1),
+            uint24(0),
+            address(pancakev3Executor),
+            protocolData
+        );
+
+        bytes[] memory swaps = new bytes[](1);
+        swaps[0] = swap;
+
+        tychoRouter.exposedSwap(amountIn, 2, pleEncode(swaps));
+
+        uint256 finalBalance = IERC20(USDT_ADDR).balanceOf(tychoRouterAddr);
+        assertGe(finalBalance, expAmountOut);
+    }
+
     function testSwapSingleUSV3Permit2() public {
         // Trade 1 WETH for DAI with 1 swap on Uniswap V3 using Permit2
         // 1 WETH   ->   DAI
@@ -993,6 +1026,30 @@ contract TychoRouterTest is TychoRouterTestSetup {
 
         assertTrue(success, "Call Failed");
         assertEq(balancerAfter - balancerBefore, 1120007305574805922);
+    }
+
+    function testEkuboIntegration() public {
+        vm.skip(true);
+        // Test needs to be run on block 22082754 or later
+
+        deal(ALICE, 1 ether);
+        uint256 balancerBefore = IERC20(USDC_ADDR).balanceOf(ALICE);
+
+        // Approve permit2
+        vm.startPrank(ALICE);
+        // Encoded solution generated using `test_split_encoding_strategy_ekubo`
+        (bool success,) = tychoRouterAddr.call{value: 1 ether}(
+            hex"0a83cb080000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb480000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc200000000000000000000000000000000000000000000000000000000000001200000000000000000000000000000000000000000000000000000000000000077007500010000005991a2df15a8f6a256d3ec51e99254cd3fb576a93ede3eca2a72b3aecc820e955b36f38437d013950000000000000000000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb4851d02a5948496a67827242eabc5725531342527c000000000000000000000000000000000000000000"
+        );
+
+        uint256 balancerAfter = IERC20(USDC_ADDR).balanceOf(ALICE);
+
+        assertTrue(success, "Call Failed");
+        assertGe(balancerAfter - balancerBefore, 26173932);
+
+        // All input tokens are transferred to the router at first. Make sure we used
+        // all of it (and thus our splits are correct).
+        assertEq(IERC20(WETH_ADDR).balanceOf(tychoRouterAddr), 0);
     }
 
     function testSplitSwapIntegration() public {

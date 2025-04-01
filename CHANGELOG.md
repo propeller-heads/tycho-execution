@@ -1,3 +1,73 @@
+## [0.70.0](https://github.com/propeller-heads/tycho-execution/compare/0.69.0...0.70.0) (2025-03-31)
+
+
+### Features
+
+* Support Ekubo callback in TychoRouter ([b3078f9](https://github.com/propeller-heads/tycho-execution/commit/b3078f9c7b99b3c0c9f0008b97855b48483f06dc))
+
+
+### Bug Fixes
+
+* ekubo -> ekubo_v2 ([18fa0cc](https://github.com/propeller-heads/tycho-execution/commit/18fa0cc7adfaa46879aa3637c03563c770582b0d))
+* ekubo -> ekubo_v2 ([6c35f11](https://github.com/propeller-heads/tycho-execution/commit/6c35f114e383b7ba93cb44d314a05f69ab15fadd))
+* Finalize ekubo executor address ([c0068d4](https://github.com/propeller-heads/tycho-execution/commit/c0068d456bbd271d1c74797577e0fe514be0fcc7))
+* support payCallback method for Ekubo ([7551612](https://github.com/propeller-heads/tycho-execution/commit/75516122e1a084f86c34e6eaaf43fe5f53a30d96))
+* Take address for EkuboExecutor init ([c678f40](https://github.com/propeller-heads/tycho-execution/commit/c678f400571d1b001c98595f68d9a99e0cf4900d))
+* test setup fix after rebase ([28f9f24](https://github.com/propeller-heads/tycho-execution/commit/28f9f244e6343393a96020a85f5e202012d7ca26))
+
+## [0.69.0](https://github.com/propeller-heads/tycho-execution/compare/0.68.2...0.69.0) (2025-03-31)
+
+
+### Features
+
+* Add PancakeSwapV3 support to encoding ([fa024a4](https://github.com/propeller-heads/tycho-execution/commit/fa024a4a6702c7809af31a6ba392338d9368c6d2))
+* Pancakeswap V3 support ([d582543](https://github.com/propeller-heads/tycho-execution/commit/d582543057665b737cc0aab5243ccc22db1f0a13))
+
+## [0.68.2](https://github.com/propeller-heads/tycho-execution/compare/0.68.1...0.68.2) (2025-03-28)
+
+
+### Bug Fixes
+
+* fix for foundry tests external contributors ([a9ddb0e](https://github.com/propeller-heads/tycho-execution/commit/a9ddb0e6e9ef546f6e851c3056df5a55ee4dfa76))
+
+## [0.68.1](https://github.com/propeller-heads/tycho-execution/compare/0.68.0...0.68.1) (2025-03-27)
+
+
+### Bug Fixes
+
+* Add crate metadata ([7e7fabf](https://github.com/propeller-heads/tycho-execution/commit/7e7fabf51bff842ab20c2f512e4f3a609a266e79))
+
+## [0.68.0](https://github.com/propeller-heads/tycho-execution/compare/0.67.2...0.68.0) (2025-03-27)
+
+
+### Features
+
+* switch to tycho_commons ([0836bf7](https://github.com/propeller-heads/tycho-execution/commit/0836bf7d530f18a6c0f112542bcad16050e88afa))
+
+
+### Bug Fixes
+
+* Handle unichain chain id ([379858b](https://github.com/propeller-heads/tycho-execution/commit/379858bfca27eb5e8180a32351337779e625e0b5))
+
+## [0.67.2](https://github.com/propeller-heads/tycho-execution/compare/0.67.1...0.67.2) (2025-03-27)
+
+
+### Bug Fixes
+
+* prepared lint workflow for external contributors ([9896f48](https://github.com/propeller-heads/tycho-execution/commit/9896f4882940517d61852300420c7c580138406f))
+* prepared lint workflow for external contributors ([5162b9e](https://github.com/propeller-heads/tycho-execution/commit/5162b9e19efcaa5a2137f71a94f6f9e7f7d14da0))
+
+## [0.67.1](https://github.com/propeller-heads/tycho-execution/compare/0.67.0...0.67.1) (2025-03-27)
+
+
+### Bug Fixes
+
+* added empty line ([b3c4dbc](https://github.com/propeller-heads/tycho-execution/commit/b3c4dbc293df758ff4cff949298a819436d83c38))
+* fixed git checkout for codelint ([58e2ddd](https://github.com/propeller-heads/tycho-execution/commit/58e2ddd50e131c484ad53a6dca0b09e1d221d0e5))
+* prepared lint workflow for external contributors ([9f7d605](https://github.com/propeller-heads/tycho-execution/commit/9f7d605ea5e76d230b5946c618ece76365fb4f02))
+* removed empty line ([ae5d7de](https://github.com/propeller-heads/tycho-execution/commit/ae5d7deaccfc1ac527f88371bb3f055b01689801))
+* test run outside a PR ([af01972](https://github.com/propeller-heads/tycho-execution/commit/af0197205adb3220673022b690f1d8aa6f6734aa))
+
 ## [0.67.0](https://github.com/propeller-heads/tycho-execution/compare/0.66.1...0.67.0) (2025-03-20)
 
 
