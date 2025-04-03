@@ -1,3 +1,23 @@
+## [0.75.1](https://github.com/propeller-heads/tycho-execution/compare/0.75.0...0.75.1) (2025-04-03)
+
+
+### Bug Fixes
+
+* Proper ekubo protocol name in GROUPABLE_PROTOCOLS ([b4c687b](https://github.com/propeller-heads/tycho-execution/commit/b4c687bc3f51167fc942b8b7b00b17df4a2bec30))
+
+## [0.75.0](https://github.com/propeller-heads/tycho-execution/compare/0.74.0...0.75.0) (2025-04-03)
+
+
+### Features
+
+* Unichain deployment ([d05e118](https://github.com/propeller-heads/tycho-execution/commit/d05e1183d4e85eb57c139b1fd5411833efea92fc))
+
+
+### Bug Fixes
+
+* Run foundry tests on PR branch (not main) ([43f1a07](https://github.com/propeller-heads/tycho-execution/commit/43f1a0701707d2dbf5bfa4f6ccde50aea48e46a1))
+* Set native and wrapped tokens for Unichain ([4878229](https://github.com/propeller-heads/tycho-execution/commit/4878229e1d60a317b0f2d97ea57886e64cc70cb5))
+
 ## [0.74.0](https://github.com/propeller-heads/tycho-execution/compare/0.73.0...0.74.0) (2025-04-02)
 
 
