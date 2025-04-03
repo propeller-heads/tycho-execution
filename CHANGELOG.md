@@ -1,3 +1,22 @@
+## [0.74.0](https://github.com/propeller-heads/tycho-execution/compare/0.73.0...0.74.0) (2025-04-02)
+
+
+### Features
+
+* Fix rollFork usage for Ekubo test ([6cdca83](https://github.com/propeller-heads/tycho-execution/commit/6cdca8381e711bc01b7573dd25cafc9aa057aac3))
+
+
+### Bug Fixes
+
+* Fix tests after cherry picking ([5336969](https://github.com/propeller-heads/tycho-execution/commit/5336969df8b06238b65a9c9f1a3458f43b89cb54))
+
+## [0.73.0](https://github.com/propeller-heads/tycho-execution/compare/0.72.0...0.73.0) (2025-04-02)
+
+
+### Features
+
+* Add router_address to cli ([1f6f1a4](https://github.com/propeller-heads/tycho-execution/commit/1f6f1a4236d577e57f50d063a81e9a1ed801a6dd))
+
 ## [0.72.0](https://github.com/propeller-heads/tycho-execution/compare/0.71.0...0.72.0) (2025-04-02)
 
 
