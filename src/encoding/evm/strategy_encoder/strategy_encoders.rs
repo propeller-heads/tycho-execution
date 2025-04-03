@@ -62,7 +62,7 @@ pub struct SingleSwapStrategyEncoder {
 
 impl SingleSwapStrategyEncoder {
     pub fn new(
-        blockchain: tycho_core::models::Chain,
+        blockchain: tycho_common::models::Chain,
         swap_encoder_registry: SwapEncoderRegistry,
         swapper_pk: Option<String>,
         router_address: Bytes,
@@ -137,7 +137,7 @@ impl StrategyEncoder for SingleSwapStrategyEncoder {
             let encoding_context = EncodingContext {
                 receiver: self.router_address.clone(),
                 exact_out: solution.exact_out,
-                router_address: self.router_address.clone(),
+                router_address: Some(self.router_address.clone()),
                 group_token_in: grouped_swap.input_token.clone(),
                 group_token_out: grouped_swap.output_token.clone(),
             };
@@ -925,7 +925,6 @@ mod tests {
             checked_amount,
             sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
             receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
-            router_address: Bytes::from_str("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395").unwrap(),
             swaps: vec![swap],
             ..Default::default()
         };
@@ -1041,9 +1040,13 @@ mod tests {
             split: 0f64,
         };
         let swap_encoder_registry = get_swap_encoder_registry();
-        let encoder =
-            SplitSwapStrategyEncoder::new(eth_chain(), swap_encoder_registry, Some(private_key))
-                .unwrap();
+        let encoder = SplitSwapStrategyEncoder::new(
+            eth_chain(),
+            swap_encoder_registry,
+            Some(private_key),
+            Some(Bytes::from_str("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395").unwrap()),
+        )
+        .unwrap();
         let solution = Solution {
             exact_out: false,
             given_token: eth(),
@@ -1053,7 +1056,6 @@ mod tests {
             checked_amount: Some(BigUint::from_str("2659881924818443699787").unwrap()),
             sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
             receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
-            router_address: Bytes::from_str("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395").unwrap(),
             swaps: vec![swap],
             native_action: Some(NativeAction::Wrap),
             ..Default::default()
@@ -1458,7 +1460,6 @@ mod tests {
             checked_amount,
             sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
             receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
-            router_address: Bytes::from_str("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395").unwrap(),
             swaps: vec![swap],
             ..Default::default()
         };
