@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    str::FromStr,
-};
+use std::{collections::HashSet, str::FromStr};
 
 use alloy_primitives::{aliases::U24, U256, U8};
 use alloy_sol_types::SolValue;
@@ -11,7 +8,6 @@ use crate::encoding::{
     errors::EncodingError,
     evm::{
         approvals::permit2::Permit2,
-        constants::DEFAULT_ROUTERS_JSON,
         group_swaps::group_swaps,
         strategy_encoder::strategy_validators::{
             SequentialSwapValidator, SplitSwapValidator, SwapValidator,
@@ -47,12 +43,11 @@ pub struct SingleSwapStrategyEncoder {
 
 impl SingleSwapStrategyEncoder {
     pub fn new(
-        blockchain: tycho_common::models::Chain,
+        chain: Chain,
         swap_encoder_registry: SwapEncoderRegistry,
         swapper_pk: Option<String>,
         router_address: Bytes,
     ) -> Result<Self, EncodingError> {
-        let chain = Chain::from(blockchain);
         let (permit2, selector) = if let Some(swapper_pk) = swapper_pk {
             (Some(Permit2::new(swapper_pk, chain.clone())?), "singleSwapPermit2(uint256,address,address,uint256,bool,bool,address,((address,uint160,uint48,uint48),address,uint256),bytes,bytes)".to_string())
         } else {
@@ -206,12 +201,11 @@ pub struct SequentialSwapStrategyEncoder {
 
 impl SequentialSwapStrategyEncoder {
     pub fn new(
-        blockchain: tycho_common::models::Chain,
+        chain: Chain,
         swap_encoder_registry: SwapEncoderRegistry,
         swapper_pk: Option<String>,
         router_address: Bytes,
     ) -> Result<Self, EncodingError> {
-        let chain = Chain::from(blockchain);
         let (permit2, selector) = if let Some(swapper_pk) = swapper_pk {
             (Some(Permit2::new(swapper_pk, chain.clone())?), "sequentialSwapPermit2(uint256,address,address,uint256,bool,bool,address,((address,uint160,uint48,uint48),address,uint256),bytes,bytes)".to_string())
         } else {
@@ -375,12 +369,11 @@ pub struct SplitSwapStrategyEncoder {
 
 impl SplitSwapStrategyEncoder {
     pub fn new(
-        blockchain: tycho_common::models::Chain,
+        chain: Chain,
         swap_encoder_registry: SwapEncoderRegistry,
         swapper_pk: Option<String>,
-        router_address: Option<Bytes>,
+        router_address: Bytes,
     ) -> Result<Self, EncodingError> {
-        let chain = Chain::from(blockchain);
         let (permit2, selector) = if let Some(swapper_pk) = swapper_pk {
             (Some(Permit2::new(swapper_pk, chain.clone())?), "splitSwapPermit2(uint256,address,address,uint256,bool,bool,uint256,address,((address,uint160,uint48,uint48),address,uint256),bytes,bytes)".to_string())
         } else {
@@ -391,20 +384,6 @@ impl SplitSwapStrategyEncoder {
             )
         };
 
-        let tycho_router_address;
-        if let Some(address) = router_address {
-            tycho_router_address = address;
-        } else {
-            let default_routers: HashMap<String, Bytes> =
-                serde_json::from_str(DEFAULT_ROUTERS_JSON)?;
-            tycho_router_address = default_routers
-                .get(&chain.name)
-                .ok_or(EncodingError::FatalError(
-                    "No default router address found for chain".to_string(),
-                ))?
-                .to_owned();
-        }
-
         Ok(Self {
             permit2,
             selector,
@@ -412,7 +391,7 @@ impl SplitSwapStrategyEncoder {
             native_address: chain.native_token()?,
             wrapped_address: chain.wrapped_token()?,
             split_swap_validator: SplitSwapValidator,
-            router_address: tycho_router_address,
+            router_address,
         })
     }
 
@@ -601,15 +580,15 @@ mod tests {
     use num_bigint::{BigInt, BigUint};
     use rstest::rstest;
     use tycho_common::{
-        models::{protocol::ProtocolComponent, Chain as TychoCoreChain},
+        models::{protocol::ProtocolComponent, Chain as TychoCommonChain},
         Bytes,
     };
 
     use super::*;
     use crate::encoding::models::Swap;
 
-    fn eth_chain() -> TychoCoreChain {
-        TychoCoreChain::Ethereum
+    fn eth_chain() -> Chain {
+        TychoCommonChain::Ethereum.into()
     }
 
     fn eth() -> Bytes {
@@ -675,7 +654,7 @@ mod tests {
             eth_chain(),
             swap_encoder_registry,
             Some(private_key),
-            Some(Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395")),
+            Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395"),
         )
         .unwrap();
         let solution = Solution {
@@ -882,7 +861,7 @@ mod tests {
             eth_chain(),
             swap_encoder_registry,
             Some(private_key),
-            Some(Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395")),
+            Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395"),
         )
         .unwrap();
         let solution = Solution {
@@ -934,7 +913,7 @@ mod tests {
             eth_chain(),
             swap_encoder_registry,
             Some(private_key),
-            Some(Bytes::from_str("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395").unwrap()),
+            Bytes::from_str("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395").unwrap(),
         )
         .unwrap();
         let solution = Solution {
@@ -986,7 +965,7 @@ mod tests {
             eth_chain(),
             swap_encoder_registry,
             Some(private_key),
-            Some(Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395")),
+            Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395"),
         )
         .unwrap();
         let solution = Solution {
@@ -1079,7 +1058,7 @@ mod tests {
             eth_chain(),
             swap_encoder_registry,
             Some(private_key),
-            Some(Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395")),
+            Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395"),
         )
         .unwrap();
         let solution = Solution {
@@ -1291,7 +1270,7 @@ mod tests {
             eth_chain(),
             swap_encoder_registry,
             Some(private_key),
-            Some(Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395")),
+            Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395"),
         )
         .unwrap();
         let solution = Solution {
@@ -1410,7 +1389,7 @@ mod tests {
             eth_chain(),
             swap_encoder_registry,
             None,
-            Some(Bytes::from_str("0xA4AD4f68d0b91CFD19687c881e50f3A00242828c").unwrap()),
+            Bytes::from_str("0xA4AD4f68d0b91CFD19687c881e50f3A00242828c").unwrap(),
         )
         .unwrap();
 
@@ -1543,7 +1522,7 @@ mod tests {
             eth_chain(),
             swap_encoder_registry,
             None,
-            Some(Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395")),
+            Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395"),
         )
         .unwrap();
         let solution = Solution {
@@ -1636,7 +1615,7 @@ mod tests {
             eth_chain(),
             swap_encoder_registry,
             Some(private_key),
-            Some(Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395")),
+            Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395"),
         )
         .unwrap();
 
@@ -1703,7 +1682,7 @@ mod tests {
             eth_chain(),
             swap_encoder_registry,
             Some(private_key),
-            Some(Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395")),
+            Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395"),
         )
         .unwrap();
 
@@ -1790,7 +1769,7 @@ mod tests {
             eth_chain(),
             swap_encoder_registry,
             Some(private_key),
-            Some(Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395")),
+            Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395"),
         )
         .unwrap();
 
@@ -1942,7 +1921,7 @@ mod tests {
             eth_chain(),
             swap_encoder_registry,
             Some(private_key.clone()),
-            Some(Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395")),
+            Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395"),
         )
         .unwrap();
 
@@ -2100,7 +2079,7 @@ mod tests {
             eth_chain(),
             swap_encoder_registry,
             Some(private_key.clone()),
-            Some(Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395")),
+            Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395"),
         )
         .unwrap();
 
