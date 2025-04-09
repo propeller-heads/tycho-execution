@@ -709,9 +709,9 @@ mod tests {
 
         let expected_swaps = String::from(concat!(
             // length of ple encoded swaps without padding
-            "0000000000000000000000000000000000000000000000000000000000000058",
+            "0000000000000000000000000000000000000000000000000000000000000059",
             // ple encoded swaps
-            "0056",
+            "0057",
             // Swap header
             "00",     // token in index
             "01",     // token out index
@@ -722,7 +722,7 @@ mod tests {
             "a478c2975ab1ea89e8196811f51a7b7ade33eb11", // component id
             "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver
             "00",                                       // zero2one
-            "00",                                       // exact out
+            "00",                                       // transfer method
             "00000000000000",                           // padding
         ));
         let hex_calldata = encode(&calldata);
@@ -817,8 +817,8 @@ mod tests {
         // it's hard to assert
 
         let expected_swap = String::from(concat!(
-            // length of ple encoded swaps without padding
-            "0000000000000000000000000000000000000000000000000000000000000051",
+            // length of encoded swap without padding
+            "0000000000000000000000000000000000000000000000000000000000000052",
             // Swap data
             "5615deb798bb3e4dfa0139dfa1b3d433cc23b72f", // executor address
             "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token in
@@ -826,7 +826,8 @@ mod tests {
             "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver
             "00",                                       // zero2one
             "00",                                       // exact out
-            "0000000000000000000000000000",             // padding
+            "00",                                       // transfer method
+            "00000000000000000000000000",               // padding
         ));
         let hex_calldata = encode(&calldata);
 
@@ -1476,7 +1477,7 @@ mod tests {
             "0000000000000000000000000000000000000000000000000000000000000000",   // unwrap
             "000000000000000000000000cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2",   // receiver
             "0000000000000000000000000000000000000000000000000000000000000100",   // offset of swap bytes
-            "0000000000000000000000000000000000000000000000000000000000000051",   // length of swap bytes without padding
+            "0000000000000000000000000000000000000000000000000000000000000052",   // length of swap bytes without padding
 
             // Swap data
             "5615deb798bb3e4dfa0139dfa1b3d433cc23b72f", // executor address
@@ -1485,7 +1486,8 @@ mod tests {
             "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver
             "00",                                       // zero2one
             "00",                                       // exact out
-            "0000000000000000000000000000",             // padding
+            "00",                                       // transfer method
+            "00000000000000000000000000",               // padding
         ]
             .join("");
 
@@ -1555,8 +1557,8 @@ mod tests {
             "0000000000000000000000000000000000000000000000000000000000000002",   // tokens length
             "000000000000000000000000cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2",   // receiver
             "0000000000000000000000000000000000000000000000000000000000000120",   // offset of ple encoded swaps
-            "0000000000000000000000000000000000000000000000000000000000000058",   // length of ple encoded swaps without padding
-            "0056", // ple encoded swaps
+            "0000000000000000000000000000000000000000000000000000000000000059",   // length of ple encoded swaps without padding
+            "0057", // ple encoded swaps
             // Swap header
             "00", // token in index
             "01", // token out index
@@ -1568,7 +1570,8 @@ mod tests {
             "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver
             "00",                                       // zero2one
             "00",                                       // exact out
-            "00000000000000",                                   // padding
+            "00",                                       // transfer method
+            "000000000000",                                   // padding
         ]
             .join("");
 
@@ -1807,8 +1810,8 @@ mod tests {
         .join("");
 
         let expected_swaps = [
-            "00000000000000000000000000000000000000000000000000000000000000de",  // length of ple encoded swaps without padding
-            "006d",  // ple encoded swaps
+            "00000000000000000000000000000000000000000000000000000000000000e0",  // length of ple encoded swaps without padding
+            "006e",  // ple encoded swaps
             "00",     // token in index
             "01",     // token out index
             "000000", // split
@@ -1819,7 +1822,8 @@ mod tests {
             "3ede3eca2a72b3aecc820e955b36f38437d01395", // router address
             "88e6a0c2ddd26feeb64f039a2c41296fcb3f5640", // component id
             "01",                                       // zero2one
-            "006d",                                     // ple encoded swaps
+            "00",                                       // transfer method
+            "006e",                                     // ple encoded swaps
             "01",                                       // token in index
             "00000000",                                 // split
             "2e234dae75c793f67a35089c9d99245e1c58470b", // executor address
@@ -1828,7 +1832,8 @@ mod tests {
             "000bb8",                                   // pool fee
             "3ede3eca2a72b3aecc820e955b36f38437d01395", // router address
             "8ad599c3a0ff1de082011efddc58f1908eb6e6d8", // component id
-            "000000",                                   // zero2one
+            "00",                                       // zero2one
+            "00",                                       // transfer method
         ]
         .join("");
 
@@ -1959,8 +1964,8 @@ mod tests {
         ]
         .join("");
         let expected_swaps = [
-        "0000000000000000000000000000000000000000000000000000000000000136", // length of ple encoded swaps without padding
-        "006d", // ple encoded swaps
+        "0000000000000000000000000000000000000000000000000000000000000139", // length of ple encoded swaps without padding
+        "006e", // ple encoded swaps
         "00", // token in index
         "01", // token out index
         "999999", // split
@@ -1971,7 +1976,8 @@ mod tests {
         "3ede3eca2a72b3aecc820e955b36f38437d01395", // router address
         "88e6a0c2ddd26feeb64f039a2c41296fcb3f5640", // component id
         "01", // zero2one
-        "006d", // ple encoded swaps
+        "00", // transfer method
+        "006e", // ple encoded swaps
         "00", // token in index
         "01", // token out index
         "000000", // split
@@ -1982,7 +1988,8 @@ mod tests {
         "3ede3eca2a72b3aecc820e955b36f38437d01395", // router address
         "8ad599c3a0ff1de082011efddc58f1908eb6e6d8", // component id
         "01", // zero2one
-        "0056", // ple encoded swaps
+        "00", // transfer method
+        "0057", // ple encoded swaps
         "01", // token in index
         "00", // token out index
         "000000", // split
@@ -1991,7 +1998,8 @@ mod tests {
         "b4e16d0168e52d35cacd2c6185b44281ec28c9dc", // component id,
         "3ede3eca2a72b3aecc820e955b36f38437d01395", // router address
         "00", // zero2one
-        "00000000000000000000" // padding
+        "00", // transfer method
+        "00000000000000" // padding
         ]
         .join("");
         assert_eq!(hex_calldata[..520], expected_input);
@@ -2118,8 +2126,8 @@ mod tests {
         .join("");
 
         let expected_swaps = [
-        "0000000000000000000000000000000000000000000000000000000000000136", // length of ple encoded swaps without padding
-        "0056", // ple encoded swaps
+        "0000000000000000000000000000000000000000000000000000000000000139", // length of ple encoded swaps without padding
+        "0057", // ple encoded swaps
         "00", // token in index
         "01", // token out index
         "000000", // split
@@ -2128,7 +2136,8 @@ mod tests {
         "b4e16d0168e52d35cacd2c6185b44281ec28c9dc", // component id
         "3ede3eca2a72b3aecc820e955b36f38437d01395", // router address
         "01", // zero2one
-        "006d", // ple encoded swaps
+        "00", // transfer method
+        "006e", // ple encoded swaps
         "01", // token in index
         "00", // token out index
         "999999", // split
@@ -2139,7 +2148,8 @@ mod tests {
         "3ede3eca2a72b3aecc820e955b36f38437d01395", // router address
         "88e6a0c2ddd26feeb64f039a2c41296fcb3f5640", // component id
         "00", // zero2one
-        "006d", // ple encoded swaps
+        "00", // transfer method
+        "006e", // ple encoded swaps
         "01", // token in index
         "00", // token out index
         "000000", // split
@@ -2150,7 +2160,8 @@ mod tests {
         "3ede3eca2a72b3aecc820e955b36f38437d01395", // router address
         "8ad599c3a0ff1de082011efddc58f1908eb6e6d8", // component id
         "00", // zero2one
-        "00000000000000000000" // padding
+        "00", // transfer method
+        "00000000000000" // padding
     ]
     .join("");
 
