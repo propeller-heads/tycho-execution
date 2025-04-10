@@ -54,7 +54,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
         (
             IAllowanceTransfer.PermitSingle memory permitSingle,
             bytes memory signature
-        ) = handlePermit2Approval(WETH_ADDR, amountIn);
+        ) = handlePermit2Approval(WETH_ADDR, tychoRouterAddr, amountIn);
 
         bytes[] memory swaps = _getSequentialSwaps();
         tychoRouter.sequentialSwapPermit2(
@@ -153,7 +153,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
         (
             IAllowanceTransfer.PermitSingle memory permitSingle,
             bytes memory signature
-        ) = handlePermit2Approval(WETH_ADDR, amountIn);
+        ) = handlePermit2Approval(WETH_ADDR, tychoRouterAddr, amountIn);
 
         bytes[] memory swaps = _getSequentialSwaps();
 
@@ -198,7 +198,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
         (
             IAllowanceTransfer.PermitSingle memory permitSingle,
             bytes memory signature
-        ) = handlePermit2Approval(WETH_ADDR, amountIn);
+        ) = handlePermit2Approval(WETH_ADDR, tychoRouterAddr, amountIn);
 
         bytes[] memory swaps = _getSequentialSwaps();
 
@@ -275,7 +275,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
         (
             IAllowanceTransfer.PermitSingle memory permitSingle,
             bytes memory signature
-        ) = handlePermit2Approval(USDC_ADDR, amountIn);
+        ) = handlePermit2Approval(USDC_ADDR, tychoRouterAddr, amountIn);
 
         bytes[] memory swaps = new bytes[](2);
 
