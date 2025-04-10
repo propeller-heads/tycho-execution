@@ -22,7 +22,7 @@ contract UniswapV3ExecutorExposed is UniswapV3Executor {
             address receiver,
             address target,
             bool zeroForOne,
-            TransferMethod method
+            TransferType method
         )
     {
         return _decodeData(data);
@@ -71,7 +71,7 @@ contract UniswapV3ExecutorTest is Test, Constants, Permit2TestHelper {
             address(2),
             address(3),
             false,
-            ExecutorTransferMethods.TransferMethod.TRANSFER
+            TokenTransfer.TransferType.TRANSFER
         );
 
         (
@@ -81,7 +81,7 @@ contract UniswapV3ExecutorTest is Test, Constants, Permit2TestHelper {
             address receiver,
             address target,
             bool zeroForOne,
-            ExecutorTransferMethods.TransferMethod method
+            TokenTransfer.TransferType method
         ) = uniswapV3Exposed.decodeData(data);
 
         assertEq(tokenIn, WETH_ADDR);
@@ -90,10 +90,7 @@ contract UniswapV3ExecutorTest is Test, Constants, Permit2TestHelper {
         assertEq(receiver, address(2));
         assertEq(target, address(3));
         assertEq(zeroForOne, false);
-        assertEq(
-            uint8(method),
-            uint8(ExecutorTransferMethods.TransferMethod.TRANSFER)
-        );
+        assertEq(uint8(method), uint8(TokenTransfer.TransferType.TRANSFER));
     }
 
     function testDecodeParamsInvalidDataLength() public {
@@ -124,10 +121,7 @@ contract UniswapV3ExecutorTest is Test, Constants, Permit2TestHelper {
 
         vm.startPrank(DAI_WETH_USV3);
         bytes memory protocolData = abi.encodePacked(
-            WETH_ADDR,
-            DAI_ADDR,
-            poolFee,
-            ExecutorTransferMethods.TransferMethod.TRANSFER
+            WETH_ADDR, DAI_ADDR, poolFee, TokenTransfer.TransferType.TRANSFER
         );
         uint256 dataOffset = 3; // some offset
         uint256 dataLength = protocolData.length;
@@ -160,7 +154,7 @@ contract UniswapV3ExecutorTest is Test, Constants, Permit2TestHelper {
             address(this),
             DAI_WETH_USV3,
             zeroForOne,
-            ExecutorTransferMethods.TransferMethod.TRANSFER
+            TokenTransfer.TransferType.TRANSFER
         );
 
         uint256 amountOut = uniswapV3Exposed.swap(amountIn, data);
@@ -184,7 +178,7 @@ contract UniswapV3ExecutorTest is Test, Constants, Permit2TestHelper {
             address(this),
             DAI_WETH_USV3,
             zeroForOne,
-            ExecutorTransferMethods.TransferMethod.TRANSFERFROM
+            TokenTransfer.TransferType.TRANSFERFROM
         );
 
         uint256 amountOut = uniswapV3Exposed.swap(amountIn, data);
@@ -206,7 +200,7 @@ contract UniswapV3ExecutorTest is Test, Constants, Permit2TestHelper {
             address(this),
             DAI_WETH_USV3,
             zeroForOne,
-            ExecutorTransferMethods.TransferMethod.TRANSFERPERMIT2
+            TokenTransfer.TransferType.TRANSFERPERMIT2
         );
 
         deal(WETH_ADDR, ALICE, amountIn);
@@ -219,7 +213,7 @@ contract UniswapV3ExecutorTest is Test, Constants, Permit2TestHelper {
         );
 
         // Assume the permit2.approve method will be called from the TychoRouter
-        // Replicate this secnario in this test.
+        // Replicate this scenario in this test.
         permit2.permit(ALICE, permitSingle, signature);
         uint256 amountOut = uniswapV3Exposed.swap(amountIn, data);
         vm.stopPrank();
@@ -242,7 +236,7 @@ contract UniswapV3ExecutorTest is Test, Constants, Permit2TestHelper {
             address(this),
             fakePool,
             zeroForOne,
-            ExecutorTransferMethods.TransferMethod.TRANSFER
+            TokenTransfer.TransferType.TRANSFER
         );
 
         vm.expectRevert(UniswapV3Executor__InvalidTarget.selector);
@@ -255,11 +249,17 @@ contract UniswapV3ExecutorTest is Test, Constants, Permit2TestHelper {
         address receiver,
         address target,
         bool zero2one,
-        ExecutorTransferMethods.TransferMethod method
+        TokenTransfer.TransferType transferType
     ) internal view returns (bytes memory) {
         IUniswapV3Pool pool = IUniswapV3Pool(target);
         return abi.encodePacked(
-            tokenIn, tokenOut, pool.fee(), receiver, target, zero2one, method
+            tokenIn,
+            tokenOut,
+            pool.fee(),
+            receiver,
+            target,
+            zero2one,
+            transferType
         );
     }
 }

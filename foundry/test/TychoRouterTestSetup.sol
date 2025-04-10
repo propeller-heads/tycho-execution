@@ -182,7 +182,7 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper {
             target,
             receiver,
             zero2one,
-            ExecutorTransferMethods.TransferMethod.TRANSFER
+            TokenTransfer.TransferType.TRANSFER
         );
     }
 
@@ -201,7 +201,7 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper {
             receiver,
             target,
             zero2one,
-            ExecutorTransferMethods.TransferMethod.TRANSFER
+            TokenTransfer.TransferType.TRANSFER
         );
     }
 }
