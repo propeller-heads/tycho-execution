@@ -99,8 +99,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
     /**
      * @notice Executes a swap operation based on a predefined swap graph, supporting internal token amount splits.
      *         This function enables multi-step swaps, optional ETH wrapping/unwrapping, and validates the output amount
-     *         against a user-specified minimum. This function expects the input tokens to already be in the router at
-     *         the time of calling.
+     *         against a user-specified minimum.
      *
      * @dev
      * - If `wrapEth` is true, the contract wraps the provided native ETH into WETH and uses it as the sell token.
@@ -131,7 +130,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
         address receiver,
         bytes calldata swaps
     ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
-        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
         return _splitSwapChecked(
             amountIn,
             tokenIn,
@@ -184,15 +182,9 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
         bytes calldata signature,
         bytes calldata swaps
     ) external payable whenNotPaused nonReentrant returns (uint256 amountOut) {
-        // For native ETH, assume funds already in our router. Else, transfer and handle approval.
+        // For native ETH, assume funds already in our router. Else, handle approval.
         if (tokenIn != address(0)) {
             permit2.permit(msg.sender, permitSingle, signature);
-            permit2.transferFrom(
-                msg.sender,
-                address(this),
-                uint160(amountIn),
-                permitSingle.details.token
-            );
         }
 
         return _splitSwapChecked(
@@ -211,7 +203,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
     /**
      * @notice Executes a swap operation based on a predefined swap graph with no split routes.
      *         This function enables multi-step swaps, optional ETH wrapping/unwrapping, and validates the output amount
-     *         against a user-specified minimum. This function performs a transferFrom to retrieve tokens from the caller.
+     *         against a user-specified minimum.
      *
      * @dev
      * - If `wrapEth` is true, the contract wraps the provided native ETH into WETH and uses it as the sell token.
@@ -240,7 +232,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
         address receiver,
         bytes calldata swaps
     ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
-        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
         return _sequentialSwapChecked(
             amountIn,
             tokenIn,
@@ -289,15 +280,9 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
         bytes calldata signature,
         bytes calldata swaps
     ) external payable whenNotPaused nonReentrant returns (uint256 amountOut) {
-        // For native ETH, assume funds already in our router. Else, transfer and handle approval.
+        // For native ETH, assume funds already in our router. Else, handle approval.
         if (tokenIn != address(0)) {
             permit2.permit(msg.sender, permitSingle, signature);
-            permit2.transferFrom(
-                msg.sender,
-                address(this),
-                uint160(amountIn),
-                permitSingle.details.token
-            );
         }
 
         return _sequentialSwapChecked(
@@ -315,7 +300,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
     /**
      * @notice Executes a single swap operation.
      *         This function enables optional ETH wrapping/unwrapping, and validates the output amount against a user-specified minimum.
-     *         This function performs a transferFrom to retrieve tokens from the caller.
      *
      * @dev
      * - If `wrapEth` is true, the contract wraps the provided native ETH into WETH and uses it as the sell token.
@@ -343,7 +327,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
         address receiver,
         bytes calldata swapData
     ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
-        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
         return _singleSwap(
             amountIn,
             tokenIn,
@@ -392,15 +375,9 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
         bytes calldata signature,
         bytes calldata swapData
     ) external payable whenNotPaused nonReentrant returns (uint256 amountOut) {
-        // For native ETH, assume funds already in our router. Else, transfer and handle approval.
+        // For native ETH, assume funds already in our router. Else, handle approval.
         if (tokenIn != address(0)) {
             permit2.permit(msg.sender, permitSingle, signature);
-            permit2.transferFrom(
-                msg.sender,
-                address(this),
-                uint160(amountIn),
-                permitSingle.details.token
-            );
         }
 
         return _singleSwap(
@@ -446,23 +423,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
             _wrapETH(amountIn);
             tokenIn = address(_weth);
         }
-
-        uint256 initialBalance = tokenIn == address(0)
-            ? address(this).balance
-            : IERC20(tokenIn).balanceOf(address(this));
-
         amountOut = _splitSwap(amountIn, nTokens, swaps);
-        uint256 currentBalance = tokenIn == address(0)
-            ? address(this).balance
-            : IERC20(tokenIn).balanceOf(address(this));
-
-        uint256 amountConsumed = initialBalance - currentBalance;
-
-        if (tokenIn != tokenOut && amountConsumed != amountIn) {
-            revert TychoRouter__AmountInDiffersFromConsumed(
-                amountIn, amountConsumed
-            );
-        }
 
         if (amountOut < minAmountOut) {
             revert TychoRouter__NegativeSlippage(amountOut, minAmountOut);
@@ -509,25 +470,10 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
             tokenIn = address(_weth);
         }
 
-        uint256 initialBalance = tokenIn == address(0)
-            ? address(this).balance
-            : IERC20(tokenIn).balanceOf(address(this));
-
         (address executor, bytes calldata protocolData) =
             swap_.decodeSingleSwap();
 
         amountOut = _callExecutor(executor, amountIn, protocolData);
-        uint256 currentBalance = tokenIn == address(0)
-            ? address(this).balance
-            : IERC20(tokenIn).balanceOf(address(this));
-
-        uint256 amountConsumed = initialBalance - currentBalance;
-
-        if (amountConsumed != amountIn) {
-            revert TychoRouter__AmountInDiffersFromConsumed(
-                amountIn, amountConsumed
-            );
-        }
 
         if (amountOut < minAmountOut) {
             revert TychoRouter__NegativeSlippage(amountOut, minAmountOut);
@@ -573,10 +519,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
             _wrapETH(amountIn);
             tokenIn = address(_weth);
         }
-
-        uint256 initialBalance = tokenIn == address(0)
-            ? address(this).balance
-            : IERC20(tokenIn).balanceOf(address(this));
 
         amountOut = _sequentialSwap(amountIn, swaps);
 
