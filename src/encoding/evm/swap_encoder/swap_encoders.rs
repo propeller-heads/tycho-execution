@@ -66,6 +66,7 @@ impl SwapEncoder for UniswapV2SwapEncoder {
             component_id,
             bytes_to_address(&encoding_context.receiver)?,
             zero_to_one,
+            (encoding_context.transfer_type as u8).to_be_bytes(),
         );
 
         Ok(args.abi_encode_packed())
@@ -128,6 +129,7 @@ impl SwapEncoder for UniswapV3SwapEncoder {
             bytes_to_address(&encoding_context.receiver)?,
             component_id,
             zero_to_one,
+            (encoding_context.transfer_type as u8).to_be_bytes(),
         );
 
         Ok(args.abi_encode_packed())
@@ -196,10 +198,6 @@ impl SwapEncoder for UniswapV4SwapEncoder {
         let group_token_out_address = bytes_to_address(&encoding_context.group_token_out)?;
 
         let zero_to_one = Self::get_zero_to_one(token_in_address, token_out_address);
-        let callback_executor =
-            bytes_to_address(&Bytes::from_str(&self.executor_address).map_err(|_| {
-                EncodingError::FatalError("Invalid UniswapV4 executor address".into())
-            })?)?;
 
         let pool_params =
             (token_out_address, pool_fee_u24, pool_tick_spacing_u24).abi_encode_packed();
@@ -208,7 +206,7 @@ impl SwapEncoder for UniswapV4SwapEncoder {
             group_token_in_address,
             group_token_out_address,
             zero_to_one,
-            callback_executor,
+            (encoding_context.transfer_type as u8).to_be_bytes(),
             pool_params,
         );
 
@@ -283,6 +281,7 @@ impl SwapEncoder for BalancerV2SwapEncoder {
             component_id,
             bytes_to_address(&encoding_context.receiver)?,
             approval_needed,
+            (encoding_context.transfer_type as u8).to_be_bytes(),
         );
         Ok(args.abi_encode_packed())
     }
@@ -344,6 +343,7 @@ impl SwapEncoder for EkuboSwapEncoder {
         let mut encoded = vec![];
 
         if encoding_context.group_token_in == swap.token_in {
+            encoded.extend((encoding_context.transfer_type as u8).to_be_bytes());
             encoded.extend(bytes_to_address(&encoding_context.receiver)?);
             encoded.extend(bytes_to_address(&swap.token_in)?);
         }
@@ -576,6 +576,7 @@ impl SwapEncoder for CurveSwapEncoder {
             i.to_be_bytes::<1>(),
             j.to_be_bytes::<1>(),
             approval_needed,
+            (encoding_context.transfer_type as u8).to_be_bytes(),
         );
 
         Ok(args.abi_encode_packed())
@@ -601,6 +602,7 @@ mod tests {
     };
 
     use super::*;
+    use crate::encoding::models::TransferType;
 
     #[test]
     fn test_encode_uniswap_v2() {
@@ -623,6 +625,7 @@ mod tests {
             router_address: Some(Bytes::zero(20)),
             group_token_in: token_in.clone(),
             group_token_out: token_out.clone(),
+            transfer_type: TransferType::TransferToProtocol,
         };
         let encoder = UniswapV2SwapEncoder::new(
             String::from("0x543778987b293C7E8Cf0722BB2e935ba6f4068D4"),
@@ -644,6 +647,8 @@ mod tests {
                 // receiver
                 "0000000000000000000000000000000000000001",
                 // zero for one
+                "00",
+                // transfer type (transfer)
                 "00",
             ))
         );
@@ -674,6 +679,7 @@ mod tests {
             router_address: Some(Bytes::zero(20)),
             group_token_in: token_in.clone(),
             group_token_out: token_out.clone(),
+            transfer_type: TransferType::TransferToProtocol,
         };
         let encoder = UniswapV3SwapEncoder::new(
             String::from("0x543778987b293C7E8Cf0722BB2e935ba6f4068D4"),
@@ -699,6 +705,8 @@ mod tests {
                 // pool id
                 "88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
                 // zero for one
+                "00",
+                // transfer type (transfer)
                 "00",
             ))
         );
@@ -726,6 +734,7 @@ mod tests {
             router_address: Some(Bytes::zero(20)),
             group_token_in: token_in.clone(),
             group_token_out: token_out.clone(),
+            transfer_type: TransferType::None,
         };
         let encoder = BalancerV2SwapEncoder::new(
             String::from("0x543778987b293C7E8Cf0722BB2e935ba6f4068D4"),
@@ -753,7 +762,9 @@ mod tests {
                 // receiver
                 "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
                 // approval needed
-                "01"
+                "01",
+                // transfer type
+                "05"
             ))
         );
     }
@@ -792,6 +803,7 @@ mod tests {
 
             group_token_in: token_in.clone(),
             group_token_out: token_out.clone(),
+            transfer_type: TransferType::TransferToProtocol,
         };
         let encoder = UniswapV4SwapEncoder::new(
             String::from("0xF62849F9A0B5Bf2913b396098F7c7019b51A820a"),
@@ -814,8 +826,8 @@ mod tests {
                 "dac17f958d2ee523a2206206994597c13d831ec7",
                 // zero for one
                 "01",
-                // executor address
-                "f62849f9a0b5bf2913b396098f7c7019b51a820a",
+                // transfer type
+                "00",
                 // pool params:
                 // - intermediary token
                 "dac17f958d2ee523a2206206994597c13d831ec7",
@@ -860,6 +872,7 @@ mod tests {
             group_token_in: group_token_in.clone(),
             // Token out is the same as the group token out
             group_token_out: token_out.clone(),
+            transfer_type: TransferType::TransferToProtocol,
         };
 
         let encoder = UniswapV4SwapEncoder::new(
@@ -902,6 +915,7 @@ mod tests {
             router_address: Some(router_address.clone()),
             group_token_in: usde_address.clone(),
             group_token_out: wbtc_address.clone(),
+            transfer_type: TransferType::TransferToProtocol,
         };
 
         // Setup - First sequence: USDE -> USDT
@@ -970,6 +984,7 @@ mod tests {
         let combined_hex =
             format!("{}{}", encode(&initial_encoded_swap), encode(&second_encoded_swap));
 
+        println!("{}", combined_hex);
         assert_eq!(
             combined_hex,
             String::from(concat!(
@@ -979,8 +994,8 @@ mod tests {
                 "2260fac5e5542a773aa44fbcfedf7c193bc2c599",
                 // zero for one
                 "01",
-                // executor address
-                "f62849f9a0b5bf2913b396098f7c7019b51a820a",
+                // transfer type
+                "00",
                 // pool params:
                 // - intermediary token USDT
                 "dac17f958d2ee523a2206206994597c13d831ec7",
@@ -1032,6 +1047,7 @@ mod tests {
                 group_token_out: token_out.clone(),
                 exact_out: false,
                 router_address: Some(Bytes::default()),
+                transfer_type: TransferType::TransferToProtocol,
             };
 
             let encoder =
@@ -1046,15 +1062,18 @@ mod tests {
 
             assert_eq!(
                 hex_swap,
-                RECEIVER.to_string() +
-                    concat!(
-                        // group token in
-                        "0000000000000000000000000000000000000000",
-                        // token out 1st swap
-                        "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-                        // pool config 1st swap
-                        "51d02a5948496a67827242eabc5725531342527c000000000000000000000000",
-                    ),
+                concat!(
+                    // transfer type
+                    "00",
+                    // receiver
+                    "ca4f73fe97d0b987a0d12b39bbd562c779bab6f6",
+                    // group token in
+                    "0000000000000000000000000000000000000000",
+                    // token out 1st swap
+                    "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                    // pool config 1st swap
+                    "51d02a5948496a67827242eabc5725531342527c000000000000000000000000",
+                ),
             );
         }
 
@@ -1074,6 +1093,7 @@ mod tests {
                 group_token_out: group_token_out.clone(),
                 exact_out: false,
                 router_address: Some(Bytes::default()),
+                transfer_type: TransferType::TransferToProtocol,
             };
 
             let first_swap = Swap {
@@ -1120,22 +1140,25 @@ mod tests {
                 format!("{}{}", encode(first_encoded_swap), encode(second_encoded_swap));
 
             println!("{}", combined_hex);
-
             assert_eq!(
                 combined_hex,
-                RECEIVER.to_string() +
-                    concat!(
-                        // group token in
-                        "0000000000000000000000000000000000000000",
-                        // token out 1st swap
-                        "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-                        // pool config 1st swap
-                        "51d02a5948496a67827242eabc5725531342527c000000000000000000000000",
-                        // token out 2nd swap
-                        "dac17f958d2ee523a2206206994597c13d831ec7",
-                        // pool config 2nd swap
-                        "00000000000000000000000000000000000000000001a36e2eb1c43200000032",
-                    ),
+                // transfer type
+                concat!(
+                    // transfer type
+                    "00",
+                    // receiver
+                    "ca4f73fe97d0b987a0d12b39bbd562c779bab6f6",
+                    // group token in
+                    "0000000000000000000000000000000000000000",
+                    // token out 1st swap
+                    "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                    // pool config 1st swap
+                    "51d02a5948496a67827242eabc5725531342527c000000000000000000000000",
+                    // token out 2nd swap
+                    "dac17f958d2ee523a2206206994597c13d831ec7",
+                    // pool config 2nd swap
+                    "00000000000000000000000000000000000000000001a36e2eb1c43200000032",
+                ),
             );
         }
     }
@@ -1266,6 +1289,7 @@ mod tests {
                 router_address: None,
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
+                transfer_type: TransferType::None,
             };
             let encoder = CurveSwapEncoder::new(
                 String::from("0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f"),
@@ -1295,6 +1319,8 @@ mod tests {
                     "01",
                     // approval needed
                     "01",
+                    // transfer type
+                    "05",
                 ))
             );
         }
@@ -1331,6 +1357,7 @@ mod tests {
                 router_address: None,
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
+                transfer_type: TransferType::None,
             };
             let encoder = CurveSwapEncoder::new(
                 String::from("0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f"),
@@ -1360,6 +1387,8 @@ mod tests {
                     "00",
                     // approval needed
                     "01",
+                    // transfer type
+                    "05",
                 ))
             );
         }
@@ -1397,6 +1426,7 @@ mod tests {
                 router_address: None,
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
+                transfer_type: TransferType::None,
             };
             let encoder = CurveSwapEncoder::new(
                 String::from("0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f"),
@@ -1435,6 +1465,8 @@ mod tests {
                     "01",
                     // approval needed
                     "01",
+                    // transfer type
+                    "05",
                 ))
             );
         }
