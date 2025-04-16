@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@permit2/src/interfaces/IAllowanceTransfer.sol";
+import "@permit2/src/interfaces/ISignatureTransfer.sol";
 import "./Dispatcher.sol";
 import {LibSwap} from "../lib/LibSwap.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
@@ -66,7 +66,7 @@ error TychoRouter__InvalidDataLength();
 error TychoRouter__UndefinedMinAmountOut();
 
 contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
-    IAllowanceTransfer public immutable permit2;
+    ISignatureTransfer public immutable permit2;
     IWETH private immutable _weth;
 
     using SafeERC20 for IERC20;
@@ -91,160 +91,12 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
         if (_permit2 == address(0) || weth == address(0)) {
             revert TychoRouter__AddressZero();
         }
-        permit2 = IAllowanceTransfer(_permit2);
+        permit2 = ISignatureTransfer(_permit2);
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _weth = IWETH(weth);
     }
 
     /**
-     * @notice Executes a swap operation based on a predefined swap graph, supporting internal token amount splits.
-     *         This function enables multi-step swaps, optional ETH wrapping/unwrapping, and validates the output amount
-     *         against a user-specified minimum.
-     *
-     * @dev
-     * - If `wrapEth` is true, the contract wraps the provided native ETH into WETH and uses it as the sell token.
-     * - If `unwrapEth` is true, the contract converts the resulting WETH back into native ETH before sending it to the receiver.
-     * - Swaps are executed sequentially using the `_swap` function.
-     * - Reverts with `TychoRouter__NegativeSlippage` if the output amount is less than `minAmountOut` and `minAmountOut` is greater than 0.
-     *
-     * @param amountIn The input token amount to be swapped.
-     * @param tokenIn The address of the input token. Use `address(0)` for native ETH
-     * @param tokenOut The address of the output token. Use `address(0)` for native ETH
-     * @param minAmountOut The minimum acceptable amount of the output token. Reverts if this condition is not met. This should always be set to avoid losing funds due to slippage.
-     * @param wrapEth If true, wraps the input token (native ETH) into WETH.
-     * @param unwrapEth If true, unwraps the resulting WETH into native ETH and sends it to the receiver.
-     * @param nTokens The total number of tokens involved in the swap graph (used to initialize arrays for internal calculations).
-     * @param receiver The address to receive the output tokens.
-     * @param swaps Encoded swap graph data containing details of each swap.
-     *
-     * @return amountOut The total amount of the output token received by the receiver.
-     */
-    function splitSwap(
-        uint256 amountIn,
-        address tokenIn,
-        address tokenOut,
-        uint256 minAmountOut,
-        bool wrapEth,
-        bool unwrapEth,
-        uint256 nTokens,
-        address receiver,
-        bytes calldata swaps
-    ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
-        return _splitSwapChecked(
-            amountIn,
-            tokenIn,
-            tokenOut,
-            minAmountOut,
-            wrapEth,
-            unwrapEth,
-            nTokens,
-            receiver,
-            swaps
-        );
-    }
-
-    /**
-     * @notice Executes a swap operation based on a predefined swap graph, supporting internal token amount splits.
-     *         This function enables multi-step swaps, optional ETH wrapping/unwrapping, and validates the output amount
-     *         against a user-specified minimum.
-     *
-     * @dev
-     * - If `wrapEth` is true, the contract wraps the provided native ETH into WETH and uses it as the sell token.
-     * - If `unwrapEth` is true, the contract converts the resulting WETH back into native ETH before sending it to the receiver.
-     * - For ERC20 tokens, Permit2 is used to approve and transfer tokens from the caller to the router.
-     * - Swaps are executed sequentially using the `_swap` function.
-     * - Reverts with `TychoRouter__NegativeSlippage` if the output amount is less than `minAmountOut` and `minAmountOut` is greater than 0.
-     *
-     * @param amountIn The input token amount to be swapped.
-     * @param tokenIn The address of the input token. Use `address(0)` for native ETH
-     * @param tokenOut The address of the output token. Use `address(0)` for native ETH
-     * @param minAmountOut The minimum acceptable amount of the output token. Reverts if this condition is not met. This should always be set to avoid losing funds due to slippage.
-     * @param wrapEth If true, wraps the input token (native ETH) into WETH.
-     * @param unwrapEth If true, unwraps the resulting WETH into native ETH and sends it to the receiver.
-     * @param nTokens The total number of tokens involved in the swap graph (used to initialize arrays for internal calculations).
-     * @param receiver The address to receive the output tokens.
-     * @param permitSingle A Permit2 structure containing token approval details for the input token. Ignored if `wrapEth` is true.
-     * @param signature A valid signature authorizing the Permit2 approval. Ignored if `wrapEth` is true.
-     * @param swaps Encoded swap graph data containing details of each swap.
-     *
-     * @return amountOut The total amount of the output token received by the receiver.
-     */
-    function splitSwapPermit2(
-        uint256 amountIn,
-        address tokenIn,
-        address tokenOut,
-        uint256 minAmountOut,
-        bool wrapEth,
-        bool unwrapEth,
-        uint256 nTokens,
-        address receiver,
-        IAllowanceTransfer.PermitSingle calldata permitSingle,
-        bytes calldata signature,
-        bytes calldata swaps
-    ) external payable whenNotPaused nonReentrant returns (uint256 amountOut) {
-        // For native ETH, assume funds already in our router. Else, handle approval.
-        if (tokenIn != address(0)) {
-            permit2.permit(msg.sender, permitSingle, signature);
-        }
-
-        return _splitSwapChecked(
-            amountIn,
-            tokenIn,
-            tokenOut,
-            minAmountOut,
-            wrapEth,
-            unwrapEth,
-            nTokens,
-            receiver,
-            swaps
-        );
-    }
-
-    /**
-     * @notice Executes a swap operation based on a predefined swap graph with no split routes.
-     *         This function enables multi-step swaps, optional ETH wrapping/unwrapping, and validates the output amount
-     *         against a user-specified minimum.
-     *
-     * @dev
-     * - If `wrapEth` is true, the contract wraps the provided native ETH into WETH and uses it as the sell token.
-     * - If `unwrapEth` is true, the contract converts the resulting WETH back into native ETH before sending it to the receiver.
-     * - Swaps are executed sequentially using the `_swap` function.
-     * - Reverts with `TychoRouter__NegativeSlippage` if the output amount is less than `minAmountOut` and `minAmountOut` is greater than 0.
-     *
-     * @param amountIn The input token amount to be swapped.
-     * @param tokenIn The address of the input token. Use `address(0)` for native ETH
-     * @param tokenOut The address of the output token. Use `address(0)` for native ETH
-     * @param minAmountOut The minimum acceptable amount of the output token. Reverts if this condition is not met. This should always be set to avoid losing funds due to slippage.
-     * @param wrapEth If true, wraps the input token (native ETH) into WETH.
-     * @param unwrapEth If true, unwraps the resulting WETH into native ETH and sends it to the receiver.
-     * @param receiver The address to receive the output tokens.
-     * @param swaps Encoded swap graph data containing details of each swap.
-     *
-     * @return amountOut The total amount of the output token received by the receiver.
-     */
-    function sequentialSwap(
-        uint256 amountIn,
-        address tokenIn,
-        address tokenOut,
-        uint256 minAmountOut,
-        bool wrapEth,
-        bool unwrapEth,
-        address receiver,
-        bytes calldata swaps
-    ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
-        return _sequentialSwapChecked(
-            amountIn,
-            tokenIn,
-            tokenOut,
-            minAmountOut,
-            wrapEth,
-            unwrapEth,
-            receiver,
-            swaps
-        );
-    }
-
-    /**
      * @notice Executes a swap operation based on a predefined swap graph with no split routes.
      *         This function enables multi-step swaps, optional ETH wrapping/unwrapping, and validates the output amount
      *         against a user-specified minimum.
@@ -262,7 +114,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
      * @param wrapEth If true, wraps the input token (native ETH) into WETH.
      * @param unwrapEth If true, unwraps the resulting WETH into native ETH and sends it to the receiver.
      * @param receiver The address to receive the output tokens.
-     * @param permitSingle A Permit2 structure containing token approval details for the input token. Ignored if `wrapEth` is true.
+     * @param permit A Permit2 structure containing token approval details for the input token. Ignored if `wrapEth` is true.
      * @param signature A valid signature authorizing the Permit2 approval. Ignored if `wrapEth` is true.
      * @param swaps Encoded swap graph data containing details of each swap.
      *
@@ -276,15 +128,10 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
         bool wrapEth,
         bool unwrapEth,
         address receiver,
-        IAllowanceTransfer.PermitSingle calldata permitSingle,
+        ISignatureTransfer.PermitTransferFrom calldata permit,
         bytes calldata signature,
         bytes calldata swaps
     ) external payable whenNotPaused nonReentrant returns (uint256 amountOut) {
-        // For native ETH, assume funds already in our router. Else, handle approval.
-        if (tokenIn != address(0)) {
-            permit2.permit(msg.sender, permitSingle, signature);
-        }
-
         return _sequentialSwapChecked(
             amountIn,
             tokenIn,
@@ -293,215 +140,10 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
             wrapEth,
             unwrapEth,
             receiver,
+            permit,
+            signature,
             swaps
         );
-    }
-
-    /**
-     * @notice Executes a single swap operation.
-     *         This function enables optional ETH wrapping/unwrapping, and validates the output amount against a user-specified minimum.
-     *
-     * @dev
-     * - If `wrapEth` is true, the contract wraps the provided native ETH into WETH and uses it as the sell token.
-     * - If `unwrapEth` is true, the contract converts the resulting WETH back into native ETH before sending it to the receiver.
-     * - Reverts with `TychoRouter__NegativeSlippage` if the output amount is less than `minAmountOut` and `minAmountOut` is greater than 0.
-     *
-     * @param amountIn The input token amount to be swapped.
-     * @param tokenIn The address of the input token. Use `address(0)` for native ETH
-     * @param tokenOut The address of the output token. Use `address(0)` for native ETH
-     * @param minAmountOut The minimum acceptable amount of the output token. Reverts if this condition is not met. This should always be set to avoid losing funds due to slippage.
-     * @param wrapEth If true, wraps the input token (native ETH) into WETH.
-     * @param unwrapEth If true, unwraps the resulting WETH into native ETH and sends it to the receiver.
-     * @param receiver The address to receive the output tokens.
-     * @param swapData Encoded swap details.
-     *
-     * @return amountOut The total amount of the output token received by the receiver.
-     */
-    function singleSwap(
-        uint256 amountIn,
-        address tokenIn,
-        address tokenOut,
-        uint256 minAmountOut,
-        bool wrapEth,
-        bool unwrapEth,
-        address receiver,
-        bytes calldata swapData
-    ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
-        return _singleSwap(
-            amountIn,
-            tokenIn,
-            tokenOut,
-            minAmountOut,
-            wrapEth,
-            unwrapEth,
-            receiver,
-            swapData
-        );
-    }
-
-    /**
-     * @notice Executes a single swap operation.
-     *         This function enables optional ETH wrapping/unwrapping, and validates the output amount
-     *         against a user-specified minimum.
-     *
-     * @dev
-     * - If `wrapEth` is true, the contract wraps the provided native ETH into WETH and uses it as the sell token.
-     * - If `unwrapEth` is true, the contract converts the resulting WETH back into native ETH before sending it to the receiver.
-     * - For ERC20 tokens, Permit2 is used to approve and transfer tokens from the caller to the router.
-     * - Reverts with `TychoRouter__NegativeSlippage` if the output amount is less than `minAmountOut` and `minAmountOut` is greater than 0.
-     *
-     * @param amountIn The input token amount to be swapped.
-     * @param tokenIn The address of the input token. Use `address(0)` for native ETH
-     * @param tokenOut The address of the output token. Use `address(0)` for native ETH
-     * @param minAmountOut The minimum acceptable amount of the output token. Reverts if this condition is not met. This should always be set to avoid losing funds due to slippage.
-     * @param wrapEth If true, wraps the input token (native ETH) into WETH.
-     * @param unwrapEth If true, unwraps the resulting WETH into native ETH and sends it to the receiver.
-     * @param receiver The address to receive the output tokens.
-     * @param permitSingle A Permit2 structure containing token approval details for the input token. Ignored if `wrapEth` is true.
-     * @param signature A valid signature authorizing the Permit2 approval. Ignored if `wrapEth` is true.
-     * @param swapData Encoded swap details.
-     *
-     * @return amountOut The total amount of the output token received by the receiver.
-     */
-    function singleSwapPermit2(
-        uint256 amountIn,
-        address tokenIn,
-        address tokenOut,
-        uint256 minAmountOut,
-        bool wrapEth,
-        bool unwrapEth,
-        address receiver,
-        IAllowanceTransfer.PermitSingle calldata permitSingle,
-        bytes calldata signature,
-        bytes calldata swapData
-    ) external payable whenNotPaused nonReentrant returns (uint256 amountOut) {
-        // For native ETH, assume funds already in our router. Else, handle approval.
-        if (tokenIn != address(0)) {
-            permit2.permit(msg.sender, permitSingle, signature);
-        }
-
-        return _singleSwap(
-            amountIn,
-            tokenIn,
-            tokenOut,
-            minAmountOut,
-            wrapEth,
-            unwrapEth,
-            receiver,
-            swapData
-        );
-    }
-
-    /**
-     * @notice Internal implementation of the core swap logic shared between splitSwap() and splitSwapPermit2().
-     *
-     * @notice This function centralizes the swap execution logic.
-     * @notice For detailed documentation on parameters and behavior, see the documentation for
-     * splitSwap() and splitSwapPermit2() functions.
-     *
-     */
-    function _splitSwapChecked(
-        uint256 amountIn,
-        address tokenIn,
-        address tokenOut,
-        uint256 minAmountOut,
-        bool wrapEth,
-        bool unwrapEth,
-        uint256 nTokens,
-        address receiver,
-        bytes calldata swaps
-    ) internal returns (uint256 amountOut) {
-        if (receiver == address(0)) {
-            revert TychoRouter__AddressZero();
-        }
-        if (minAmountOut == 0) {
-            revert TychoRouter__UndefinedMinAmountOut();
-        }
-
-        // Assume funds are already in the router.
-        if (wrapEth) {
-            _wrapETH(amountIn);
-            tokenIn = address(_weth);
-        }
-
-        uint256 initialBalanceTokenOut = _balanceOf(tokenOut, receiver);
-        amountOut = _splitSwap(amountIn, nTokens, swaps);
-
-        if (amountOut < minAmountOut) {
-            revert TychoRouter__NegativeSlippage(amountOut, minAmountOut);
-        }
-
-        if (unwrapEth) {
-            _unwrapETH(amountOut);
-            Address.sendValue(payable(receiver), amountOut);
-        }
-
-        if (tokenIn != tokenOut) {
-            uint256 currentBalanceTokenOut = _balanceOf(tokenOut, receiver);
-            uint256 userAmount = currentBalanceTokenOut - initialBalanceTokenOut;
-            if (userAmount != amountOut) {
-                revert TychoRouter__AmountOutNotFullyReceived(
-                    userAmount, amountOut
-                );
-            }
-        }
-    }
-
-    /**
-     * @notice Internal implementation of the core swap logic shared between singleSwap() and singleSwapPermit2().
-     *
-     * @notice This function centralizes the swap execution logic.
-     * @notice For detailed documentation on parameters and behavior, see the documentation for
-     * singleSwap() and singleSwapPermit2() functions.
-     *
-     */
-    function _singleSwap(
-        uint256 amountIn,
-        address tokenIn,
-        address tokenOut,
-        uint256 minAmountOut,
-        bool wrapEth,
-        bool unwrapEth,
-        address receiver,
-        bytes calldata swap_
-    ) internal returns (uint256 amountOut) {
-        if (receiver == address(0)) {
-            revert TychoRouter__AddressZero();
-        }
-        if (minAmountOut == 0) {
-            revert TychoRouter__UndefinedMinAmountOut();
-        }
-
-        // Assume funds are already in the router.
-        if (wrapEth) {
-            _wrapETH(amountIn);
-            tokenIn = address(_weth);
-        }
-
-        (address executor, bytes calldata protocolData) =
-            swap_.decodeSingleSwap();
-
-        uint256 initialBalanceTokenOut = _balanceOf(tokenOut, receiver);
-        amountOut = _callExecutor(executor, amountIn, protocolData);
-
-        if (amountOut < minAmountOut) {
-            revert TychoRouter__NegativeSlippage(amountOut, minAmountOut);
-        }
-
-        if (unwrapEth) {
-            _unwrapETH(amountOut);
-            Address.sendValue(payable(receiver), amountOut);
-        }
-
-        if (tokenIn != tokenOut) {
-            uint256 currentBalanceTokenOut = _balanceOf(tokenOut, receiver);
-            uint256 userAmount = currentBalanceTokenOut - initialBalanceTokenOut;
-            if (userAmount != amountOut) {
-                revert TychoRouter__AmountOutNotFullyReceived(
-                    userAmount, amountOut
-                );
-            }
-        }
     }
 
     /**
@@ -520,6 +162,8 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
         bool wrapEth,
         bool unwrapEth,
         address receiver,
+        ISignatureTransfer.PermitTransferFrom calldata permit,
+        bytes calldata signature,
         bytes calldata swaps
     ) internal returns (uint256 amountOut) {
         if (receiver == address(0)) {
@@ -536,7 +180,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
         }
 
         uint256 initialBalanceTokenOut = _balanceOf(tokenOut, receiver);
-        amountOut = _sequentialSwap(amountIn, swaps);
+        amountOut = _sequentialSwap(amountIn, permit, signature, swaps);
         uint256 currentBalanceTokenIn = _balanceOf(tokenIn, address(this));
 
         if (amountOut < minAmountOut) {
@@ -562,86 +206,17 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
     /**
      * @dev Executes sequential swaps as defined by the provided swap graph.
      *
-     * This function processes a series of swaps encoded in the `swaps_` byte array. Each swap operation determines:
-     * - The indices of the input and output tokens (via `tokenInIndex()` and `tokenOutIndex()`).
-     * - The portion of the available amount to be used for the swap, indicated by the `split` value.
-     *
-     * Three important notes:
-     * - The contract assumes that token indexes follow a specific order: the sell token is at index 0, followed by any
-     *  intermediary tokens, and finally the buy token.
-     * - A `split` value of 0 is interpreted as 100% of the available amount (i.e., the entire remaining balance).
-     *  This means that in scenarios without explicit splits the value should be 0, and when splits are present,
-     *  the last swap should also have a split value of 0.
-     * - In case of cyclic swaps, the output token is the same as the input token.
-     *  `cyclicSwapAmountOut` is used to track the amount of the output token, and is updated when
-     *  the `tokenOutIndex` is 0.
-     *
-     * @param amountIn The initial amount of the sell token to be swapped.
-     * @param nTokens The total number of tokens involved in the swap path, used to initialize arrays for internal tracking.
-     * @param swaps_ Encoded swap graph data containing the details of each swap operation.
-     *
-     * @return The total amount of the buy token obtained after all swaps have been executed.
-     */
-    function _splitSwap(
-        uint256 amountIn,
-        uint256 nTokens,
-        bytes calldata swaps_
-    ) internal returns (uint256) {
-        if (swaps_.length == 0) {
-            revert TychoRouter__EmptySwaps();
-        }
-
-        uint256 currentAmountIn;
-        uint256 currentAmountOut;
-        uint8 tokenInIndex = 0;
-        uint8 tokenOutIndex = 0;
-        uint24 split;
-        address executor;
-        bytes calldata protocolData;
-        bytes calldata swapData;
-
-        uint256[] memory remainingAmounts = new uint256[](nTokens);
-        uint256[] memory amounts = new uint256[](nTokens);
-        uint256 cyclicSwapAmountOut = 0;
-        amounts[0] = amountIn;
-        remainingAmounts[0] = amountIn;
-
-        while (swaps_.length > 0) {
-            (swapData, swaps_) = swaps_.next();
-
-            (tokenInIndex, tokenOutIndex, split, executor, protocolData) =
-                swapData.decodeSplitSwap();
-
-            currentAmountIn = split > 0
-                ? (amounts[tokenInIndex] * split) / 0xffffff
-                : remainingAmounts[tokenInIndex];
-
-            currentAmountOut =
-                _callExecutor(executor, currentAmountIn, protocolData);
-            // Checks if the output token is the same as the input token
-            if (tokenOutIndex == 0) {
-                cyclicSwapAmountOut += currentAmountOut;
-            } else {
-                amounts[tokenOutIndex] += currentAmountOut;
-            }
-            remainingAmounts[tokenOutIndex] += currentAmountOut;
-            remainingAmounts[tokenInIndex] -= currentAmountIn;
-        }
-        return tokenOutIndex == 0 ? cyclicSwapAmountOut : amounts[tokenOutIndex];
-    }
-
-    /**
-     * @dev Executes sequential swaps as defined by the provided swap graph.
-     *
      * @param amountIn The initial amount of the sell token to be swapped.
      * @param swaps_ Encoded swap graph data containing the details of each swap operation.
      *
      * @return calculatedAmount The total amount of the buy token obtained after all swaps have been executed.
      */
-    function _sequentialSwap(uint256 amountIn, bytes calldata swaps_)
-        internal
-        returns (uint256 calculatedAmount)
-    {
+    function _sequentialSwap(
+        uint256 amountIn,
+        ISignatureTransfer.PermitTransferFrom calldata permit,
+        bytes calldata signature,
+        bytes calldata swaps_
+    ) internal returns (uint256 calculatedAmount) {
         bytes calldata swap;
         calculatedAmount = amountIn;
         while (swaps_.length > 0) {
@@ -650,8 +225,9 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
             (address executor, bytes calldata protocolData) =
                 swap.decodeSingleSwap();
 
-            calculatedAmount =
-                _callExecutor(executor, calculatedAmount, protocolData);
+            calculatedAmount = _callExecutor(
+                executor, calculatedAmount, permit, signature, protocolData
+            );
         }
     }
 

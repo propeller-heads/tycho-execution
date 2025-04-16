@@ -3,6 +3,7 @@ pragma solidity ^0.8.26;
 
 import "@interfaces/IExecutor.sol";
 import "@interfaces/ICallback.sol";
+import "@permit2/src/interfaces/ISignatureTransfer.sol";
 
 error Dispatcher__UnapprovedExecutor(address executor);
 error Dispatcher__NonContractExecutor();
@@ -56,6 +57,8 @@ contract Dispatcher {
     function _callExecutor(
         address executor,
         uint256 amount,
+        ISignatureTransfer.PermitTransferFrom calldata permit,
+        bytes calldata signature,
         bytes calldata data
     ) internal returns (uint256 calculatedAmount) {
         if (!executors[executor]) {
@@ -68,7 +71,9 @@ contract Dispatcher {
 
         // slither-disable-next-line controlled-delegatecall,low-level-calls,calls-loop
         (bool success, bytes memory result) = executor.delegatecall(
-            abi.encodeWithSelector(IExecutor.swap.selector, amount, data)
+            abi.encodeWithSelector(
+                IExecutor.swap.selector, amount, permit, signature, data
+            )
         );
 
         if (!success) {

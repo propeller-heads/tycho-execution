@@ -3,14 +3,14 @@ pragma solidity ^0.8.26;
 
 import "@interfaces/IExecutor.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@permit2/src/interfaces/IAllowanceTransfer.sol";
+import "@permit2/src/interfaces/ISignatureTransfer.sol";
 
 error TokenTransfer__AddressZero();
 
 contract TokenTransfer {
     using SafeERC20 for IERC20;
 
-    IAllowanceTransfer public immutable permit2;
+    ISignatureTransfer public immutable permit2;
 
     enum TransferType {
         // Assume funds are in the TychoRouter - transfer into the pool
@@ -35,7 +35,7 @@ contract TokenTransfer {
         if (_permit2 == address(0)) {
             revert TokenTransfer__AddressZero();
         }
-        permit2 = IAllowanceTransfer(_permit2);
+        permit2 = ISignatureTransfer(_permit2);
     }
 
     function _transfer(
@@ -43,7 +43,9 @@ contract TokenTransfer {
         address sender,
         address receiver,
         uint256 amount,
-        TransferType transferType
+        TransferType transferType,
+        ISignatureTransfer.PermitTransferFrom calldata permit,
+        bytes calldata signature
     ) internal {
         if (transferType == TransferType.TRANSFER_TO_PROTOCOL) {
             if (tokenIn == address(0)) {
@@ -56,14 +58,28 @@ contract TokenTransfer {
             IERC20(tokenIn).safeTransferFrom(sender, receiver, amount);
         } else if (transferType == TransferType.TRANSFER_PERMIT2_TO_PROTOCOL) {
             // Permit2.permit is already called from the TychoRouter
-            permit2.transferFrom(sender, receiver, uint160(amount), tokenIn);
+            permit2.permitTransferFrom(
+                permit,
+                ISignatureTransfer.SignatureTransferDetails({
+                    to: receiver,
+                    requestedAmount: amount
+                }),
+                msg.sender,
+                signature
+            );
         } else if (transferType == TransferType.TRANSFER_FROM_TO_ROUTER) {
             // slither-disable-next-line arbitrary-send-erc20
             IERC20(tokenIn).safeTransferFrom(sender, address(this), amount);
         } else if (transferType == TransferType.TRANSFER_PERMIT2_TO_ROUTER) {
             // Permit2.permit is already called from the TychoRouter
-            permit2.transferFrom(
-                sender, address(this), uint160(amount), tokenIn
+            permit2.permitTransferFrom(
+                permit,
+                ISignatureTransfer.SignatureTransferDetails({
+                    to: address(this),
+                    requestedAmount: amount
+                }),
+                msg.sender,
+                signature
             );
         }
     }

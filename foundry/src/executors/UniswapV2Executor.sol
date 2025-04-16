@@ -4,6 +4,7 @@ pragma solidity ^0.8.26;
 import "@interfaces/IExecutor.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@uniswap-v2/contracts/interfaces/IUniswapV2Pair.sol";
+import "@permit2/src/interfaces/ISignatureTransfer.sol";
 import "./TokenTransfer.sol";
 
 error UniswapV2Executor__InvalidDataLength();
@@ -33,11 +34,12 @@ contract UniswapV2Executor is IExecutor, TokenTransfer {
     }
 
     // slither-disable-next-line locked-ether
-    function swap(uint256 givenAmount, bytes calldata data)
-        external
-        payable
-        returns (uint256 calculatedAmount)
-    {
+    function swap(
+        uint256 givenAmount,
+        ISignatureTransfer.PermitTransferFrom calldata permit,
+        bytes calldata signature,
+        bytes calldata data
+    ) external payable returns (uint256 calculatedAmount) {
         IERC20 tokenIn;
         address target;
         address receiver;
@@ -51,7 +53,13 @@ contract UniswapV2Executor is IExecutor, TokenTransfer {
 
         calculatedAmount = _getAmountOut(target, givenAmount, zeroForOne);
         _transfer(
-            address(tokenIn), msg.sender, target, givenAmount, transferType
+            address(tokenIn),
+            msg.sender,
+            target,
+            givenAmount,
+            transferType,
+            permit,
+            signature
         );
 
         IUniswapV2Pair pool = IUniswapV2Pair(target);

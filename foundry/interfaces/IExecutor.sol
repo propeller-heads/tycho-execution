@@ -2,6 +2,7 @@
 pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@permit2/src/interfaces/ISignatureTransfer.sol";
 
 pragma abicoder v2;
 
@@ -22,6 +23,8 @@ interface IExecutor {
      */
     function swap(
         uint256 givenAmount,
+        ISignatureTransfer.PermitTransferFrom calldata permit,
+        bytes calldata signature,
         bytes calldata data
     ) external payable returns (uint256 calculatedAmount);
 }
