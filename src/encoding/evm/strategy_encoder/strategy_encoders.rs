@@ -1,7 +1,9 @@
 use std::{collections::HashSet, str::FromStr};
 
-use alloy_primitives::{aliases::U24, U256, U8};
-use alloy_sol_types::SolValue;
+use alloy::{
+    primitives::{aliases::U24, U256, U8},
+    sol_types::SolValue,
+};
 use tycho_common::Bytes;
 
 use crate::encoding::{
@@ -644,8 +646,7 @@ impl StrategyEncoder for SplitSwapStrategyEncoder {
 mod tests {
     use std::{collections::HashMap, str::FromStr};
 
-    use alloy::hex::encode;
-    use alloy_primitives::{hex, Address};
+    use alloy::{hex, hex::encode};
     use num_bigint::{BigInt, BigUint};
     use rstest::rstest;
     use tycho_common::{
@@ -2232,8 +2233,10 @@ mod tests {
     }
 
     mod protocol_integration {
-        // in this module we test protocol specific logic by creating the calldata that then is used
-        // in the solidity tests
+        use alloy::primitives::Address;
+
+        // in this module we test protocol specific logic by creating the calldata that then is
+        // used in the solidity tests
         use super::*;
 
         #[test]

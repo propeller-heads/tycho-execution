@@ -1,14 +1,13 @@
 use std::{str::FromStr, sync::Arc};
 
 use alloy::{
-    primitives::{aliases::U48, Address, Bytes as AlloyBytes, TxKind, U160, U256},
-    providers::{Provider, RootProvider},
+    primitives::{aliases::U48, Address, Bytes as AlloyBytes, Signature, TxKind, B256, U160, U256},
+    providers::Provider,
     rpc::types::{TransactionInput, TransactionRequest},
     signers::{local::PrivateKeySigner, SignerSync},
-    transports::BoxTransport,
+    sol,
+    sol_types::{eip712_domain, SolStruct, SolValue},
 };
-use alloy_primitives::{PrimitiveSignature as Signature, B256};
-use alloy_sol_types::{eip712_domain, sol, SolStruct, SolValue};
 use chrono::Utc;
 use num_bigint::BigUint;
 use tokio::{
@@ -19,7 +18,9 @@ use tycho_common::Bytes;
 
 use crate::encoding::{
     errors::EncodingError,
-    evm::utils::{biguint_to_u256, bytes_to_address, encode_input, get_client, get_runtime},
+    evm::utils::{
+        biguint_to_u256, bytes_to_address, encode_input, get_client, get_runtime, EVMProvider,
+    },
     models::Chain,
 };
 
@@ -28,7 +29,7 @@ use crate::encoding::{
 #[derive(Clone)]
 pub struct Permit2 {
     address: Address,
-    client: Arc<RootProvider<BoxTransport>>,
+    client: EVMProvider,
     signer: PrivateKeySigner,
     chain_id: u64,
     runtime_handle: Handle,
@@ -103,16 +104,15 @@ impl Permit2 {
 
         let output = block_in_place(|| {
             self.runtime_handle
-                .block_on(async { self.client.call(&tx).await })
+                .block_on(async { self.client.call(tx).await })
         });
         match output {
             Ok(response) => {
-                let allowance: Allowance =
-                    Allowance::abi_decode(&response, true).map_err(|_| {
-                        EncodingError::FatalError(
-                            "Failed to decode response for permit2 allowance".to_string(),
-                        )
-                    })?;
+                let allowance: Allowance = Allowance::abi_decode(&response).map_err(|_| {
+                    EncodingError::FatalError(
+                        "Failed to decode response for permit2 allowance".to_string(),
+                    )
+                })?;
                 Ok(allowance)
             }
             Err(err) => Err(EncodingError::RecoverableError(format!(
@@ -168,7 +168,10 @@ impl Permit2 {
 mod tests {
     use std::str::FromStr;
 
-    use alloy_primitives::Uint;
+    use alloy::{
+        primitives::{Address, Uint},
+        sol_types::SolValue,
+    };
     use num_bigint::BigUint;
     use tycho_common::models::Chain as TychoCommonChain;
 

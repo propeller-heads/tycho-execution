@@ -128,7 +128,7 @@ impl TransferOptimization {
 
 #[cfg(test)]
 mod tests {
-    use alloy_primitives::hex;
+    use alloy::hex;
     use rstest::rstest;
     use tycho_common::models::protocol::ProtocolComponent;
 

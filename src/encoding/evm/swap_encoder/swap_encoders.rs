@@ -1,11 +1,11 @@
 use std::{collections::HashMap, str::FromStr};
 
 use alloy::{
+    primitives::{Address, Bytes as AlloyBytes, TxKind, U256, U8},
     providers::Provider,
     rpc::types::{TransactionInput, TransactionRequest},
+    sol_types::SolValue,
 };
-use alloy_primitives::{Address, Bytes as AlloyBytes, TxKind, U256, U8};
-use alloy_sol_types::SolValue;
 use tokio::task::block_in_place;
 use tycho_common::Bytes;
 
@@ -428,19 +428,16 @@ impl CurveSwapEncoder {
             to: Some(TxKind::from(Address::from_str(&self.meta_registry_address).map_err(
                 |_| EncodingError::FatalError("Invalid Curve meta registry address".to_string()),
             )?)),
-            input: TransactionInput {
-                input: Some(alloy_primitives::Bytes::from(data)),
-                data: None,
-            },
+            input: TransactionInput { input: Some(AlloyBytes::from(data)), data: None },
             ..Default::default()
         };
-        let output = block_in_place(|| handle.block_on(async { client.call(&tx).await }));
+        let output = block_in_place(|| handle.block_on(async { client.call(tx).await }));
         type ResponseType = (U256, U256, bool);
 
         match output {
             Ok(response) => {
-                let (i_256, j_256, _): ResponseType = ResponseType::abi_decode(&response, true)
-                    .map_err(|_| {
+                let (i_256, j_256, _): ResponseType =
+                    ResponseType::abi_decode(&response).map_err(|_| {
                         EncodingError::FatalError(
                             "Failed to decode response when getting coin indexes on a curve pool"
                                 .to_string(),
