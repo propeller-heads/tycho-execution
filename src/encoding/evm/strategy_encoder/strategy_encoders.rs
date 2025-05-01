@@ -1133,6 +1133,82 @@ mod tests {
         }
 
         #[test]
+        fn test_sequential_swap_gas_benchmark() {
+            // Encode swap found in `0xb3a6305071887182baaa133f62d7d0f7fbfcdc6423d41d4f112da19f93c2859f`
+            //
+            //   PEAS ───(USV3)──> DAI ───(USV3)──> cbBTC
+
+            let peas = Bytes::from_str("0x02f92800f57bcd74066f5709f1daa1a4302df875").unwrap();
+            let dai = Bytes::from_str("0x6B175474E89094C44Da98b954EedeAC495271d0F").unwrap();
+            let usdc = Bytes::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap();
+
+            let swap_peas_dai = Swap {
+                component: ProtocolComponent {
+                    id: "0xae750560b09ad1f5246f3b279b3767afd1d79160".to_string(),
+                    protocol_system: "uniswap_v3".to_string(),
+                    static_attributes: {
+                        let mut attrs = HashMap::new();
+                        attrs.insert(
+                            "fee".to_string(),
+                            Bytes::from(BigInt::from(10000).to_signed_bytes_be()),
+                        );
+                        attrs
+                    },
+                    ..Default::default()
+                },
+                token_in: peas.clone(),
+                token_out: dai.clone(),
+                split: 0f64,
+            };
+            let swap_dai_usdc = Swap {
+                component: ProtocolComponent {
+                    id: "0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168".to_string(),
+                    protocol_system: "uniswap_v3".to_string(),
+                    static_attributes: {
+                        let mut attrs = HashMap::new();
+                        attrs.insert(
+                            "fee".to_string(),
+                            Bytes::from(BigInt::from(100).to_signed_bytes_be()),
+                        );
+                        attrs
+                    },
+                    ..Default::default()
+                },
+                token_in: dai.clone(),
+                token_out: usdc.clone(),
+                split: 0f64,
+            };
+            let swap_encoder_registry = get_swap_encoder_registry();
+            let encoder = SequentialSwapStrategyEncoder::new(
+                eth_chain(),
+                swap_encoder_registry,
+                None,
+                Bytes::from_str("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395").unwrap(),
+                false,
+            )
+                .unwrap();
+            let solution = Solution {
+                exact_out: false,
+                given_token: peas,
+                given_amount: BigUint::from_str("378683146000000000000").unwrap(),
+                checked_token: usdc,
+                expected_amount: None,
+                checked_amount: Some(BigUint::from_str("1016651350").unwrap()),
+                sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
+                receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
+                swaps: vec![swap_peas_dai, swap_dai_usdc],
+                ..Default::default()
+            };
+
+            let (calldata, _) = encoder
+                .encode_strategy(solution)
+                .unwrap();
+
+            let hex_calldata = encode(&calldata);
+            write_calldata_to_file("test_sequential_swap_gas_benchmark", hex_calldata.as_str());
+        }
+
+        #[test]
         fn test_sequential_swap_strategy_encoder_no_permit2() {
             // Performs a sequential swap from WETH to USDC though WBTC using USV2 pools
             //

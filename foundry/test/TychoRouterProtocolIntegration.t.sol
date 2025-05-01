@@ -115,6 +115,31 @@ contract TychoRouterTestProtocolIntegration is TychoRouterTestSetup {
         assertEq(balanceAfter - balanceBefore, 123172000092711286554274694);
     }
 
+    function testSequentialSwapGasBenchmark() public {
+        // Test created with calldata from our router encoder.
+        //
+        // Encode swap found in `0xb3a6305071887182baaa133f62d7d0f7fbfcdc6423d41d4f112da19f93c2859f`
+        //
+        //   PEAS ───(USV3)──> DAI ───(USV3)──> USDC
+//        vm.rollFork(22385078);
+        deal(PEAS_ADDR, ALICE, 378683146000000000000);
+        uint256 balanceBefore = IERC20(USDC_ADDR).balanceOf(ALICE);
+
+        vm.startPrank(ALICE);
+        IERC20(PEAS_ADDR).approve(tychoRouterAddr, type(uint256).max);
+
+        bytes memory callData =
+            loadCallDataFromFile("test_sequential_swap_gas_benchmark");
+        (bool success,) = tychoRouterAddr.call(callData);
+
+        vm.stopPrank();
+
+        uint256 balanceAfter = IERC20(USDC_ADDR).balanceOf(ALICE);
+
+        assertTrue(success, "Call Failed");
+        assertEq(balanceAfter - balanceBefore, 1316651350);
+    }
+
     function testMultiProtocolIntegration() public {
         // Test created with calldata from our router encoder.
         //
