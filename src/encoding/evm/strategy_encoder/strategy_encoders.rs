@@ -1134,7 +1134,8 @@ mod tests {
 
         #[test]
         fn test_sequential_swap_gas_benchmark() {
-            // Encode swap found in `0xb3a6305071887182baaa133f62d7d0f7fbfcdc6423d41d4f112da19f93c2859f`
+            // Encode swap found in
+            // `0xb3a6305071887182baaa133f62d7d0f7fbfcdc6423d41d4f112da19f93c2859f`
             //
             //   PEAS ───(USV3)──> DAI ───(USV3)──> cbBTC
 
@@ -1186,7 +1187,7 @@ mod tests {
                 Bytes::from_str("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395").unwrap(),
                 false,
             )
-                .unwrap();
+            .unwrap();
             let solution = Solution {
                 exact_out: false,
                 given_token: peas,
