@@ -185,7 +185,7 @@ contract UniswapV4Executor is
         returns (bytes memory)
     {
         verifyCallback(data);
-        return _unlockCallback(data);
+        return _unlockCallback(data[68:]);
     }
 
     function verifyCallback(bytes calldata) public view poolManagerOnly {}

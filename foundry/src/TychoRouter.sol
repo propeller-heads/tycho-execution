@@ -781,14 +781,14 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
     /**
      * @dev Called by UniswapV4 pool manager after achieving unlock state.
      */
-    function unlockCallback(bytes calldata data)
-        external
-        returns (bytes memory)
-    {
-        if (data.length < 24) revert TychoRouter__InvalidDataLength();
-        bytes memory result = _callHandleCallbackOnExecutor(data);
-        return result;
-    }
+//    function unlockCallback(bytes calldata data)
+//        external
+//        returns (bytes memory)
+//    {
+//        if (data.length < 24) revert TychoRouter__InvalidDataLength();
+//        bytes memory result = _callHandleCallbackOnExecutor(data);
+//        return result;
+//    }
 
     /**
      * @dev Gets balance of a token for a given address. Supports both native ETH and ERC20 tokens.
