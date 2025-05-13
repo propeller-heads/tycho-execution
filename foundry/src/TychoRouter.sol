@@ -4,16 +4,17 @@ pragma solidity ^0.8.26;
 import "../lib/IWETH.sol";
 import "../lib/bytes/LibPrefixLengthEncodedByteArray.sol";
 
+import "./Dispatcher.sol";
+import "./TychoRouter.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@permit2/src/interfaces/IAllowanceTransfer.sol";
-import "./Dispatcher.sol";
-import {LibSwap} from "../lib/LibSwap.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+import {LibSwap} from "../lib/LibSwap.sol";
 
 //                                         ✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷
 //                                   ✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷
@@ -64,6 +65,23 @@ error TychoRouter__AmountOutNotFullyReceived(
 error TychoRouter__MessageValueMismatch(uint256 value, uint256 amount);
 error TychoRouter__InvalidDataLength();
 error TychoRouter__UndefinedMinAmountOut();
+
+enum InputTransferType {
+    // Assume funds are in msg.sender's wallet - transferFrom into the pool
+    TRANSFER_FROM_TO_PROTOCOL,
+    // Assume funds are in msg.sender's wallet - permit2TransferFrom into the pool
+    TRANSFER_PERMIT2_TO_PROTOCOL,
+    // Assume funds are in msg.sender's wallet - but the pool requires it to be
+    // in the router contract when calling swap - transferFrom into the router
+    // contract
+    TRANSFER_FROM_TO_ROUTER,
+    // Assume funds are in msg.sender's wallet - but the pool requires it to be
+    // in the router contract when calling swap - transferFrom into the router
+    // contract using permit2
+    TRANSFER_PERMIT2_TO_ROUTER,
+    // Assume funds have already been transferred into the pool. Do nothing.
+    NONE
+}
 
 contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
     IAllowanceTransfer public immutable permit2;
@@ -463,6 +481,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
         bool wrapEth,
         bool unwrapEth,
         address receiver,
+        InputTransferType inputTransferType,
         bytes calldata swap_
     ) internal returns (uint256 amountOut) {
         if (receiver == address(0)) {
@@ -477,6 +496,10 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
             _wrapETH(amountIn);
             tokenIn = address(_weth);
         }
+
+        _transfer(
+            tokenIn, msg.sender, address(this), amountIn, inputTransferType
+        );
 
         (address executor, bytes calldata protocolData) =
             swap_.decodeSingleSwap();
@@ -800,5 +823,27 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
     {
         return
             token == address(0) ? owner.balance : IERC20(token).balanceOf(owner);
+    }
+
+    function _transfer(
+        address tokenIn,
+        address sender,
+        address receiver,
+        uint256 amount,
+        InputTransferType transferType
+    ) internal {
+        if (transferType == InputTransferType.TRANSFER_FROM_TO_PROTOCOL) {
+            // slither-disable-next-line arbitrary-send-erc20
+            IERC20(tokenIn).safeTransferFrom(sender, receiver, amount);
+        } else if (transferType == InputTransferType.TRANSFER_PERMIT2_TO_PROTOCOL) {
+            permit2.transferFrom(sender, receiver, uint160(amount), tokenIn);
+        } else if (transferType == InputTransferType.TRANSFER_FROM_TO_ROUTER) {
+            // slither-disable-next-line arbitrary-send-erc20
+            IERC20(tokenIn).safeTransferFrom(sender, address(this), amount);
+        } else if (transferType == InputTransferType.TRANSFER_PERMIT2_TO_ROUTER) {
+            permit2.transferFrom(
+                sender, address(this), uint160(amount), tokenIn
+            );
+        }
     }
 }

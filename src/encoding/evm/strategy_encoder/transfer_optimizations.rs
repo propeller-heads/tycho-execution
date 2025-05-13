@@ -39,6 +39,9 @@ impl TransferOptimization {
     }
 
     /// Returns the transfer method that should be used for the given swap and solution.
+    // TODO: Then this can be simplified to handle only the first swap
+    // and we make a new function for the other swaps that just figures out if the transfer is
+    // needed or not
     pub fn get_transfer_type(
         &self,
         swap: SwapGroup,
