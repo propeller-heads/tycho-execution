@@ -8,7 +8,7 @@ import "./executors/UniswapV4Utils.sol";
 import {SafeCallback} from "@uniswap/v4-periphery/src/base/SafeCallback.sol";
 
 contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
-    function _getSequentialSwaps(bool permit2)
+    function _getSequentialSwaps()
         internal
         view
         returns (bytes[] memory)
@@ -17,16 +17,15 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
         // 1 WETH   ->   DAI   ->   USDC
         //       (univ2)     (univ2)
 
-        TokenTransfer.TransferType transferType = permit2
-            ? TokenTransfer.TransferType.TRANSFER_PERMIT2_TO_PROTOCOL
-            : TokenTransfer.TransferType.TRANSFER_FROM_TO_PROTOCOL;
+        // Transfer directly from user to first pool
+        bool transferNeeded = false;
 
         bytes[] memory swaps = new bytes[](2);
         // WETH -> DAI
         swaps[0] = encodeSequentialSwap(
             address(usv2Executor),
             encodeUniswapV2Swap(
-                WETH_ADDR, WETH_DAI_POOL, tychoRouterAddr, false, transferType
+                WETH_ADDR, WETH_DAI_POOL, tychoRouterAddr, false, transferNeeded
             )
         );
 
@@ -38,7 +37,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
                 DAI_USDC_POOL,
                 ALICE,
                 true,
-                TokenTransfer.TransferType.TRANSFER_TO_PROTOCOL
+                true // transferNeeded
             )
         );
         return swaps;
@@ -55,7 +54,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
             bytes memory signature
         ) = handlePermit2Approval(WETH_ADDR, tychoRouterAddr, amountIn);
 
-        bytes[] memory swaps = _getSequentialSwaps(true);
+        bytes[] memory swaps = _getSequentialSwaps();
         tychoRouter.sequentialSwapPermit2(
             amountIn,
             WETH_ADDR,
@@ -63,7 +62,8 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
             1000_000000, // min amount
             false,
             false,
-            ALICE,
+            WETH_DAI_POOL, // in token receiver
+            ALICE, // out token receiver
             permitSingle,
             signature,
             pleEncode(swaps)
@@ -82,7 +82,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
         vm.startPrank(ALICE);
         IERC20(WETH_ADDR).approve(tychoRouterAddr, amountIn);
 
-        bytes[] memory swaps = _getSequentialSwaps(false);
+        bytes[] memory swaps = _getSequentialSwaps();
         tychoRouter.sequentialSwap(
             amountIn,
             WETH_ADDR,
@@ -90,7 +90,8 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
             1000_000000, // min amount
             false,
             false,
-            ALICE,
+            WETH_DAI_POOL, // in token receiver
+            ALICE, // out token receiver
             pleEncode(swaps)
         );
 
@@ -107,7 +108,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
         vm.startPrank(ALICE);
         IERC20(WETH_ADDR).approve(tychoRouterAddr, amountIn);
 
-        bytes[] memory swaps = _getSequentialSwaps(false);
+        bytes[] memory swaps = _getSequentialSwaps();
         vm.expectRevert(TychoRouter__UndefinedMinAmountOut.selector);
         tychoRouter.sequentialSwap(
             amountIn,
@@ -116,7 +117,8 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
             0, // min amount
             false,
             false,
-            ALICE,
+            WETH_DAI_POOL, // in token receiver
+            ALICE, // out token receiver
             pleEncode(swaps)
         );
     }
@@ -129,7 +131,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
         vm.startPrank(ALICE);
         IERC20(WETH_ADDR).approve(tychoRouterAddr, amountIn - 1);
 
-        bytes[] memory swaps = _getSequentialSwaps(false);
+        bytes[] memory swaps = _getSequentialSwaps();
         vm.expectRevert();
         tychoRouter.sequentialSwap(
             amountIn,
@@ -138,7 +140,8 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
             0, // min amount
             false,
             false,
-            ALICE,
+            WETH_DAI_POOL, // in token receiver
+            ALICE, // out token receiver
             pleEncode(swaps)
         );
     }
@@ -154,7 +157,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
             bytes memory signature
         ) = handlePermit2Approval(WETH_ADDR, tychoRouterAddr, amountIn);
 
-        bytes[] memory swaps = _getSequentialSwaps(true);
+        bytes[] memory swaps = _getSequentialSwaps();
 
         uint256 minAmountOut = 3000 * 1e18;
 
@@ -172,7 +175,8 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
             minAmountOut,
             false,
             false,
-            ALICE,
+            WETH_DAI_POOL, // in token receiver
+            ALICE, // out token receiver
             permitSingle,
             signature,
             pleEncode(swaps)
@@ -206,7 +210,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
                 WETH_DAI_POOL,
                 tychoRouterAddr,
                 false,
-                TokenTransfer.TransferType.TRANSFER_TO_PROTOCOL
+                true // transferNeeded
             )
         );
 
@@ -218,7 +222,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
                 DAI_USDC_POOL,
                 ALICE,
                 true,
-                TokenTransfer.TransferType.TRANSFER_TO_PROTOCOL
+                true // transferNeeded
             )
         );
 
@@ -266,7 +270,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
                 DAI_USDC_POOL,
                 tychoRouterAddr,
                 false,
-                TokenTransfer.TransferType.TRANSFER_PERMIT2_TO_PROTOCOL
+                false // transferNeeded
             )
         );
 
@@ -278,7 +282,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
                 WETH_DAI_POOL,
                 tychoRouterAddr,
                 true,
-                TokenTransfer.TransferType.TRANSFER_TO_PROTOCOL
+                true
             )
         );
 
@@ -289,7 +293,8 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
             1 * 10 ** 18, // min amount
             false,
             true,
-            ALICE,
+            DAI_USDC_POOL, // in token receiver
+            ALICE, // out token receiver
             permitSingle,
             signature,
             pleEncode(swaps)
@@ -315,7 +320,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
             tychoRouterAddr,
             USDC_WETH_USV3,
             true,
-            TokenTransfer.TransferType.TRANSFER_TO_PROTOCOL
+            true // transferNeeded
         );
 
         bytes memory usdcWethV3Pool2OneZeroData = encodeUniswapV3Swap(
@@ -324,7 +329,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
             tychoRouterAddr,
             USDC_WETH_USV3_2,
             false,
-            TokenTransfer.TransferType.TRANSFER_TO_PROTOCOL
+            true // transferNeeded
         );
 
         bytes[] memory swaps = new bytes[](2);

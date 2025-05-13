@@ -8,7 +8,7 @@ import "./executors/UniswapV4Utils.sol";
 import {SafeCallback} from "@uniswap/v4-periphery/src/base/SafeCallback.sol";
 
 contract TychoRouterSplitSwapTest is TychoRouterTestSetup {
-    function _getSplitSwaps(bool permit2)
+    function _getSplitSwaps()
         private
         view
         returns (bytes[] memory)
@@ -19,10 +19,6 @@ contract TychoRouterSplitSwapTest is TychoRouterTestSetup {
         //          ->   WBTC  ->
         //       (univ2)     (univ2)
         bytes[] memory swaps = new bytes[](4);
-
-        TokenTransfer.TransferType inTransferType = permit2
-            ? TokenTransfer.TransferType.TRANSFER_PERMIT2_TO_PROTOCOL
-            : TokenTransfer.TransferType.TRANSFER_FROM_TO_PROTOCOL;
 
         // WETH -> WBTC (60%)
         swaps[0] = encodeSplitSwap(
@@ -35,7 +31,7 @@ contract TychoRouterSplitSwapTest is TychoRouterTestSetup {
                 WETH_WBTC_POOL,
                 tychoRouterAddr,
                 false,
-                inTransferType
+                false // transfer not needed -> transfer directly from user to pool
             )
         );
         // WBTC -> USDC
@@ -49,7 +45,7 @@ contract TychoRouterSplitSwapTest is TychoRouterTestSetup {
                 USDC_WBTC_POOL,
                 ALICE,
                 true,
-                TokenTransfer.TransferType.TRANSFER_TO_PROTOCOL
+                true // transfer needed
             )
         );
         // WETH -> DAI
@@ -59,7 +55,7 @@ contract TychoRouterSplitSwapTest is TychoRouterTestSetup {
             uint24(0),
             address(usv2Executor),
             encodeUniswapV2Swap(
-                WETH_ADDR, WETH_DAI_POOL, tychoRouterAddr, false, inTransferType
+                WETH_ADDR, WETH_DAI_POOL, tychoRouterAddr, false,  false // transfer not needed -> transfer directly from user to pool
             )
         );
 
@@ -74,7 +70,7 @@ contract TychoRouterSplitSwapTest is TychoRouterTestSetup {
                 DAI_USDC_POOL,
                 ALICE,
                 true,
-                TokenTransfer.TransferType.TRANSFER_TO_PROTOCOL
+                true // transfer needed
             )
         );
 

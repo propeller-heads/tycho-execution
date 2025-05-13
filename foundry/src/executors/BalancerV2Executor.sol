@@ -14,7 +14,7 @@ import {TokenTransfer} from "./TokenTransfer.sol";
 
 error BalancerV2Executor__InvalidDataLength();
 
-contract BalancerV2Executor is IExecutor, TokenTransfer {
+contract BalancerV2Executor is IExecutor {
     using SafeERC20 for IERC20;
 
     address private constant VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
@@ -32,20 +32,10 @@ contract BalancerV2Executor is IExecutor, TokenTransfer {
             IERC20 tokenOut,
             bytes32 poolId,
             address receiver,
-            bool needsApproval,
-            TransferType transferType
+            bool needsApproval
         ) = _decodeData(data);
 
-        _transfer(
-            address(tokenIn),
-            msg.sender,
-            // Receiver can never be the pool, since the pool expects funds in the router contract
-            // Thus, this call will only ever be used to transfer funds from the user into the router.
-            address(this),
-            givenAmount,
-            transferType
-        );
-
+        // The protocol expects funds in the router contract.
         if (needsApproval) {
             // slither-disable-next-line unused-return
             tokenIn.forceApprove(VAULT, type(uint256).max);
@@ -81,8 +71,7 @@ contract BalancerV2Executor is IExecutor, TokenTransfer {
             IERC20 tokenOut,
             bytes32 poolId,
             address receiver,
-            bool needsApproval,
-            TransferType transferType
+            bool needsApproval
         )
     {
         if (data.length != 94) {
@@ -93,7 +82,6 @@ contract BalancerV2Executor is IExecutor, TokenTransfer {
         tokenOut = IERC20(address(bytes20(data[20:40])));
         poolId = bytes32(data[40:72]);
         receiver = address(bytes20(data[72:92]));
-        needsApproval = uint8(data[92]) > 0;
-        transferType = TransferType(uint8(data[93]));
+        needsApproval = data[92] != 0;
     }
 }

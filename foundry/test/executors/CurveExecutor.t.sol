@@ -37,7 +37,6 @@ contract CurveExecutorExposed is CurveExecutor {
             int128 i,
             int128 j,
             bool tokenApprovalNeeded,
-            TokenTransfer.TransferType transferType,
             address receiver
         )
     {
@@ -80,7 +79,6 @@ contract CurveExecutorTest is Test, Constants {
             int128 i,
             int128 j,
             bool tokenApprovalNeeded,
-            TokenTransfer.TransferType transferType,
             address receiver
         ) = curveExecutorExposed.decodeData(data);
 
@@ -91,7 +89,6 @@ contract CurveExecutorTest is Test, Constants {
         assertEq(i, 2);
         assertEq(j, 0);
         assertEq(tokenApprovalNeeded, true);
-        assertEq(uint8(transferType), uint8(TokenTransfer.TransferType.NONE));
         assertEq(receiver, ALICE);
     }
 

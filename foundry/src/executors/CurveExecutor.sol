@@ -65,20 +65,10 @@ contract CurveExecutor is IExecutor, TokenTransfer {
             int128 i,
             int128 j,
             bool tokenApprovalNeeded,
-            TransferType transferType,
             address receiver
         ) = _decodeData(data);
 
-        _transfer(
-            tokenIn,
-            msg.sender,
-            // Receiver can never be the pool, since the pool expects funds in the router contract
-            // Thus, this call will only ever be used to transfer funds from the user into the router.
-            address(this),
-            amountIn,
-            transferType
-        );
-
+        // The protocol expects funds in the router contract
         if (tokenApprovalNeeded && tokenIn != nativeToken) {
             // slither-disable-next-line unused-return
             IERC20(tokenIn).forceApprove(address(pool), type(uint256).max);
@@ -134,7 +124,6 @@ contract CurveExecutor is IExecutor, TokenTransfer {
             int128 i,
             int128 j,
             bool tokenApprovalNeeded,
-            TransferType transferType,
             address receiver
         )
     {
@@ -145,8 +134,7 @@ contract CurveExecutor is IExecutor, TokenTransfer {
         i = int128(uint128(uint8(data[61])));
         j = int128(uint128(uint8(data[62])));
         tokenApprovalNeeded = data[63] != 0;
-        transferType = TransferType(uint8(data[64]));
-        receiver = address(bytes20(data[65:85]));
+        receiver = address(bytes20(data[64:84]));
     }
 
     receive() external payable {

@@ -82,7 +82,7 @@ contract UniswapV4Executor is
             address tokenIn,
             address tokenOut,
             bool zeroForOne,
-            TransferType transferType,
+            bool transferNeeded,
             address receiver,
             UniswapV4Executor.UniswapV4Pool[] memory pools
         ) = _decodeData(data);
@@ -101,7 +101,7 @@ contract UniswapV4Executor is
                 zeroForOne,
                 amountIn,
                 msg.sender,
-                transferType,
+                transferNeeded,
                 receiver,
                 bytes("")
             );
@@ -124,7 +124,7 @@ contract UniswapV4Executor is
                 path,
                 amountIn,
                 msg.sender,
-                transferType,
+                transferNeeded,
                 receiver
             );
         }
@@ -142,7 +142,7 @@ contract UniswapV4Executor is
             address tokenIn,
             address tokenOut,
             bool zeroForOne,
-            TransferType transferType,
+            bool transferNeeded,
             address receiver,
             UniswapV4Pool[] memory pools
         )
@@ -154,7 +154,7 @@ contract UniswapV4Executor is
         tokenIn = address(bytes20(data[0:20]));
         tokenOut = address(bytes20(data[20:40]));
         zeroForOne = (data[40] != 0);
-        transferType = TransferType(uint8(data[41]));
+        transferNeeded = (data[41] != 0);
         receiver = address(bytes20(data[42:62]));
 
         uint256 poolsLength = (data.length - 62) / 26; // 26 bytes per pool object
@@ -237,7 +237,7 @@ contract UniswapV4Executor is
      * @param zeroForOne Whether the swap is from token0 to token1 (true) or vice versa (false).
      * @param amountIn The amount of tokens to swap in.
      * @param sender The address of the sender.
-     * @param transferType The type of transfer in to use.
+     * @param transferNeeded Whether a transfer needs to be performed from the router into the protocol
      * @param receiver The address of the receiver.
      * @param hookData Additional data for hook contracts.
      */
@@ -246,7 +246,7 @@ contract UniswapV4Executor is
         bool zeroForOne,
         uint128 amountIn,
         address sender,
-        TransferType transferType,
+        bool transferNeeded,
         address receiver,
         bytes calldata hookData
     ) external returns (uint128) {
@@ -259,7 +259,7 @@ contract UniswapV4Executor is
         if (amount > amountIn) {
             revert UniswapV4Executor__V4TooMuchRequested(amountIn, amount);
         }
-        _settle(currencyIn, amount, sender, transferType);
+        _settle(currencyIn, amount, transferNeeded);
 
         Currency currencyOut =
             zeroForOne ? poolKey.currency1 : poolKey.currency0;
@@ -273,7 +273,7 @@ contract UniswapV4Executor is
      * @param path The path to swap along.
      * @param amountIn The amount of tokens to swap in.
      * @param sender The address of the sender.
-     * @param transferType The type of transfer in to use.
+     * @param transferNeeded Whether a transfer needs to be performed from the router into the protocol
      * @param receiver The address of the receiver.
      */
     function swapExactInput(
@@ -281,7 +281,7 @@ contract UniswapV4Executor is
         PathKey[] calldata path,
         uint128 amountIn,
         address sender,
-        TransferType transferType,
+        bool transferNeeded,
         address receiver
     ) external returns (uint128) {
         uint128 amountOut = 0;
@@ -312,7 +312,7 @@ contract UniswapV4Executor is
         if (amount > amountIn) {
             revert UniswapV4Executor__V4TooMuchRequested(amountIn, amount);
         }
-        _settle(currencyIn, amount, sender, transferType);
+        _settle(currencyIn, amount, transferNeeded);
 
         _take(
             swapCurrencyIn, // at the end of the loop this is actually currency out
@@ -384,15 +384,13 @@ contract UniswapV4Executor is
      * @dev The implementing contract must ensure that the `payer` is a secure address.
      * @param currency The currency to settle.
      * @param amount The amount to send.
-     * @param sender The address of the payer.
-     * @param transferType The type of transfer to use.
+     * @param transferNeeded Whether a transfer needs to be performed from the router into the protocol
      * @dev Returns early if the amount is 0.
      */
     function _settle(
         Currency currency,
         uint256 amount,
-        address sender,
-        TransferType transferType
+        bool transferNeeded
     ) internal {
         if (amount == 0) return;
         poolManager.sync(currency);
@@ -402,10 +400,9 @@ contract UniswapV4Executor is
         } else {
             _transfer(
                 Currency.unwrap(currency),
-                sender,
                 address(poolManager),
                 amount,
-                transferType
+                transferNeeded
             );
             // slither-disable-next-line unused-return
             poolManager.settle();

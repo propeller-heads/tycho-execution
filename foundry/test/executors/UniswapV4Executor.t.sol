@@ -22,7 +22,7 @@ contract UniswapV4ExecutorExposed is UniswapV4Executor {
             address tokenIn,
             address tokenOut,
             bool zeroForOne,
-            TokenTransfer.TransferType transferType,
+            bool transferNeeded,
             address receiver,
             UniswapV4Pool[] memory pools
         )
@@ -53,8 +53,7 @@ contract UniswapV4ExecutorTest is Constants, TestUtils {
         int24 tickSpacing1 = 60;
         uint24 pool2Fee = 1000;
         int24 tickSpacing2 = -10;
-        TokenTransfer.TransferType transferType =
-            TokenTransfer.TransferType.TRANSFER_FROM_TO_PROTOCOL;
+        bool transferNeeded = true;
 
         UniswapV4Executor.UniswapV4Pool[] memory pools =
             new UniswapV4Executor.UniswapV4Pool[](2);
@@ -70,14 +69,14 @@ contract UniswapV4ExecutorTest is Constants, TestUtils {
         });
 
         bytes memory data = UniswapV4Utils.encodeExactInput(
-            USDE_ADDR, USDT_ADDR, zeroForOne, transferType, ALICE, pools
+            USDE_ADDR, USDT_ADDR, zeroForOne, transferNeeded, ALICE, pools
         );
 
         (
             address tokenIn,
             address tokenOut,
             bool zeroForOneDecoded,
-            TokenTransfer.TransferType transferTypeDecoded,
+            bool transferNeededDecoded,
             address receiver,
             UniswapV4Executor.UniswapV4Pool[] memory decodedPools
         ) = uniswapV4Exposed.decodeData(data);
@@ -85,7 +84,7 @@ contract UniswapV4ExecutorTest is Constants, TestUtils {
         assertEq(tokenIn, USDE_ADDR);
         assertEq(tokenOut, USDT_ADDR);
         assertEq(zeroForOneDecoded, zeroForOne);
-        assertEq(uint8(transferTypeDecoded), uint8(transferType));
+        assertEq(transferNeededDecoded, transferNeeded);
         assertEq(receiver, ALICE);
         assertEq(decodedPools.length, 2);
         assertEq(decodedPools[0].intermediaryToken, USDT_ADDR);

@@ -22,7 +22,7 @@ contract UniswapV3ExecutorExposed is UniswapV3Executor {
             address receiver,
             address target,
             bool zeroForOne,
-            TransferType transferType
+            bool transferNeeded
         )
     {
         return _decodeData(data);
@@ -81,7 +81,7 @@ contract UniswapV3ExecutorTest is Test, Constants, Permit2TestHelper {
             address receiver,
             address target,
             bool zeroForOne,
-            TokenTransfer.TransferType transferType
+            bool transferNeeded
         ) = uniswapV3Exposed.decodeData(data);
 
         assertEq(tokenIn, WETH_ADDR);
@@ -91,8 +91,7 @@ contract UniswapV3ExecutorTest is Test, Constants, Permit2TestHelper {
         assertEq(target, address(3));
         assertEq(zeroForOne, false);
         assertEq(
-            uint8(transferType),
-            uint8(TokenTransfer.TransferType.TRANSFER_TO_PROTOCOL)
+            transferNeeded, true
         );
     }
 
@@ -197,7 +196,7 @@ contract UniswapV3ExecutorTest is Test, Constants, Permit2TestHelper {
         address receiver,
         address target,
         bool zero2one,
-        TokenTransfer.TransferType transferType
+        bool transferNeeded
     ) internal view returns (bytes memory) {
         IUniswapV3Pool pool = IUniswapV3Pool(target);
         return abi.encodePacked(
@@ -207,7 +206,7 @@ contract UniswapV3ExecutorTest is Test, Constants, Permit2TestHelper {
             receiver,
             target,
             zero2one,
-            transferType
+            transferNeeded
         );
     }
 }

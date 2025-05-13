@@ -51,16 +51,16 @@ contract UniswapV2Executor is IExecutor, TokenTransfer {
         address target;
         address receiver;
         bool zeroForOne;
-        TransferType transferType;
+        bool transferNeeded;
 
-        (tokenIn, target, receiver, zeroForOne, transferType) =
+        (tokenIn, target, receiver, zeroForOne, transferNeeded) =
             _decodeData(data);
 
         _verifyPairAddress(target);
 
         calculatedAmount = _getAmountOut(target, givenAmount, zeroForOne);
         _transfer(
-            address(tokenIn), msg.sender, target, givenAmount, transferType
+            address(tokenIn), target, givenAmount, transferNeeded
         );
 
         IUniswapV2Pair pool = IUniswapV2Pair(target);
@@ -79,7 +79,7 @@ contract UniswapV2Executor is IExecutor, TokenTransfer {
             address target,
             address receiver,
             bool zeroForOne,
-            TransferType transferType
+            bool transferNeeded
         )
     {
         if (data.length != 62) {
@@ -89,7 +89,7 @@ contract UniswapV2Executor is IExecutor, TokenTransfer {
         target = address(bytes20(data[20:40]));
         receiver = address(bytes20(data[40:60]));
         zeroForOne = uint8(data[60]) > 0;
-        transferType = TransferType(uint8(data[61]));
+        transferNeeded = data[61] > 0;
     }
 
     function _getAmountOut(address target, uint256 amountIn, bool zeroForOne)

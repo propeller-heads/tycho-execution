@@ -51,7 +51,7 @@ contract UniswapV3Executor is IExecutor, ICallback, TokenTransfer {
             address receiver,
             address target,
             bool zeroForOne,
-            TransferType transferType
+            bool transferNeeded
         ) = _decodeData(data);
 
         _verifyPairAddress(tokenIn, tokenOut, fee, target);
@@ -61,7 +61,7 @@ contract UniswapV3Executor is IExecutor, ICallback, TokenTransfer {
         IUniswapV3Pool pool = IUniswapV3Pool(target);
 
         bytes memory callbackData =
-            _makeV3CallbackData(tokenIn, tokenOut, fee, transferType);
+            _makeV3CallbackData(tokenIn, tokenOut, fee, transferNeeded);
 
         {
             (amount0, amount1) = pool.swap(
@@ -98,12 +98,7 @@ contract UniswapV3Executor is IExecutor, ICallback, TokenTransfer {
 
         address tokenIn = address(bytes20(msgData[132:152]));
 
-        // Transfer type does not exist
-        if (uint8(msgData[175]) > uint8(TransferType.NONE)) {
-            revert UniswapV3Executor__InvalidTransferType(uint8(msgData[175]));
-        }
-
-        TransferType transferType = TransferType(uint8(msgData[175]));
+        bool transferNeeded = msgData[175] != 0;
         address sender = address(bytes20(msgData[176:196]));
 
         verifyCallback(msgData[132:]);
@@ -111,7 +106,8 @@ contract UniswapV3Executor is IExecutor, ICallback, TokenTransfer {
         uint256 amountOwed =
             amount0Delta > 0 ? uint256(amount0Delta) : uint256(amount1Delta);
 
-        _transfer(tokenIn, sender, msg.sender, amountOwed, transferType);
+        // Receiver is msg.sender since pool performs callback
+        _transfer(tokenIn, msg.sender, amountOwed, transferNeeded);
 
         return abi.encode(amountOwed, tokenIn);
     }
@@ -142,7 +138,7 @@ contract UniswapV3Executor is IExecutor, ICallback, TokenTransfer {
             address receiver,
             address target,
             bool zeroForOne,
-            TransferType transferType
+            bool transferNeeded
         )
     {
         if (data.length != 85) {
@@ -154,17 +150,17 @@ contract UniswapV3Executor is IExecutor, ICallback, TokenTransfer {
         receiver = address(bytes20(data[43:63]));
         target = address(bytes20(data[63:83]));
         zeroForOne = uint8(data[83]) > 0;
-        transferType = TransferType(uint8(data[84]));
+        transferNeeded = uint8(data[84]) > 0;
     }
 
     function _makeV3CallbackData(
         address tokenIn,
         address tokenOut,
         uint24 fee,
-        TransferType transferType
+        bool transferNeeded
     ) internal view returns (bytes memory) {
         return abi.encodePacked(
-            tokenIn, tokenOut, fee, uint8(transferType), msg.sender
+            tokenIn, tokenOut, fee, transferNeeded, msg.sender
         );
     }
 

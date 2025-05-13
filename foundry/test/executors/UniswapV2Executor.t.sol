@@ -23,7 +23,7 @@ contract UniswapV2ExecutorExposed is UniswapV2Executor {
             address target,
             address receiver,
             bool zeroForOne,
-            TransferType transferType
+            bool transferNeeded
         )
     {
         return _decodeData(data);
@@ -97,7 +97,7 @@ contract UniswapV2ExecutorTest is Test, Constants, Permit2TestHelper {
             address target,
             address receiver,
             bool zeroForOne,
-            TokenTransfer.TransferType transferType
+            bool transferNeeded
         ) = uniswapV2Exposed.decodeParams(params);
 
         assertEq(address(tokenIn), WETH_ADDR);
@@ -105,8 +105,7 @@ contract UniswapV2ExecutorTest is Test, Constants, Permit2TestHelper {
         assertEq(receiver, address(3));
         assertEq(zeroForOne, false);
         assertEq(
-            uint8(TokenTransfer.TransferType.TRANSFER_TO_PROTOCOL),
-            uint8(transferType)
+            transferNeeded, true
         );
     }
 
@@ -255,15 +254,14 @@ contract UniswapV2ExecutorTest is Test, Constants, Permit2TestHelper {
             address target,
             address receiver,
             bool zeroForOne,
-            TokenTransfer.TransferType transferType
+            bool transferNeeded
         ) = uniswapV2Exposed.decodeParams(protocolData);
 
         assertEq(address(tokenIn), WETH_ADDR);
         assertEq(target, 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640);
         assertEq(receiver, 0x0000000000000000000000000000000000000001);
         assertEq(zeroForOne, false);
-        // TRANSFER = 0
-        assertEq(0, uint8(transferType));
+        assertEq(transferNeeded, true);
     }
 
     function testSwapIntegration() public {

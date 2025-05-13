@@ -11,7 +11,6 @@ contract TokenTransfer {
 
     function _transfer(
         address tokenIn,
-        address sender,
         address receiver,
         uint256 amount,
         bool transferNeeded

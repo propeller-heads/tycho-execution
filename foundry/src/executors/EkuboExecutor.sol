@@ -44,13 +44,8 @@ contract EkuboExecutor is
         if (data.length < 93) revert EkuboExecutor__InvalidDataLength();
 
         // amountIn must be at most type(int128).MAX
-        calculatedAmount = uint256(
-            _lock(
-                bytes.concat(
-                    bytes16(uint128(amountIn)), bytes20(msg.sender), data
-                )
-            )
-        );
+        calculatedAmount =
+            uint256(_lock(bytes.concat(bytes16(uint128(amountIn)), data)));
     }
 
     function handleCallback(bytes calldata raw)
@@ -125,11 +120,10 @@ contract EkuboExecutor is
     function _locked(bytes calldata swapData) internal returns (int128) {
         int128 nextAmountIn = int128(uint128(bytes16(swapData[0:16])));
         uint128 tokenInDebtAmount = uint128(nextAmountIn);
-        address sender = address(bytes20(swapData[16:36]));
-        uint8 transferType = uint8(swapData[36]);
+        bool transferNeeded = swapData[16] != 0;
 
-        address receiver = address(bytes20(swapData[37:57]));
-        address tokenIn = address(bytes20(swapData[57:77]));
+        address receiver = address(bytes20(swapData[17:37]));
+        address tokenIn = address(bytes20(swapData[37:57]));
 
         address nextTokenIn = tokenIn;
 
@@ -163,17 +157,14 @@ contract EkuboExecutor is
             offset += HOP_BYTE_LEN;
         }
 
-        _pay(tokenIn, tokenInDebtAmount, sender, transferType);
+        _pay(tokenIn, tokenInDebtAmount, transferNeeded);
         core.withdraw(nextTokenIn, receiver, uint128(nextAmountIn));
         return nextAmountIn;
     }
 
-    function _pay(
-        address token,
-        uint128 amount,
-        address sender,
-        uint8 transferType
-    ) internal {
+    function _pay(address token, uint128 amount, bool transferNeeded)
+        internal
+    {
         address target = address(core);
 
         if (token == NATIVE_TOKEN_ADDRESS) {
@@ -186,10 +177,9 @@ contract EkuboExecutor is
                 mstore(free, shl(224, 0x0c11dedd))
                 mstore(add(free, 4), token)
                 mstore(add(free, 36), shl(128, amount))
-                mstore(add(free, 52), shl(96, sender))
-                mstore(add(free, 72), shl(248, transferType))
+                mstore(add(free, 52), shl(248, transferNeeded))
 
-                // 4 (selector) + 32 (token) + 16 (amount) + 20 (sender) + 1 (transferType) = 73
+                // 4 (selector) + 32 (token) + 16 (amount) + 1 (transferType) = 53
                 if iszero(call(gas(), target, 0, free, 73, 0, 0)) {
                     returndatacopy(0, 0, returndatasize())
                     revert(0, returndatasize())
@@ -201,9 +191,8 @@ contract EkuboExecutor is
     function _payCallback(bytes calldata payData) internal {
         address token = address(bytes20(payData[12:32])); // This arg is abi-encoded
         uint128 amount = uint128(bytes16(payData[32:48]));
-        address sender = address(bytes20(payData[48:68]));
-        TransferType transferType = TransferType(uint8(payData[68]));
-        _transfer(token, sender, address(core), amount, transferType);
+        bool transferNeeded = payData[48] != 0;
+        _transfer(token, address(core), amount, transferNeeded);
     }
 
     // To receive withdrawals from Core

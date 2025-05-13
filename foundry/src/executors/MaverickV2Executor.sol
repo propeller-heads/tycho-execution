@@ -30,9 +30,9 @@ contract MaverickV2Executor is IExecutor, TokenTransfer {
         address target;
         address receiver;
         IERC20 tokenIn;
-        TransferType transferType;
+        bool transferNeeded;
 
-        (tokenIn, target, receiver, transferType) = _decodeData(data);
+        (tokenIn, target, receiver, transferNeeded) = _decodeData(data);
 
         _verifyPairAddress(target);
         IMaverickV2Pool pool = IMaverickV2Pool(target);
@@ -48,7 +48,7 @@ contract MaverickV2Executor is IExecutor, TokenTransfer {
         });
 
         _transfer(
-            address(tokenIn), msg.sender, target, givenAmount, transferType
+            address(tokenIn), target, givenAmount, transferNeeded
         );
         // slither-disable-next-line unused-return
         (, calculatedAmount) = pool.swap(receiver, swapParams, "");
@@ -61,7 +61,7 @@ contract MaverickV2Executor is IExecutor, TokenTransfer {
             IERC20 inToken,
             address target,
             address receiver,
-            TransferType transferType
+            bool transferNeeded
         )
     {
         if (data.length != 61) {
@@ -70,7 +70,7 @@ contract MaverickV2Executor is IExecutor, TokenTransfer {
         inToken = IERC20(address(bytes20(data[0:20])));
         target = address(bytes20(data[20:40]));
         receiver = address(bytes20(data[40:60]));
-        transferType = TransferType(uint8(data[60]));
+        transferNeeded = data[60] != 0;
     }
 
     function _verifyPairAddress(address target) internal view {
