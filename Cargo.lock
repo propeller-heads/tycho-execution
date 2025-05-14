@@ -4317,9 +4317,9 @@ checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 
 [[package]]
 name = "tycho-common"
-version = "0.66.4"
+version = "0.70.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5131fdb21cbd754822b0947fc6c763494531837ba8bb34123f6c7f4f89cb69f7"
+checksum = "a68cff315416f335afcd7619ff49aa7c85ec84d26d4c8187c548588fce228926"
 dependencies = [
  "anyhow",
  "async-trait",
