@@ -19,11 +19,6 @@ contract ContractWithFunds is ReentrancyGuard {
     }
 
     function withdraw(address token, uint256 amount, address receiver) public {
-        // guardians???
         IERC20(token).safeTransfer(receiver, amount);
-    }
-
-    function doSomething() {
-        // Placeholder for some logic
     }
 }
