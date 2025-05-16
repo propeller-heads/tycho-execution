@@ -26,7 +26,7 @@ contract TychoRouterTestProtocolIntegration is TychoRouterTestSetup {
             USDE_ADDR,
             USDT_ADDR,
             true,
-            TokenTransfer.TransferType.TRANSFER_PERMIT2_TO_PROTOCOL,
+            RestrictTransferFrom.TransferType.TransferFrom,
             ALICE,
             pools
         );
@@ -55,7 +55,7 @@ contract TychoRouterTestProtocolIntegration is TychoRouterTestSetup {
         // This test has two uniswap v4 hops that will be executed inside of the V4 pool manager
         // USDE -> USDT -> WBTC
         uint256 amountIn = 100 ether;
-        deal(USDE_ADDR, tychoRouterAddr, amountIn);
+        deal(USDE_ADDR, ALICE, amountIn);
 
         UniswapV4Executor.UniswapV4Pool[] memory pools =
             new UniswapV4Executor.UniswapV4Pool[](2);
@@ -74,7 +74,7 @@ contract TychoRouterTestProtocolIntegration is TychoRouterTestSetup {
             USDE_ADDR,
             WBTC_ADDR,
             true,
-            TokenTransfer.TransferType.TRANSFER_TO_PROTOCOL,
+            RestrictTransferFrom.TransferType.TransferFrom,
             ALICE,
             pools
         );
@@ -82,6 +82,8 @@ contract TychoRouterTestProtocolIntegration is TychoRouterTestSetup {
         bytes memory swap =
             encodeSingleSwap(address(usv4Executor), protocolData);
 
+        vm.startPrank(ALICE);
+        IERC20(USDE_ADDR).approve(tychoRouterAddr, amountIn);
         tychoRouter.singleSwap(
             amountIn, USDE_ADDR, WBTC_ADDR, 118280, false, false, ALICE, swap
         );
@@ -262,7 +264,7 @@ contract TychoRouterTestProtocolIntegration is TychoRouterTestSetup {
             ALICE,
             DAI_WETH_USV3,
             zeroForOne,
-            TokenTransfer.TransferType.TRANSFER_PERMIT2_TO_PROTOCOL
+            RestrictTransferFrom.TransferType.TransferFrom
         );
         bytes memory swap =
             encodeSingleSwap(address(usv3Executor), protocolData);

@@ -26,7 +26,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             WETH_DAI_POOL,
             ALICE,
             false,
-            TokenTransfer.TransferType.TRANSFER_PERMIT2_TO_PROTOCOL
+            RestrictTransferFrom.TransferType.TransferFrom
         );
 
         bytes memory swap =
@@ -67,7 +67,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             WETH_DAI_POOL,
             ALICE,
             false,
-            TokenTransfer.TransferType.TRANSFER_FROM_TO_PROTOCOL
+            RestrictTransferFrom.TransferType.TransferFrom
         );
 
         bytes memory swap =
@@ -108,7 +108,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             WETH_DAI_POOL,
             ALICE,
             false,
-            TokenTransfer.TransferType.TRANSFER_FROM_TO_PROTOCOL
+            RestrictTransferFrom.TransferType.None
         );
 
         bytes memory swap =
@@ -134,7 +134,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             WETH_DAI_POOL,
             ALICE,
             false,
-            TokenTransfer.TransferType.TRANSFER_FROM_TO_PROTOCOL
+            RestrictTransferFrom.TransferType.TransferFrom
         );
 
         bytes memory swap =
@@ -169,7 +169,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             WETH_DAI_POOL,
             ALICE,
             false,
-            TokenTransfer.TransferType.TRANSFER_FROM_TO_PROTOCOL
+            RestrictTransferFrom.TransferType.TransferFrom
         );
 
         bytes memory swap =
@@ -218,7 +218,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             WETH_DAI_POOL,
             ALICE,
             false,
-            TokenTransfer.TransferType.TRANSFER_TO_PROTOCOL
+            RestrictTransferFrom.TransferType.Transfer // ETH has already been transferred to router
         );
 
         bytes memory swap =
@@ -261,7 +261,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             WETH_DAI_POOL,
             tychoRouterAddr,
             true,
-            TokenTransfer.TransferType.TRANSFER_PERMIT2_TO_PROTOCOL
+            RestrictTransferFrom.TransferType.TransferFrom
         );
 
         bytes memory swap =
