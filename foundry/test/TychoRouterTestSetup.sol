@@ -2,6 +2,7 @@
 pragma solidity ^0.8.26;
 
 import "../src/executors/BalancerV2Executor.sol";
+import "../src/executors/BebopExecutor.sol";
 import "../src/executors/CurveExecutor.sol";
 import "../src/executors/EkuboExecutor.sol";
 import "../src/executors/UniswapV2Executor.sol";
@@ -17,6 +18,7 @@ import {Permit2TestHelper} from "./Permit2TestHelper.sol";
 import "./TestUtils.sol";
 import {MaverickV2Executor} from "../src/executors/MaverickV2Executor.sol";
 import {BalancerV3Executor} from "../src/executors/BalancerV3Executor.sol";
+import {MockBebopSettlement} from "./executors/BebopExecutor.t.sol";
 
 contract TychoRouterExposed is TychoRouter {
     constructor(address _permit2, address weth) TychoRouter(_permit2, weth) {}
@@ -68,6 +70,7 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
     CurveExecutor public curveExecutor;
     MaverickV2Executor public maverickv2Executor;
     BalancerV3Executor public balancerV3Executor;
+    BebopExecutor public bebopExecutor;
     MockERC20[] tokens;
 
     function getForkBlock() public view virtual returns (uint256) {
@@ -133,7 +136,12 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
             new MaverickV2Executor(MAVERICK_V2_FACTORY, PERMIT2_ADDRESS);
         balancerV3Executor = new BalancerV3Executor(PERMIT2_ADDRESS);
 
-        address[] memory executors = new address[](9);
+        // Deploy mock Bebop settlement for testing
+        MockBebopSettlement mockBebopSettlement = new MockBebopSettlement();
+        bebopExecutor =
+            new BebopExecutor(address(mockBebopSettlement), PERMIT2_ADDRESS);
+
+        address[] memory executors = new address[](10);
         executors[0] = address(usv2Executor);
         executors[1] = address(usv3Executor);
         executors[2] = address(pancakev3Executor);
@@ -143,6 +151,7 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
         executors[6] = address(curveExecutor);
         executors[7] = address(maverickv2Executor);
         executors[8] = address(balancerV3Executor);
+        executors[9] = address(bebopExecutor);
 
         return executors;
     }
@@ -197,6 +206,30 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
     ) internal pure returns (bytes memory) {
         return abi.encodePacked(
             tokenInIndex, tokenOutIndex, split, executor, protocolData
+        );
+    }
+
+    function encodeBebopSwap(
+        address tokenIn,
+        address tokenOut,
+        RestrictTransferFrom.TransferType transferType,
+        BebopExecutor.OrderType orderType,
+        bytes memory quoteData,
+        uint8 signatureType,
+        bytes memory signature,
+        bool approvalNeeded
+    ) internal pure returns (bytes memory) {
+        return abi.encodePacked(
+            tokenIn,
+            tokenOut,
+            transferType,
+            orderType,
+            uint32(quoteData.length),
+            quoteData,
+            signatureType,
+            uint32(signature.length),
+            signature,
+            approvalNeeded ? uint8(1) : uint8(0)
         );
     }
 
