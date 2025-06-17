@@ -1256,6 +1256,8 @@ mod tests {
                     "01",
                     // receiver
                     "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2",
+                    // hook address (not set, so zero)
+                    "0000000000000000000000000000000000000000",
                     // first pool intermediary token (ETH)
                     "0000000000000000000000000000000000000000",
                     // fee
@@ -3400,7 +3402,7 @@ mod tests {
 
                 let expected_swaps = String::from(concat!(
                     // length of ple encoded swaps without padding
-                    "0000000000000000000000000000000000000000000000000000000000000086",
+                    "000000000000000000000000000000000000000000000000000000000000009a",
                     // Swap data header
                     "f62849f9a0b5bf2913b396098f7c7019b51a820a", // executor address
                     // Protocol data
@@ -3409,6 +3411,7 @@ mod tests {
                     "00",                                       // zero2one
                     "00",                                       // transfer type TransferFrom
                     "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
+                    "0000000000000000000000000000000000000000", // hook address
                     // First pool params
                     "0000000000000000000000000000000000000000", // intermediary token (ETH)
                     "000bb8",                                   // fee
@@ -3417,7 +3420,7 @@ mod tests {
                     "6982508145454ce325ddbe47a25d4ec3d2311933", // intermediary token (PEPE)
                     "0061a8",                                   // fee
                     "0001f4",                                   // tick spacing
-                    "0000000000000000000000000000000000000000000000000000"  // padding
+                    "000000000000"                              // padding
                 ));
 
                 let hex_calldata = encode(&calldata);
