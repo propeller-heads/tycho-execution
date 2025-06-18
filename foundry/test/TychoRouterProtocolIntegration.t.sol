@@ -29,6 +29,7 @@ contract TychoRouterTestProtocolIntegration is TychoRouterTestSetup {
             RestrictTransferFrom.TransferType.TransferFrom,
             ALICE,
             address(0),
+            bytes(""),
             pools
         );
 
@@ -78,6 +79,7 @@ contract TychoRouterTestProtocolIntegration is TychoRouterTestSetup {
             RestrictTransferFrom.TransferType.TransferFrom,
             ALICE,
             address(0),
+            bytes(""),
             pools
         );
 
