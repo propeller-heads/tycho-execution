@@ -333,7 +333,6 @@ impl SwapEncoder for EkuboSwapEncoder {
             .map_err(|_| EncodingError::FatalError("extension should be an address".to_string()))?;
 
         let mut encoded = vec![];
-
         if encoding_context.group_token_in == swap.token_in {
             encoded.extend((encoding_context.transfer_type as u8).to_be_bytes());
             encoded.extend(bytes_to_address(&encoding_context.receiver)?);
