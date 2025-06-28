@@ -13,6 +13,7 @@ import {
     IUniswapV3Pool
 } from "../src/executors/UniswapV3Executor.sol";
 import {UniswapV4Executor} from "../src/executors/UniswapV4Executor.sol";
+import {BebopExecutorHarness} from "./protocols/BebopExecutionHarness.t.sol";
 
 // Test utilities and mocks
 import "./Constants.sol";
@@ -73,6 +74,7 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
     CurveExecutor public curveExecutor;
     MaverickV2Executor public maverickv2Executor;
     BalancerV3Executor public balancerV3Executor;
+    BebopExecutorHarness public bebopExecutor;
 
     function getForkBlock() public view virtual returns (uint256) {
         return 22082754;
@@ -130,8 +132,10 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
         maverickv2Executor =
             new MaverickV2Executor(MAVERICK_V2_FACTORY, PERMIT2_ADDRESS);
         balancerV3Executor = new BalancerV3Executor(PERMIT2_ADDRESS);
+        bebopExecutor =
+            new BebopExecutorHarness(BEBOP_SETTLEMENT, PERMIT2_ADDRESS);
 
-        address[] memory executors = new address[](9);
+        address[] memory executors = new address[](10);
         executors[0] = address(usv2Executor);
         executors[1] = address(usv3Executor);
         executors[2] = address(pancakev3Executor);
@@ -141,6 +145,7 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
         executors[6] = address(curveExecutor);
         executors[7] = address(maverickv2Executor);
         executors[8] = address(balancerV3Executor);
+        executors[9] = address(bebopExecutor);
 
         return executors;
     }
@@ -183,6 +188,30 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
     ) internal pure returns (bytes memory) {
         return abi.encodePacked(
             tokenInIndex, tokenOutIndex, split, executor, protocolData
+        );
+    }
+
+    function encodeBebopSwap(
+        address tokenIn,
+        address tokenOut,
+        RestrictTransferFrom.TransferType transferType,
+        BebopExecutorHarness.OrderType orderType,
+        bytes memory quoteData,
+        uint8 signatureType,
+        bytes memory signature,
+        bool approvalNeeded
+    ) internal pure returns (bytes memory) {
+        return abi.encodePacked(
+            tokenIn,
+            tokenOut,
+            transferType,
+            orderType,
+            uint32(quoteData.length),
+            quoteData,
+            signatureType,
+            uint32(signature.length),
+            signature,
+            approvalNeeded ? uint8(1) : uint8(0)
         );
     }
 
