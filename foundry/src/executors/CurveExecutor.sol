@@ -74,6 +74,8 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
             IERC20(tokenIn).forceApprove(address(pool), type(uint256).max);
         }
         _transfer(address(this), transferType, tokenIn, amountIn);
+        // Curve pool will withdraw tokens from the router -> make sure it is unlocked first
+        uint256 amountInRouter = _is_unlocked(tokenIn, amountIn);
 
         /// Inspired by Curve's router contract: https://github.com/curvefi/curve-router-ng/blob/9ab006ca848fc7f1995b6fbbecfecc1e0eb29e2a/contracts/Router.vy#L44
         uint256 balanceBefore = _balanceOf(tokenOut);
@@ -103,13 +105,11 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
 
         uint256 balanceAfter = _balanceOf(tokenOut);
         uint256 amountOut = balanceAfter - balanceBefore;
+        _maybe_lock(tokenIn, amountInRouter, amountIn);
 
         if (receiver != address(this)) {
-            if (tokenOut == nativeToken) {
-                Address.sendValue(payable(receiver), amountOut);
-            } else {
-                IERC20(tokenOut).safeTransfer(receiver, amountOut);
-            }
+            _unlock(tokenOut, balanceBefore); // we trust that the curve pool
+            _transfer(receiver, TransferType.Transfer, tokenOut, amountOut);
         }
         return amountOut;
     }

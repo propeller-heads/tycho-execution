@@ -56,11 +56,21 @@ contract UniswapV2Executor is IExecutor, RestrictTransferFrom {
         (tokenIn, target, receiver, zeroForOne, transferType) =
             _decodeData(data);
 
+        address tokenOut = address(0); // We need to know the tokenOut
+
         _verifyPairAddress(target);
 
         calculatedAmount = _getAmountOut(target, givenAmount, zeroForOne);
+        uint256 balanceBefore = tokenOut == address(0)
+            ? address(this).balance
+            : IERC20(tokenOut).balanceOf(address(this));
 
         _transfer(target, transferType, address(tokenIn), givenAmount);
+
+        // if the receiver is the router, set transient storage vars
+        if (receiver == address(this)) {
+            _unlock(tokenOut, balanceBefore);
+        }
 
         IUniswapV2Pair pool = IUniswapV2Pair(target);
         if (zeroForOne) {

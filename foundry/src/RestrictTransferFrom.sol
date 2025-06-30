@@ -14,6 +14,11 @@ error RestrictTransferFrom__DifferentTokenIn(
     address tokenIn, address tokenInStorage
 );
 error RestrictTransferFrom__UnknownTransferType();
+error RestrictTransferFrom__RouterLocked();
+error RestrictTransferFrom__RouterAlreadyUnlocked();
+error RestrictTransferFrom__AmountNotTransferredToRouter(
+    uint256 amountToTransfer, uint256 amountTransfered
+);
 
 /**
  * @title RestrictTransferFrom - Restrict transferFrom upto allowed amount of token
@@ -51,6 +56,28 @@ contract RestrictTransferFrom {
         TransferFrom,
         Transfer,
         None
+    }
+
+    function _transferUnlockedSlot(address token)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(
+            abi.encodePacked("RestrictTransferFrom#TRANSFER_UNLOCKED", token)
+        );
+    }
+
+    function _preSwapTokenBalanceSlot(address token)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(
+            abi.encodePacked(
+                "RestrictTransferFrom#PRE_SWAP_TOKEN_BALANCE", token
+            )
+        );
     }
 
     /**
@@ -115,6 +142,10 @@ contract RestrictTransferFrom {
             assembly {
                 tstore(_AMOUNT_ALLOWED_SLOT, amountAllowed)
             }
+
+            uint256 routerBalance = tokenIn == address(0)
+                ? address(this).balance
+                : IERC20(tokenIn).balanceOf(address(this));
             if (isPermit2) {
                 // Permit2.permit is already called from the TychoRouter
                 permit2.transferFrom(sender, receiver, uint160(amount), tokenIn);
@@ -122,16 +153,80 @@ contract RestrictTransferFrom {
                 // slither-disable-next-line arbitrary-send-erc20
                 IERC20(tokenIn).safeTransferFrom(sender, receiver, amount);
             }
+            if (receiver == address(this)) {
+                _unlock(tokenIn, routerBalance);
+            }
         } else if (transferType == TransferType.Transfer) {
+            uint256 amountInRouter = _is_unlocked(tokenIn, amount);
+
             if (tokenIn == address(0)) {
                 Address.sendValue(payable(receiver), amount);
             } else {
                 IERC20(tokenIn).safeTransfer(receiver, amount);
             }
+            _maybe_lock(tokenIn, amountInRouter, amount);
         } else if (transferType == TransferType.None) {
             return;
         } else {
             revert RestrictTransferFrom__UnknownTransferType();
         }
+    }
+
+    function _unlock(address token, uint256 routerBalance) internal {
+        bytes32 unlockedSlot = _transferUnlockedSlot(token);
+        bytes32 preSwapTokenBalanceSlot = _preSwapTokenBalanceSlot(token);
+        bool unlock;
+        assembly {
+            unlock := tload(unlockedSlot)
+        }
+        if (unlock == true) {
+            revert RestrictTransferFrom__RouterAlreadyUnlocked();
+        }
+        assembly {
+            tstore(preSwapTokenBalanceSlot, routerBalance)
+            // maybe make a key that uses token and user instead of just token?
+            tstore(unlockedSlot, true)
+        }
+    }
+
+    function _is_unlocked(address token, uint256 amount)
+        internal
+        returns (uint256 amountInRouter)
+    {
+        uint256 currentBalance = token == address(0)
+            ? address(this).balance
+            : IERC20(token).balanceOf(address(this));
+
+        bytes32 unlockedSlot = _transferUnlockedSlot(token);
+        bytes32 preSwapTokenBalanceSlot = _preSwapTokenBalanceSlot(token);
+        bool unlocked;
+        uint256 preSwapBalance;
+        assembly {
+            unlocked := tload(unlockedSlot)
+            preSwapBalance := tload(preSwapTokenBalanceSlot)
+        }
+
+        if (unlocked == false) {
+            revert RestrictTransferFrom__RouterLocked();
+        }
+
+        amountInRouter = currentBalance - preSwapBalance;
+        if (amountInRouter > amount) {
+            revert RestrictTransferFrom__AmountNotTransferredToRouter(
+                amount, amountInRouter
+            );
+        }
+    }
+
+    function _maybe_lock(address token, uint256 amountInRouter, uint256 amount)
+        internal
+    {
+        bytes32 unlockedSlot = _transferUnlockedSlot(token);
+        if (amountInRouter - amount == 0) {
+            assembly {
+                tstore(unlockedSlot, false)
+            }
+        }
+        // it won't unlock for split swaps only
     }
 }
