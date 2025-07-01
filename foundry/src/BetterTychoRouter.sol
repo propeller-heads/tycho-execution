@@ -49,9 +49,9 @@ contract TychoRouter is
         permit2 = IAllowanceTransfer(_permit2);
     }
 
-    function unlock(address token) public {
+    function unlock(address token, uint256 amount) public {
         uint256 currentBalance = _balanceOf(token, address(this));
-        _unlock(token, currentBalance);
+        _unlock(token, currentBalance, amount);
     }
 
     function singleSwap(
@@ -78,6 +78,8 @@ contract TychoRouter is
         if (amountOut < minAmountOut) {
             revert TychoRouter__NegativeSlippage(amountOut, minAmountOut);
         }
+
+        _is_everything_locked_at_the_end();
 
         // handle unwrapping
 

@@ -108,7 +108,7 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
         _maybe_lock(tokenIn, amountInRouter, amountIn);
 
         if (receiver != address(this)) {
-            _unlock(tokenOut, balanceBefore); // we trust that the curve pool
+            _unlock(tokenOut, balanceBefore, amountOut); // we trust that the curve pool will transfer the tokens back to the router
             _transfer(receiver, TransferType.Transfer, tokenOut, amountOut);
         }
         return amountOut;

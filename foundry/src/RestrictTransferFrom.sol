@@ -15,10 +15,10 @@ error RestrictTransferFrom__DifferentTokenIn(
 );
 error RestrictTransferFrom__UnknownTransferType();
 error RestrictTransferFrom__RouterLocked();
-error RestrictTransferFrom__RouterAlreadyUnlocked();
 error RestrictTransferFrom__AmountNotTransferredToRouter(
     uint256 amountToTransfer, uint256 amountTransfered
 );
+error RestrictTransferFrom__NotAllTokensAreLocked();
 
 /**
  * @title RestrictTransferFrom - Restrict transferFrom upto allowed amount of token
@@ -44,6 +44,9 @@ contract RestrictTransferFrom {
     // keccak256("RestrictTransferFrom#SENDER_SLOT")
     uint256 private constant _SENDER_SLOT =
         0x6249046ac25ba4612871a1715b1abd1de7cf9c973c5045a9b08ce3f441ce6e3a;
+    // keccak256("RestrictTransferFrom#UNLOCKED_TOKENS")
+    uint256 private constant _UNLOCKED_TOKENS =
+0x388966919adefa809a77742f41b6a4113d0d143ee169c358f41f9166c16c4e5c;
 
     constructor(address _permit2) {
         if (_permit2 == address(0)) {
@@ -154,7 +157,7 @@ contract RestrictTransferFrom {
                 IERC20(tokenIn).safeTransferFrom(sender, receiver, amount);
             }
             if (receiver == address(this)) {
-                _unlock(tokenIn, routerBalance);
+                _unlock(tokenIn, routerBalance, amount);
             }
         } else if (transferType == TransferType.Transfer) {
             uint256 amountInRouter = _is_unlocked(tokenIn, amount);
@@ -172,20 +175,27 @@ contract RestrictTransferFrom {
         }
     }
 
-    function _unlock(address token, uint256 routerBalance) internal {
+    function _unlock(address token, uint256 routerBalance, uint256 amount)
+        internal
+    {
         bytes32 unlockedSlot = _transferUnlockedSlot(token);
         bytes32 preSwapTokenBalanceSlot = _preSwapTokenBalanceSlot(token);
-        bool unlock;
+        uint256 unlockedAmount;
+        uint256 unlockedTokens;
         assembly {
-            unlock := tload(unlockedSlot)
+            unlockedAmount := tload(unlockedSlot)
+            unlockedTokens := tload(_UNLOCKED_TOKENS)
         }
-        if (unlock == true) {
-            revert RestrictTransferFrom__RouterAlreadyUnlocked();
+        unlockedAmount += amount;
+        if (preSwapTokenBalanceSlot == 0) {
+            unlockedTokens +=1;
+            assembly {
+                tstore(preSwapTokenBalanceSlot, routerBalance)
+                tstore(_UNLOCKED_TOKENS, unlockedTokens)
+            }
         }
         assembly {
-            tstore(preSwapTokenBalanceSlot, routerBalance)
-            // maybe make a key that uses token and user instead of just token?
-            tstore(unlockedSlot, true)
+            tstore(unlockedSlot, amount)
         }
     }
 
@@ -199,14 +209,14 @@ contract RestrictTransferFrom {
 
         bytes32 unlockedSlot = _transferUnlockedSlot(token);
         bytes32 preSwapTokenBalanceSlot = _preSwapTokenBalanceSlot(token);
-        bool unlocked;
+        uint256 unlockedAmount;
         uint256 preSwapBalance;
         assembly {
-            unlocked := tload(unlockedSlot)
+            unlockedAmount := tload(unlockedSlot)
             preSwapBalance := tload(preSwapTokenBalanceSlot)
         }
 
-        if (unlocked == false) {
+        if (unlockedAmount <= amount) {
             revert RestrictTransferFrom__RouterLocked();
         }
 
@@ -222,11 +232,34 @@ contract RestrictTransferFrom {
         internal
     {
         bytes32 unlockedSlot = _transferUnlockedSlot(token);
-        if (amountInRouter - amount == 0) {
+        bytes32 preSwapTokenBalanceSlot = _preSwapTokenBalanceSlot(token);
+        uint256 unlockedAmount;
+        uint256 unlockedTokens;
+        assembly {
+            unlockedAmount := tload(unlockedSlot)
+            unlockedTokens := tload(_UNLOCKED_TOKENS)
+        }
+        unlockedAmount -= amount;
+        assembly {
+            tstore(unlockedSlot, unlockedAmount)
+        }
+        if (unlockedAmount == 0) {
+            unlockedTokens -= 1;
             assembly {
-                tstore(unlockedSlot, false)
+                tstore(preSwapTokenBalanceSlot, 0)
+                tstore(_UNLOCKED_TOKENS, unlockedTokens)
             }
         }
-        // it won't unlock for split swaps only
+    }
+
+    // TODO: think of a better name :|
+    function _is_everything_locked_at_the_end() internal{
+        uint256 unlockedTokens;
+        assembly {
+            unlockedTokens := tload(_UNLOCKED_TOKENS)
+        }
+        if (unlockedTokens != 0){
+            revert RestrictTransferFrom__NotAllTokensAreLocked();
+        }
     }
 }

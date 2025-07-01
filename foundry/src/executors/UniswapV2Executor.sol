@@ -69,7 +69,7 @@ contract UniswapV2Executor is IExecutor, RestrictTransferFrom {
 
         // if the receiver is the router, set transient storage vars
         if (receiver == address(this)) {
-            _unlock(tokenOut, balanceBefore);
+            _unlock(tokenOut, balanceBefore, calculatedAmount);
         }
 
         IUniswapV2Pair pool = IUniswapV2Pair(target);
