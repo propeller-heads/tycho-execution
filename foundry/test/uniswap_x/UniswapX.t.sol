@@ -30,7 +30,7 @@ contract UniswapXFillerTest is Constants, TestUtils, TychoRouterTestSetup {
             WETH_DAI_POOL,
             address(filler),
             zeroForOne,
-            RestrictTransferFrom.TransferType.Transfer
+            RestrictTransferFrom.TransferType.TransferFrom
         );
 
         bytes memory swap =
@@ -45,11 +45,14 @@ contract UniswapXFillerTest is Constants, TestUtils, TychoRouterTestSetup {
             false,
             false,
             address(filler),
-            false,
+            true,
             swap
         );
 
         deal(WETH_ADDR, address(filler), amountIn);
+        vm.startPrank(address(filler));
+        IERC20(WETH_ADDR).approve(tychoRouterAddr, amountIn);
+        vm.stopPrank();
         ResolvedOrder[] memory orders = new ResolvedOrder[](1);
 
         filler.reactorCallback(orders, callbackData);
@@ -75,7 +78,7 @@ contract UniswapXFillerTest is Constants, TestUtils, TychoRouterTestSetup {
             USDC_WBTC_POOL,
             address(filler),
             zeroForOne,
-            RestrictTransferFrom.TransferType.Transfer
+            RestrictTransferFrom.TransferType.TransferFrom
         );
 
         bytes memory swap =
@@ -90,10 +93,13 @@ contract UniswapXFillerTest is Constants, TestUtils, TychoRouterTestSetup {
             false,
             false,
             address(filler),
-            false,
+            true,
             swap
         );
 
+        vm.startPrank(address(filler));
+        IERC20(WBTC_ADDR).approve(tychoRouterAddr, amountIn);
+        vm.stopPrank();
         // This is a hack because the tx we are trying to replicate returns a looooot more USDC than what the uni v2 pool does at this point
         // 5113180081 is the difference and 54068100 is the fee
         deal(USDC_ADDR, address(filler), 5113180081 + 54068100);

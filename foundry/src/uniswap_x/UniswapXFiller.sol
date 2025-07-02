@@ -44,13 +44,6 @@ contract UniswapXFiller is AccessControl, IReactorCallback {
         ResolvedOrder memory order = resolvedOrders[0];
 
         uint256 ethValue = 0;
-        if (order.input.token != address(0)) {
-            IERC20(order.input.token).safeTransfer(
-                address(tychoRouter), order.input.amount
-            );
-        } else {
-            ethValue = order.input.amount;
-        }
         (bool success, bytes memory result) =
             tychoRouter.call{value: ethValue}(callbackData);
 
