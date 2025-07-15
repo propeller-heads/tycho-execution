@@ -639,6 +639,50 @@ impl SwapEncoder for BalancerV3SwapEncoder {
     }
 }
 
+/// Encodes a swap on a Seamless pool through the given executor address.
+///
+/// # Fields
+/// * `executor_address` - The address of the executor contract that will perform the swap.
+#[derive(Clone)]
+pub struct SeamlessSwapEncoder {
+    executor_address: String,
+}
+
+impl SwapEncoder for SeamlessSwapEncoder {
+    fn new(
+        executor_address: String,
+        _chain: Chain,
+        _config: Option<HashMap<String, String>>,
+    ) -> Result<Self, EncodingError> {
+        Ok(Self { executor_address })
+    }
+
+    fn encode_swap(
+        &self,
+        swap: &Swap,
+        encoding_context: &EncodingContext,
+    ) -> Result<Vec<u8>, EncodingError> {
+        let pool = Address::from_str(&swap.component.id).map_err(|_| {
+            EncodingError::FatalError("Invalid pool address for Balancer v3".to_string())
+        })?;
+
+        let args = (
+            bytes_to_address(&swap.token_in)?,
+            bytes_to_address(&swap.token_out)?,
+            pool,
+            (encoding_context.transfer_type as u8).to_be_bytes(),
+            bytes_to_address(&encoding_context.receiver)?,
+        );
+        Ok(args.abi_encode_packed())
+    }
+
+    fn executor_address(&self) -> &str {
+        &self.executor_address
+    }
+    fn clone_box(&self) -> Box<dyn SwapEncoder> {
+        Box::new(self.clone())
+    }
+}
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
