@@ -4635,7 +4635,7 @@ checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 [[package]]
 name = "tycho-common"
 version = "0.79.0"
-source = "git+https://github.com/propeller-heads/tycho-indexer.git?rev=7bce8048c14b1fa3d6eb99715b19c62ccb4bee07#7bce8048c14b1fa3d6eb99715b19c62ccb4bee07"
+source = "git+https://github.com/propeller-heads/tycho-indexer.git?rev=1d71bb2e316d27ef089a81fe4200cbdb476e6c11#1d71bb2e316d27ef089a81fe4200cbdb476e6c11"
 dependencies = [
  "anyhow",
  "async-trait",
