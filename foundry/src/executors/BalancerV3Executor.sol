@@ -6,10 +6,13 @@ import {
     IERC20,
     SafeERC20
 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import {IVault} from "@balancer-labs/v3-interfaces/contracts/vault/IVault.sol";
 import {
     SwapKind,
-    VaultSwapParams
+    VaultSwapParams,
+    BufferWrapOrUnwrapParams,
+    WrappingDirection
 } from "@balancer-labs/v3-interfaces/contracts/vault/VaultTypes.sol";
 import {RestrictTransferFrom} from "../RestrictTransferFrom.sol";
 import {ICallback} from "@interfaces/ICallback.sol";
@@ -60,23 +63,87 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
             IERC20 tokenOut,
             address poolId,
             TransferType transferType,
+            bool wrapIn,
+            bool unwrapIn,
+            bool wrapOut,
+            bool unwrapOut,
+            address wrappedTokenIn,
+            address wrappedTokenOut,
             address receiver
         ) = _decodeData(data);
 
-        uint256 amountCalculated;
         uint256 amountIn;
         uint256 amountOut;
-        (amountCalculated, amountIn, amountOut) = VAULT.swap(
+        uint256 exactAmountIn = amountGiven;
+        if (wrapIn) {
+            (, uint256 wrapAmountInRaw, uint256 wrapAmountOut) = VAULT
+                .erc4626BufferWrapOrUnwrap(
+                BufferWrapOrUnwrapParams({
+                    kind: SwapKind.EXACT_IN,
+                    direction: WrappingDirection.WRAP,
+                    wrappedToken: IERC4626(wrappedTokenIn),
+                    amountGivenRaw: amountGiven,
+                    limitRaw: 0
+                })
+            );
+            exactAmountIn = wrapAmountOut;
+            amountIn = wrapAmountInRaw;
+        }
+        if (unwrapIn) {
+            (, uint256 unwrapAmountInRaw, uint256 unwrapAmountOut) = VAULT
+                .erc4626BufferWrapOrUnwrap(
+                BufferWrapOrUnwrapParams({
+                    kind: SwapKind.EXACT_IN,
+                    direction: WrappingDirection.UNWRAP,
+                    wrappedToken: IERC4626(wrappedTokenIn),
+                    amountGivenRaw: amountGiven,
+                    limitRaw: 0
+                })
+            );
+            exactAmountIn = unwrapAmountOut;
+            amountIn = unwrapAmountInRaw;
+        }
+        (uint256 amountCalculated, uint256 swapAmountIn, uint256 swapAmountOut)
+        = VAULT.swap(
             VaultSwapParams({
                 kind: SwapKind.EXACT_IN,
                 pool: poolId,
                 tokenIn: tokenIn,
                 tokenOut: tokenOut,
-                amountGivenRaw: amountGiven,
+                amountGivenRaw: exactAmountIn,
                 limitRaw: 0,
                 userData: ""
             })
         );
+        if (amountIn == 0 && swapAmountIn > 0) {
+            amountIn = swapAmountIn;
+        }
+        if (wrapOut) {
+            (,, uint256 wrapAmountOut) = VAULT.erc4626BufferWrapOrUnwrap(
+                BufferWrapOrUnwrapParams({
+                    kind: SwapKind.EXACT_IN,
+                    direction: WrappingDirection.WRAP,
+                    wrappedToken: IERC4626(wrappedTokenOut),
+                    amountGivenRaw: amountCalculated,
+                    limitRaw: 0
+                })
+            );
+            amountCalculated = wrapAmountOut;
+            amountOut = wrapAmountOut;
+        }
+        if (unwrapOut) {
+            (,, uint256 unwrapAmountOut) = VAULT.erc4626BufferWrapOrUnwrap(
+                BufferWrapOrUnwrapParams({
+                    kind: SwapKind.EXACT_IN,
+                    direction: WrappingDirection.UNWRAP,
+                    wrappedToken: IERC4626(wrappedTokenOut),
+                    amountGivenRaw: amountCalculated,
+                    limitRaw: 0
+                })
+            );
+            amountCalculated = unwrapAmountOut;
+            amountOut = unwrapAmountOut;
+        }
 
         _transfer(address(VAULT), transferType, address(tokenIn), amountIn);
         // slither-disable-next-line unused-return
@@ -113,6 +180,12 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
             IERC20 tokenOut,
             address poolId,
             TransferType transferType,
+            bool wrapIn,
+            bool unwrapIn,
+            bool wrapOut,
+            bool unwrapOut,
+            address wrappedTokenIn,
+            address wrappedTokenOut,
             address receiver
         )
     {
@@ -120,7 +193,14 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
         tokenIn = IERC20(address(bytes20(data[32:52])));
         tokenOut = IERC20(address(bytes20(data[52:72])));
         poolId = address(bytes20(data[72:92]));
-        transferType = TransferType(uint8(data[92]));
-        receiver = address(bytes20(data[93:113]));
+        uint8 packed = uint8(data[92]);
+        wrapIn = (packed & 1) != 0; // bit0
+        unwrapIn = ((packed >> 1) & 1) != 0; // bit1
+        wrapOut = ((packed >> 2) & 1) != 0; // bit2
+        unwrapOut = ((packed >> 3) & 1) != 0; // bit3
+        transferType = TransferType(packed >> 4);
+        wrappedTokenIn = address(bytes20(data[93:113]));
+        wrappedTokenOut = address(bytes20(data[113:133]));
+        receiver = address(bytes20(data[133:153]));
     }
 }
