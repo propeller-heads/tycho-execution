@@ -70,6 +70,7 @@ pub fn pad_to_fixed_size<const N: usize>(input: &[u8]) -> Result<[u8; N], Encodi
 
 /// Extracts a static attribute from a swap.
 pub fn get_static_attribute(swap: &Swap, attribute_name: &str) -> Result<Vec<u8>, EncodingError> {
+    println!("static attributes {:?}", swap.component.static_attributes.clone());
     Ok(swap
         .component
         .static_attributes

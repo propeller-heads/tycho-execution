@@ -191,6 +191,8 @@ impl SwapEncoder for UniswapV4SwapEncoder {
         };
         let mut hook_data = AlloyBytes::new();
         if encoding_context.group_token_out == swap.token_out {
+            println!("This is the last swap");
+            println!("{:?}", swap.user_data.clone().unwrap_or_default());
             // Add hook data if it's only the last swap
             hook_data = AlloyBytes::from(
                 swap.user_data
@@ -198,6 +200,8 @@ impl SwapEncoder for UniswapV4SwapEncoder {
                     .unwrap_or_default()
                     .to_vec(),
             );
+        } else {
+            println!("This is not the last swap");
         }
         // Early check if this is not the first swap
         if encoding_context.group_token_in != swap.token_in {
