@@ -566,6 +566,18 @@ fn test_uniswap_v3_balancer_v3() {
         component: ProtocolComponent {
             id: "0x571bea0e99e139cd0b6b7d9352ca872dfe0d72dd".to_string(),
             protocol_system: "vm:balancer_v3".to_string(),
+            static_attributes: {
+                let mut attrs = HashMap::new();
+                attrs.insert(
+                    "mapping_tokens".to_string(),
+                    Bytes::from("0x5b7b22616464726573736573223a5b5b302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c305d5d2c22746f6b656e5f74797065223a224e6f6e65227d2c7b22616464726573736573223a5b5b302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c305d5d2c22746f6b656e5f74797065223a224e6f6e65227d5d"),
+                );
+                attrs
+            },
+            tokens: vec![
+                Bytes::from_str("0x2260fac5e5542a773aa44fbcfedf7c193bc2c599").unwrap(),
+                Bytes::from_str("0x4a220e6096b25eadb88358cb44068a3248254675").unwrap(),
+            ],
             ..Default::default()
         },
         token_in: wbtc.clone(),

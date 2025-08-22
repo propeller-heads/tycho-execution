@@ -188,8 +188,8 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
         returns (bytes memory result)
     {
         verifyCallback(data);
-        // Remove the first 68 bytes 4 selector + 32 dataOffset + 32 dataLength and extra padding at the end
-        result = _swapCallback(data[68:181]);
+        // Remove the first 68 bytes (4 selector + 32 dataOffset + 32 dataLength) and extract 153 bytes (32 givenAmount + 121 executor data)
+        result = _swapCallback(data[68:221]);
         // Our general callback logic returns a not ABI encoded result (see Dispatcher._callHandleCallbackOnExecutor).
         // However, the Vault expects the result to be ABI encoded. That is why we need to encode it here again.
         return abi.encode(result);
