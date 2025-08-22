@@ -4,6 +4,7 @@ use alloy::{
     primitives::{Address, Bytes as AlloyBytes, U256, U8},
     sol_types::SolValue,
 };
+use serde::{Deserialize, Serialize};
 use serde_json::from_str;
 use tokio::{
     runtime::{Handle, Runtime},
@@ -612,6 +613,23 @@ pub struct BalancerV3SwapEncoder {
     executor_address: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+enum TokenType {
+    None,
+    Wrapped,
+    Underlying,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+struct MappingToken {
+    pub addresses: Vec<Vec<u8>>,
+    pub token_type: TokenType,
+}
+
+fn json_deserialize_mapping_tokens(bytes: &[u8]) -> Vec<MappingToken> {
+    serde_json::from_slice(bytes).expect("Failed to deserialize MappingToken array from JSON")
+}
+
 impl SwapEncoder for BalancerV3SwapEncoder {
     fn new(
         executor_address: String,
@@ -630,11 +648,78 @@ impl SwapEncoder for BalancerV3SwapEncoder {
             EncodingError::FatalError("Invalid pool address for Balancer v3".to_string())
         })?;
 
+        let mapping_tokens_bytes = get_static_attribute(swap, "mapping_tokens")?;
+
+        let mapping_tokens: Vec<MappingToken> =
+            json_deserialize_mapping_tokens(&mapping_tokens_bytes);
+
+        let matches = |token: &Bytes, expected_type: TokenType| -> (bool, Option<usize>) {
+            if let Some(index) = mapping_tokens
+                .iter()
+                .position(|mapping_token| {
+                    mapping_token.token_type == expected_type &&
+                        mapping_token
+                            .addresses
+                            .iter()
+                            .any(|addr| addr.as_slice() == token.as_ref())
+                })
+            {
+                (true, Some(index))
+            } else {
+                (false, None)
+            }
+        };
+
+        // - if token_in exists in mapping_tokens && token_type == Underlying --> wrap_in token_in:
+        //   ERC20 --> pool: ERC4626
+        let (wrap_in, wrap_in_index) = matches(&swap.token_in, TokenType::Underlying);
+
+        // - if token_in exists in mapping_tokens && token_type == Wrapped --> unwrap_in token_in:
+        //   ERC4626 --> pool: ERC20
+        let (unwrap_in, _) = matches(&swap.token_in, TokenType::Wrapped);
+
+        // - if token_out exists in mapping_tokens && token_type == Wrapped --> wrap_out pool: ERC20
+        //   --> token_out: ERC4626
+        let (wrap_out, _) = matches(&swap.token_out, TokenType::Wrapped);
+
+        // - if token_out exists in mapping_tokens && token_type == Underlying --> unwrap_out pool:
+        //   ERC4626 --> token_out: ERC20
+        let (unwrap_out, unwrap_out_index) = matches(&swap.token_out, TokenType::Underlying);
+
+        //  Bit:  7     6      5      4 |         3  |        2 |         1 |       0 |
+        // Field: transfer_type_bits(4) | unwrap_out | wrap_out | unwrap_in | wrap_in |
+        let packed_byte = ((encoding_context.transfer_type as u8) << 4) |
+            ((unwrap_out as u8) << 3) |
+            ((wrap_out as u8) << 2) |
+            ((unwrap_in as u8) << 1) |
+            (wrap_in as u8);
+
+        let get_wrapped_token =
+            |wrap: bool, unwrap: bool, index: Option<usize>, token: &Bytes| -> Bytes {
+                if wrap {
+                    swap.component
+                        .tokens
+                        .get(index.unwrap())
+                        .cloned()
+                        .unwrap_or_else(|| Bytes::from(Address::ZERO.as_slice()))
+                } else if unwrap {
+                    token.clone()
+                } else {
+                    Bytes::from(Address::ZERO.as_slice())
+                }
+            };
+
+        let wrapped_token_in = get_wrapped_token(wrap_in, unwrap_in, wrap_in_index, &swap.token_in);
+        let wrapped_token_out =
+            get_wrapped_token(unwrap_out, wrap_out, unwrap_out_index, &swap.token_out);
+
         let args = (
             bytes_to_address(&swap.token_in)?,
             bytes_to_address(&swap.token_out)?,
             pool,
-            (encoding_context.transfer_type as u8).to_be_bytes(),
+            [packed_byte],
+            bytes_to_address(&wrapped_token_in)?,
+            bytes_to_address(&wrapped_token_out)?,
             bytes_to_address(&encoding_context.receiver)?,
         );
         Ok(args.abi_encode_packed())
@@ -1859,6 +1944,19 @@ mod tests {
             let balancer_pool = ProtocolComponent {
                 id: String::from("0x85b2b559bc2d21104c4defdd6efca8a20343361d"),
                 protocol_system: String::from("vm:balancer_v3"),
+                static_attributes: {
+                    let mut attrs = HashMap::new();
+                    attrs.insert(
+                        "mapping_tokens".to_string(),
+                        Bytes::from("0x5b7b22616464726573736573223a5b5b3231382c3139332c3132372c3134392c3134312c34362c3232392c33352c3136322c33322c39382c362c3135332c36392c3135312c3139332c36312c3133312c33302c3139395d5d2c22746f6b656e5f74797065223a22556e6465726c79696e67227d2c7b22616464726573736573223a5b5b36342c3230392c3131312c3139322c33362c3130362c3231312c32322c31322c3230342c392c3138342c3230382c3231312c3136322c3230352c34302c3137342c3130382c34375d5d2c22746f6b656e5f74797065223a22556e6465726c79696e67227d2c7b22616464726573736573223a5b5b3136302c3138342c3130352c3134352c3139382c33332c3133392c35342c3139332c3230392c3135372c37342c34362c3135382c3137362c3230362c35342c362c3233352c37325d5d2c22746f6b656e5f74797065223a22556e6465726c79696e67227d5d"),
+                    );
+                    attrs
+                },
+                tokens: vec![
+                    Bytes::from_str("0x7bc3485026ac48b6cf9baf0a377477fff5703af8").unwrap(),
+                    Bytes::from_str("0xc71ea051a5f82c67adcf634c36ffe6334793d24c").unwrap(),
+                    Bytes::from_str("0xd4fa2d31b7968e448877f69a96de69f5de8cd23e").unwrap(),
+                ],
                 ..Default::default()
             };
             let token_in = Bytes::from("0x7bc3485026ac48b6cf9baf0a377477fff5703af8");
@@ -1893,8 +1991,143 @@ mod tests {
                     "c71ea051a5f82c67adcf634c36ffe6334793d24c",
                     // pool id
                     "85b2b559bc2d21104c4defdd6efca8a20343361d",
-                    // transfer type None
-                    "01",
+                    // wrap_in, unwrap_in, wrap_out, unwrap_out: false, TransferType: Transfer
+                    "10",
+                    // wrapped_token_in
+                    "0000000000000000000000000000000000000000",
+                    // wrapped_token_out
+                    "0000000000000000000000000000000000000000",
+                    // receiver
+                    "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
+                ))
+            );
+            write_calldata_to_file("test_encode_balancer_v3", hex_swap.as_str());
+        }
+
+        #[test]
+        fn test_encode_balancer_v3_with_wrap_in() {
+            let balancer_pool = ProtocolComponent {
+                id: String::from("0x85b2b559bc2d21104c4defdd6efca8a20343361d"),
+                protocol_system: String::from("vm:balancer_v3"),
+                static_attributes: {
+                    let mut attrs = HashMap::new();
+                    attrs.insert(
+                        "mapping_tokens".to_string(),
+                        Bytes::from("0x5b7b22616464726573736573223a5b5b3231382c3139332c3132372c3134392c3134312c34362c3232392c33352c3136322c33322c39382c362c3135332c36392c3135312c3139332c36312c3133312c33302c3139395d5d2c22746f6b656e5f74797065223a22556e6465726c79696e67227d2c7b22616464726573736573223a5b5b36342c3230392c3131312c3139322c33362c3130362c3231312c32322c31322c3230342c392c3138342c3230382c3231312c3136322c3230352c34302c3137342c3130382c34375d5d2c22746f6b656e5f74797065223a22556e6465726c79696e67227d2c7b22616464726573736573223a5b5b3136302c3138342c3130352c3134352c3139382c33332c3133392c35342c3139332c3230392c3135372c37342c34362c3135382c3137362c3230362c35342c362c3233352c37325d5d2c22746f6b656e5f74797065223a22556e6465726c79696e67227d5d"),
+                    );
+                    attrs
+                },
+                tokens: vec![
+                    Bytes::from_str("0x7bc3485026ac48b6cf9baf0a377477fff5703af8").unwrap(),
+                    Bytes::from_str("0xc71ea051a5f82c67adcf634c36ffe6334793d24c").unwrap(),
+                    Bytes::from_str("0xd4fa2d31b7968e448877f69a96de69f5de8cd23e").unwrap(),
+                ],
+                ..Default::default()
+            };
+            let token_in = Bytes::from("0xdac17f958d2ee523a2206206994597c13d831ec7"); // USDT
+            let token_out = Bytes::from("0xc71ea051a5f82c67adcf634c36ffe6334793d24c");
+            let swap = SwapBuilder::new(balancer_pool, token_in.clone(), token_out.clone()).build();
+            let encoding_context = EncodingContext {
+                // The receiver was generated with `makeAddr("bob") using forge`
+                receiver: Bytes::from("0x1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e"),
+                exact_out: false,
+                router_address: Some(Bytes::zero(20)),
+                group_token_in: token_in.clone(),
+                group_token_out: token_out.clone(),
+                transfer_type: TransferType::Transfer,
+            };
+            let encoder = BalancerV3SwapEncoder::new(
+                String::from("0x543778987b293C7E8Cf0722BB2e935ba6f4068D4"),
+                Chain::Ethereum,
+                None,
+            )
+            .unwrap();
+            let encoded_swap = encoder
+                .encode_swap(&swap, &encoding_context)
+                .unwrap();
+            let hex_swap = encode(&encoded_swap);
+
+            assert_eq!(
+                hex_swap,
+                String::from(concat!(
+                    // token in
+                    "dac17f958d2ee523a2206206994597c13d831ec7",
+                    // token out
+                    "c71ea051a5f82c67adcf634c36ffe6334793d24c",
+                    // pool id
+                    "85b2b559bc2d21104c4defdd6efca8a20343361d",
+                    // wrap_in: True, unwrap_in, wrap_out, unwrap_out: false, TransferType: None
+                    "11",
+                    // wrapped_token_in
+                    "7bc3485026ac48b6cf9baf0a377477fff5703af8",
+                    // wrapped_token_out
+                    "0000000000000000000000000000000000000000",
+                    // receiver
+                    "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
+                ))
+            );
+            write_calldata_to_file("test_encode_balancer_v3", hex_swap.as_str());
+        }
+
+        #[test]
+        fn test_encode_balancer_v3_with_unwrap_out() {
+            let balancer_pool = ProtocolComponent {
+                id: String::from("0x85b2b559bc2d21104c4defdd6efca8a20343361d"),
+                protocol_system: String::from("vm:balancer_v3"),
+                static_attributes: {
+                    let mut attrs = HashMap::new();
+                    attrs.insert(
+                        "mapping_tokens".to_string(),
+                        Bytes::from("0x5b7b22616464726573736573223a5b5b3231382c3139332c3132372c3134392c3134312c34362c3232392c33352c3136322c33322c39382c362c3135332c36392c3135312c3139332c36312c3133312c33302c3139395d5d2c22746f6b656e5f74797065223a22556e6465726c79696e67227d2c7b22616464726573736573223a5b5b36342c3230392c3131312c3139322c33362c3130362c3231312c32322c31322c3230342c392c3138342c3230382c3231312c3136322c3230352c34302c3137342c3130382c34375d5d2c22746f6b656e5f74797065223a22556e6465726c79696e67227d2c7b22616464726573736573223a5b5b3136302c3138342c3130352c3134352c3139382c33332c3133392c35342c3139332c3230392c3135372c37342c34362c3135382c3137362c3230362c35342c362c3233352c37325d5d2c22746f6b656e5f74797065223a22556e6465726c79696e67227d5d"),
+                    );
+                    attrs
+                },
+                tokens: vec![
+                    Bytes::from_str("0x7bc3485026ac48b6cf9baf0a377477fff5703af8").unwrap(),
+                    Bytes::from_str("0xc71ea051a5f82c67adcf634c36ffe6334793d24c").unwrap(),
+                    Bytes::from_str("0xd4fa2d31b7968e448877f69a96de69f5de8cd23e").unwrap(),
+                ],
+                ..Default::default()
+            };
+            let token_in = Bytes::from("0x7bc3485026ac48b6cf9baf0a377477fff5703af8");
+            let token_out = Bytes::from("40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f"); // GHO
+            let swap = SwapBuilder::new(balancer_pool, token_in.clone(), token_out.clone()).build();
+            let encoding_context = EncodingContext {
+                // The receiver was generated with `makeAddr("bob") using forge`
+                receiver: Bytes::from("0x1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e"),
+                exact_out: false,
+                router_address: Some(Bytes::zero(20)),
+                group_token_in: token_in.clone(),
+                group_token_out: token_out.clone(),
+                transfer_type: TransferType::Transfer,
+            };
+            let encoder = BalancerV3SwapEncoder::new(
+                String::from("0x543778987b293C7E8Cf0722BB2e935ba6f4068D4"),
+                Chain::Ethereum,
+                None,
+            )
+            .unwrap();
+            let encoded_swap = encoder
+                .encode_swap(&swap, &encoding_context)
+                .unwrap();
+            let hex_swap = encode(&encoded_swap);
+
+            assert_eq!(
+                hex_swap,
+                String::from(concat!(
+                    // token in
+                    "7bc3485026ac48b6cf9baf0a377477fff5703af8",
+                    // token out
+                    "40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f",
+                    // pool id
+                    "85b2b559bc2d21104c4defdd6efca8a20343361d",
+                    // wrap_in, unwrap_in, wrap_out: False, unwrap_out: True, TransferType:
+                    // Transfer
+                    "18",
+                    // wrapped_token_in
+                    "0000000000000000000000000000000000000000",
+                    // wrapped_token_out
+                    "c71ea051a5f82c67adcf634c36ffe6334793d24c",
                     // receiver
                     "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
                 ))

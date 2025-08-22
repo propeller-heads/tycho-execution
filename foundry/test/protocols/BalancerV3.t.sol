@@ -17,6 +17,12 @@ contract BalancerV3ExecutorExposed is BalancerV3Executor {
             IERC20 tokenOut,
             address poolId,
             TransferType transferType,
+            bool wrapIn,
+            bool unwrapIn,
+            bool wrapOut,
+            bool unwrapOut,
+            address wrappedTokenIn,
+            address wrappedTokenOut,
             address receiver
         )
     {
@@ -55,6 +61,12 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
             IERC20 tokenOut,
             address poolId,
             RestrictTransferFrom.TransferType transferType,
+            bool wrapIn,
+            bool unwrapIn,
+            bool wrapOut,
+            bool unwrapOut,
+            address wrappedTokenIn,
+            address wrappedTokenOut,
             address receiver
         ) = balancerV3Exposed.decodeParams(params);
 
