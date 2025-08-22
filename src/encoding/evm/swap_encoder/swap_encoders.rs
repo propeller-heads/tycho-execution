@@ -1832,7 +1832,7 @@ mod tests {
                     "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
                 ))
             );
-            write_calldata_to_file("test_encode_balancer_v3", hex_swap.as_str());
+            write_calldata_to_file("test_encode_balancer_v3_with_wrap_in", hex_swap.as_str());
         }
 
         #[test]
@@ -1856,7 +1856,7 @@ mod tests {
                 ..Default::default()
             };
             let token_in = Bytes::from("0x7bc3485026ac48b6cf9baf0a377477fff5703af8");
-            let token_out = Bytes::from("40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f"); // GHO
+            let token_out = Bytes::from("0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f"); // GHO
             let swap = SwapBuilder::new(balancer_pool, token_in.clone(), token_out.clone()).build();
             let encoding_context = EncodingContext {
                 // The receiver was generated with `makeAddr("bob") using forge`
@@ -1898,7 +1898,7 @@ mod tests {
                     "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
                 ))
             );
-            write_calldata_to_file("test_encode_balancer_v3", hex_swap.as_str());
+            write_calldata_to_file("test_encode_balancer_v3_with_unwrap_out", hex_swap.as_str());
         }
     }
 
