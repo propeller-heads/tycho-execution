@@ -198,8 +198,9 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
     }
 
     function testSwapIntegrationWithWrapInAndUnwrapOut() public {
-        bytes memory protocolData =
-            loadCallDataFromFile("test_encode_balancer_v3_with_wrap_in_and_unwrap_out");
+        bytes memory protocolData = loadCallDataFromFile(
+            "test_encode_balancer_v3_with_wrap_in_and_unwrap_out"
+        );
 
         uint256 amountIn = 10 ** 6;
         address USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
