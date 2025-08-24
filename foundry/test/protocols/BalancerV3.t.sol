@@ -197,6 +197,22 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
         assertEq(balanceAfter - balanceBefore, amountOut);
     }
 
+    function testSwapIntegrationWithWrapInAndUnwrapOut() public {
+        bytes memory protocolData =
+            loadCallDataFromFile("test_encode_balancer_v3_with_wrap_in_and_unwrap_out");
+
+        uint256 amountIn = 10 ** 6;
+        address USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+        deal(USDT, address(balancerV3Exposed), amountIn);
+        uint256 balanceBefore = IERC20(GHO_ADDR).balanceOf(BOB);
+
+        uint256 amountOut = balancerV3Exposed.swap(amountIn, protocolData);
+
+        uint256 balanceAfter = IERC20(GHO_ADDR).balanceOf(BOB);
+        assertGt(balanceAfter, balanceBefore);
+        assertEq(balanceAfter - balanceBefore, amountOut);
+    }
+
     function _packParams(
         uint8 transferType,
         bool wrapIn,
