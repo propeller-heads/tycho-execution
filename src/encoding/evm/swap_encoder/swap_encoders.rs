@@ -686,7 +686,8 @@ impl SwapEncoder for BalancerV3SwapEncoder {
             ((unwrap_in as u8) << 1) |
             (wrap_in as u8);
 
-        // Get wrapped token address: from component.tokens if wrapping, original token if unwrapping, zero otherwise
+        // Get wrapped token address: from component.tokens if wrapping, original token if
+        // unwrapping, zero otherwise
         let get_wrapped_token =
             |wrap: bool, unwrap: bool, index: Option<usize>, token: &Bytes| -> Bytes {
                 if wrap {
@@ -1940,7 +1941,7 @@ mod tests {
                 Chain::Ethereum,
                 None,
             )
-                .unwrap();
+            .unwrap();
             let encoded_swap = encoder
                 .encode_swap(&swap, &encoding_context)
                 .unwrap();
@@ -1949,24 +1950,27 @@ mod tests {
             assert_eq!(
                 hex_swap,
                 String::from(concat!(
-                // token in
-                "dac17f958d2ee523a2206206994597c13d831ec7",
-                // token out
-                "40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f",
-                // pool id
-                "85b2b559bc2d21104c4defdd6efca8a20343361d",
-                // wrap_in: True, unwrap_in, wrap_out: False, unwrap_out: True, TransferType:
-                // Transfer
-                "19",
-                // wrapped_token_in
-                "7bc3485026ac48b6cf9baf0a377477fff5703af8",
-                // wrapped_token_out
-                "c71ea051a5f82c67adcf634c36ffe6334793d24c",
-                // receiver
-                "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
+                    // token in
+                    "dac17f958d2ee523a2206206994597c13d831ec7",
+                    // token out
+                    "40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f",
+                    // pool id
+                    "85b2b559bc2d21104c4defdd6efca8a20343361d",
+                    // wrap_in: True, unwrap_in, wrap_out: False, unwrap_out: True, TransferType:
+                    // Transfer
+                    "19",
+                    // wrapped_token_in
+                    "7bc3485026ac48b6cf9baf0a377477fff5703af8",
+                    // wrapped_token_out
+                    "c71ea051a5f82c67adcf634c36ffe6334793d24c",
+                    // receiver
+                    "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
                 ))
             );
-            write_calldata_to_file("test_encode_balancer_v3_with_wrap_in_and_unwrap_out", hex_swap.as_str());
+            write_calldata_to_file(
+                "test_encode_balancer_v3_with_wrap_in_and_unwrap_out",
+                hex_swap.as_str(),
+            );
         }
     }
 
