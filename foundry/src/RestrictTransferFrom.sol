@@ -14,6 +14,11 @@ error RestrictTransferFrom__DifferentTokenIn(
     address tokenIn, address tokenInStorage
 );
 error RestrictTransferFrom__UnknownTransferType();
+error RestrictTransferFrom__RouterLocked();
+error RestrictTransferFrom__AmountNotTransferredToRouter(
+    uint256 amountToTransfer, uint256 amountTransfered
+);
+error RestrictTransferFrom__NotAllTokensAreLocked();
 
 /**
  * @title RestrictTransferFrom - Restrict transferFrom upto allowed amount of token
@@ -39,6 +44,9 @@ contract RestrictTransferFrom {
     // keccak256("RestrictTransferFrom#SENDER_SLOT")
     uint256 private constant _SENDER_SLOT =
         0x6249046ac25ba4612871a1715b1abd1de7cf9c973c5045a9b08ce3f441ce6e3a;
+    // keccak256("RestrictTransferFrom#UNLOCKED_TOKENS")
+    uint256 private constant _UNLOCKED_TOKENS =
+0x388966919adefa809a77742f41b6a4113d0d143ee169c358f41f9166c16c4e5c;
 
     constructor(address _permit2) {
         if (_permit2 == address(0)) {
@@ -51,6 +59,28 @@ contract RestrictTransferFrom {
         TransferFrom,
         Transfer,
         None
+    }
+
+    function _transferUnlockedSlot(address token)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(
+            abi.encodePacked("RestrictTransferFrom#TRANSFER_UNLOCKED", token)
+        );
+    }
+
+    function _preSwapTokenBalanceSlot(address token)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(
+            abi.encodePacked(
+                "RestrictTransferFrom#PRE_SWAP_TOKEN_BALANCE", token
+            )
+        );
     }
 
     /**
@@ -115,6 +145,10 @@ contract RestrictTransferFrom {
             assembly {
                 tstore(_AMOUNT_ALLOWED_SLOT, amountAllowed)
             }
+
+            uint256 routerBalance = tokenIn == address(0)
+                ? address(this).balance
+                : IERC20(tokenIn).balanceOf(address(this));
             if (isPermit2) {
                 // Permit2.permit is already called from the TychoRouter
                 permit2.transferFrom(sender, receiver, uint160(amount), tokenIn);
@@ -122,16 +156,110 @@ contract RestrictTransferFrom {
                 // slither-disable-next-line arbitrary-send-erc20
                 IERC20(tokenIn).safeTransferFrom(sender, receiver, amount);
             }
+            if (receiver == address(this)) {
+                _unlock(tokenIn, routerBalance, amount);
+            }
         } else if (transferType == TransferType.Transfer) {
+            uint256 amountInRouter = _is_unlocked(tokenIn, amount);
+
             if (tokenIn == address(0)) {
                 Address.sendValue(payable(receiver), amount);
             } else {
                 IERC20(tokenIn).safeTransfer(receiver, amount);
             }
+            _maybe_lock(tokenIn, amountInRouter, amount);
         } else if (transferType == TransferType.None) {
             return;
         } else {
             revert RestrictTransferFrom__UnknownTransferType();
+        }
+    }
+
+    function _unlock(address token, uint256 routerBalance, uint256 amount)
+        internal
+    {
+        bytes32 unlockedSlot = _transferUnlockedSlot(token);
+        bytes32 preSwapTokenBalanceSlot = _preSwapTokenBalanceSlot(token);
+        uint256 unlockedAmount;
+        uint256 unlockedTokens;
+        assembly {
+            unlockedAmount := tload(unlockedSlot)
+            unlockedTokens := tload(_UNLOCKED_TOKENS)
+        }
+        unlockedAmount += amount;
+        if (preSwapTokenBalanceSlot == 0) {
+            unlockedTokens +=1;
+            assembly {
+                tstore(preSwapTokenBalanceSlot, routerBalance)
+                tstore(_UNLOCKED_TOKENS, unlockedTokens)
+            }
+        }
+        assembly {
+            tstore(unlockedSlot, amount)
+        }
+    }
+
+    function _is_unlocked(address token, uint256 amount)
+        internal
+        returns (uint256 amountInRouter)
+    {
+        uint256 currentBalance = token == address(0)
+            ? address(this).balance
+            : IERC20(token).balanceOf(address(this));
+
+        bytes32 unlockedSlot = _transferUnlockedSlot(token);
+        bytes32 preSwapTokenBalanceSlot = _preSwapTokenBalanceSlot(token);
+        uint256 unlockedAmount;
+        uint256 preSwapBalance;
+        assembly {
+            unlockedAmount := tload(unlockedSlot)
+            preSwapBalance := tload(preSwapTokenBalanceSlot)
+        }
+
+        if (unlockedAmount <= amount) {
+            revert RestrictTransferFrom__RouterLocked();
+        }
+
+        amountInRouter = currentBalance - preSwapBalance;
+        if (amountInRouter > amount) {
+            revert RestrictTransferFrom__AmountNotTransferredToRouter(
+                amount, amountInRouter
+            );
+        }
+    }
+
+    function _maybe_lock(address token, uint256 amountInRouter, uint256 amount)
+        internal
+    {
+        bytes32 unlockedSlot = _transferUnlockedSlot(token);
+        bytes32 preSwapTokenBalanceSlot = _preSwapTokenBalanceSlot(token);
+        uint256 unlockedAmount;
+        uint256 unlockedTokens;
+        assembly {
+            unlockedAmount := tload(unlockedSlot)
+            unlockedTokens := tload(_UNLOCKED_TOKENS)
+        }
+        unlockedAmount -= amount;
+        assembly {
+            tstore(unlockedSlot, unlockedAmount)
+        }
+        if (unlockedAmount == 0) {
+            unlockedTokens -= 1;
+            assembly {
+                tstore(preSwapTokenBalanceSlot, 0)
+                tstore(_UNLOCKED_TOKENS, unlockedTokens)
+            }
+        }
+    }
+
+    // TODO: think of a better name :|
+    function _is_everything_locked_at_the_end() internal{
+        uint256 unlockedTokens;
+        assembly {
+            unlockedTokens := tload(_UNLOCKED_TOKENS)
+        }
+        if (unlockedTokens != 0){
+            revert RestrictTransferFrom__NotAllTokensAreLocked();
         }
     }
 }
