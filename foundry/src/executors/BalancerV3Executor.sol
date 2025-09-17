@@ -34,7 +34,7 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
         payable
         returns (uint256 calculatedAmount)
     {
-        if (data.length != 121) {
+        if (data.length != 81) {
             revert BalancerV3Executor__InvalidDataLength();
         }
         bytes memory result = VAULT.unlock(
@@ -63,123 +63,73 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
             IERC20 tokenOut,
             address poolId,
             TransferType transferType,
+            bool isBuffer,
             bool wrapIn,
-            bool unwrapIn,
-            bool wrapOut,
             bool unwrapOut,
-            address wrappedTokenIn,
-            address wrappedTokenOut,
             address receiver
         ) = _decodeData(data);
 
-        IERC20 swapTokenIn = tokenIn;
-        IERC20 swapTokenOut = tokenOut;
-        uint256 amountIn = 0;
-        uint256 amountOut = 0;
-        uint256 amountCalculated = 0;
-        uint256 swapExactAmountIn = amountGiven;
+        uint256 amountCalculated;
+        uint256 amountIn;
+        uint256 amountOut;
 
-        // 1. Pre-processing (wrapIn / unwrapIn)
-        if (wrapIn) {
-            // ERC20 -> ERC4626
-            (uint256 wrappedOut, uint256 wrapAmountInRaw,) = VAULT
-                .erc4626BufferWrapOrUnwrap(
-                BufferWrapOrUnwrapParams({
-                    kind: SwapKind.EXACT_IN,
-                    direction: WrappingDirection.WRAP,
-                    wrappedToken: IERC4626(wrappedTokenIn),
-                    amountGivenRaw: amountGiven,
-                    limitRaw: 0
-                })
+        if (isBuffer) {
+            // Take the token in advance. We need this to wrap/unwrap.
+            _transfer(
+                address(VAULT), transferType, address(tokenIn), amountGiven
             );
-            swapTokenIn = IERC20(wrappedTokenIn);
-            swapExactAmountIn = wrappedOut;
-            amountIn = wrapAmountInRaw;
-        } else if (unwrapIn) {
-            // ERC4626 -> ERC20
-            (uint256 unwrappedOut, uint256 unwrapAmountInRaw,) = VAULT
-                .erc4626BufferWrapOrUnwrap(
-                BufferWrapOrUnwrapParams({
-                    kind: SwapKind.EXACT_IN,
-                    direction: WrappingDirection.UNWRAP,
-                    wrappedToken: IERC4626(wrappedTokenIn),
-                    amountGivenRaw: amountGiven,
-                    limitRaw: 0
-                })
-            );
-            swapTokenIn = IERC20(IERC4626(wrappedTokenIn).asset()); // todo how to get underlying?
-            swapExactAmountIn = unwrappedOut;
-            amountIn = unwrapAmountInRaw;
+            // slither-disable-next-line unused-return
+            VAULT.settle(tokenIn, amountGiven);
+            if (wrapIn) {
+                // ERC20 -> ERC4626
+                (uint256 wrappedOut, uint256 wrapAmountInRaw,) = VAULT
+                    .erc4626BufferWrapOrUnwrap(
+                    BufferWrapOrUnwrapParams({
+                        kind: SwapKind.EXACT_IN,
+                        direction: WrappingDirection.WRAP,
+                        wrappedToken: IERC4626(address(tokenOut)),
+                        amountGivenRaw: amountGiven,
+                        limitRaw: 0
+                    })
+                );
+                amountCalculated = wrappedOut;
+                amountIn = wrapAmountInRaw;
+                amountOut = wrappedOut;
+            } else if (unwrapOut) {
+                // ERC4626 -> ERC20
+                (uint256 unwrappedOut, uint256 unwrapAmountInRaw,) = VAULT
+                    .erc4626BufferWrapOrUnwrap(
+                    BufferWrapOrUnwrapParams({
+                        kind: SwapKind.EXACT_IN,
+                        direction: WrappingDirection.UNWRAP,
+                        wrappedToken: IERC4626(address(tokenIn)),
+                        amountGivenRaw: amountGiven,
+                        limitRaw: 0
+                    })
+                );
+                amountCalculated = unwrappedOut;
+                amountIn = unwrapAmountInRaw;
+                amountOut = unwrappedOut;
+            }
         } else {
-            amountIn = amountGiven;
-        }
-
-        if (wrapOut) {
-            swapTokenOut = IERC20(IERC4626(wrappedTokenOut).asset());
-        } else if (unwrapOut) {
-            swapTokenOut = IERC20(wrappedTokenOut);
-        }
-
-        // 2. Pool Swap
-        (
-            uint256 swapAmountCalculated,
-            uint256 swapAmountIn,
-            uint256 swapAmountOut
-        ) = VAULT.swap(
-            VaultSwapParams({
-                kind: SwapKind.EXACT_IN,
-                pool: poolId,
-                tokenIn: swapTokenIn,
-                tokenOut: swapTokenOut,
-                amountGivenRaw: swapExactAmountIn,
-                limitRaw: 0,
-                userData: ""
-            })
-        );
-
-        amountCalculated = swapAmountCalculated;
-
-        // todo need to delete?
-        if (amountIn == 0 && swapAmountIn > 0) {
-            amountIn = swapAmountIn;
-        }
-
-        // 3. Post-processing (wrapOut / unwrapOut)
-        if (wrapOut) {
-            // ERC20 -> ERC4626
-            (uint256 wrappedOut,,) = VAULT.erc4626BufferWrapOrUnwrap(
-                BufferWrapOrUnwrapParams({
+            (amountCalculated, amountIn, amountOut) = VAULT.swap(
+                VaultSwapParams({
                     kind: SwapKind.EXACT_IN,
-                    direction: WrappingDirection.WRAP,
-                    wrappedToken: IERC4626(wrappedTokenOut),
-                    amountGivenRaw: swapAmountCalculated,
-                    limitRaw: 0
+                    pool: poolId,
+                    tokenIn: tokenIn,
+                    tokenOut: tokenOut,
+                    amountGivenRaw: amountGiven,
+                    limitRaw: 0,
+                    userData: ""
                 })
             );
-            amountCalculated = wrappedOut;
-            amountOut = wrappedOut;
-        } else if (unwrapOut) {
-            // ERC4626 -> ERC20
-            (uint256 unwrappedOut,,) = VAULT.erc4626BufferWrapOrUnwrap(
-                BufferWrapOrUnwrapParams({
-                    kind: SwapKind.EXACT_IN,
-                    direction: WrappingDirection.UNWRAP,
-                    wrappedToken: IERC4626(wrappedTokenOut),
-                    amountGivenRaw: swapAmountCalculated,
-                    limitRaw: 0
-                })
-            );
-            amountCalculated = unwrappedOut;
-            amountOut = unwrappedOut;
-        } else {
-            amountOut = swapAmountOut;
+
+            _transfer(address(VAULT), transferType, address(tokenIn), amountIn);
+            // slither-disable-next-line unused-return
+            VAULT.settle(tokenIn, amountIn);
         }
 
-        // 4. Final settle + sendTo
-        _transfer(address(VAULT), transferType, address(tokenIn), amountIn);
-        VAULT.settle(tokenIn, amountIn);
         VAULT.sendTo(tokenOut, receiver, amountOut);
-
         return abi.encode(amountCalculated);
     }
 
@@ -188,8 +138,8 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
         returns (bytes memory result)
     {
         verifyCallback(data);
-        // Remove the first 68 bytes (4 selector + 32 dataOffset + 32 dataLength) and extract 153 bytes (32 givenAmount + 121 executor data)
-        result = _swapCallback(data[68:221]);
+        // Remove the first 68 bytes 4 selector + 32 dataOffset + 32 dataLength and extra padding at the end
+        result = _swapCallback(data[68:181]);
         // Our general callback logic returns a not ABI encoded result (see Dispatcher._callHandleCallbackOnExecutor).
         // However, the Vault expects the result to be ABI encoded. That is why we need to encode it here again.
         return abi.encode(result);
@@ -211,12 +161,9 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
             IERC20 tokenOut,
             address poolId,
             TransferType transferType,
+            bool isBuffer,
             bool wrapIn,
-            bool unwrapIn,
-            bool wrapOut,
             bool unwrapOut,
-            address wrappedTokenIn,
-            address wrappedTokenOut,
             address receiver
         )
     {
@@ -225,13 +172,10 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
         tokenOut = IERC20(address(bytes20(data[52:72])));
         poolId = address(bytes20(data[72:92]));
         uint8 packed = uint8(data[92]);
-        wrapIn = (packed & 1) != 0; // bit0
-        unwrapIn = ((packed >> 1) & 1) != 0; // bit1
-        wrapOut = ((packed >> 2) & 1) != 0; // bit2
-        unwrapOut = ((packed >> 3) & 1) != 0; // bit3
-        transferType = TransferType(packed >> 4);
-        wrappedTokenIn = address(bytes20(data[93:113]));
-        wrappedTokenOut = address(bytes20(data[113:133]));
-        receiver = address(bytes20(data[133:153]));
+        isBuffer = (packed & 1) != 0; // bit0
+        wrapIn = ((packed >> 1) & 1) != 0; // bit1
+        unwrapOut = ((packed >> 2) & 1) != 0; // bit2
+        transferType = TransferType(packed >> 3);
+        receiver = address(bytes20(data[93:113]));
     }
 }

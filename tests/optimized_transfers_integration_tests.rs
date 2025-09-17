@@ -569,8 +569,8 @@ fn test_uniswap_v3_balancer_v3() {
             static_attributes: {
                 let mut attrs = HashMap::new();
                 attrs.insert(
-                    "mapping_tokens".to_string(),
-                    Bytes::from("0x5b7b22616464726573736573223a5b5b302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c305d5d2c22746f6b656e5f74797065223a224e6f6e65227d2c7b22616464726573736573223a5b5b302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c305d5d2c22746f6b656e5f74797065223a224e6f6e65227d5d"),
+                    "pool_type".to_string(),
+                    Bytes::from("0x5765696768746564506f6f6c466163746f7279"),
                 );
                 attrs
             },

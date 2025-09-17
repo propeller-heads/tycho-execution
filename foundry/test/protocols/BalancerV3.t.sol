@@ -17,12 +17,9 @@ contract BalancerV3ExecutorExposed is BalancerV3Executor {
             IERC20 tokenOut,
             address poolId,
             TransferType transferType,
+            bool isBuffer,
             bool wrapIn,
-            bool unwrapIn,
-            bool wrapOut,
             bool unwrapOut,
-            address wrappedTokenIn,
-            address wrappedTokenOut,
             address receiver
         )
     {
@@ -42,7 +39,7 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
         0x0000000000000000000000000000000000000000;
 
     function setUp() public {
-        uint256 forkBlock = 22625131;
+        uint256 forkBlock = 22753387;
         vm.createSelectFork(vm.rpcUrl("mainnet"), forkBlock);
         balancerV3Exposed = new BalancerV3ExecutorExposed(PERMIT2_ADDRESS);
     }
@@ -55,13 +52,10 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
             WETH_osETH_pool,
             _packParams(
                 uint8(RestrictTransferFrom.TransferType.None),
+                false, // isBuffer
                 false, // wrapIn
-                false, // unwrapIn
-                false, // wrapOut
                 false // unwrapOut
             ),
-            ZERO_TOKEN,
-            ZERO_TOKEN,
             BOB
         );
 
@@ -71,12 +65,9 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
             IERC20 tokenOut,
             address poolId,
             RestrictTransferFrom.TransferType transferType,
+            bool isBuffer,
             bool wrapIn,
-            bool unwrapIn,
-            bool wrapOut,
             bool unwrapOut,
-            address wrappedTokenIn,
-            address wrappedTokenOut,
             address receiver
         ) = balancerV3Exposed.decodeParams(params);
 
@@ -87,12 +78,9 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
         assertEq(
             uint8(transferType), uint8(RestrictTransferFrom.TransferType.None)
         );
+        assertEq(isBuffer, false);
         assertEq(wrapIn, false);
-        assertEq(unwrapIn, false);
-        assertEq(wrapOut, false);
         assertEq(unwrapOut, false);
-        assertEq(wrappedTokenIn, ZERO_TOKEN);
-        assertEq(wrappedTokenOut, ZERO_TOKEN);
         assertEq(receiver, BOB);
     }
 
@@ -103,9 +91,8 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
             WETH_osETH_pool,
             _packParams(
                 uint8(RestrictTransferFrom.TransferType.None),
+                false, // isBuffer
                 false, // wrapIn
-                false, // unwrapIn
-                false, // wrapOut
                 false // unwrapOut
             )
         );
@@ -122,13 +109,10 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
             WETH_osETH_pool,
             _packParams(
                 uint8(RestrictTransferFrom.TransferType.Transfer),
+                false, // isBuffer
                 false, // wrapIn
-                false, // unwrapIn
-                false, // wrapOut
                 false // unwrapOut
             ),
-            ZERO_TOKEN,
-            ZERO_TOKEN,
             BOB
         );
 
@@ -166,16 +150,15 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
         bytes memory protocolData =
             loadCallDataFromFile("test_encode_balancer_v3_with_wrap_in");
 
-        uint256 amountIn = 10 ** 6;
-        address USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-        address aaveGHO_ADDR =
-            address(0xC71Ea051a5F82c67ADcF634c36FFE6334793D24C);
-        deal(USDT, address(balancerV3Exposed), amountIn);
-        uint256 balanceBefore = IERC20(aaveGHO_ADDR).balanceOf(BOB);
+        uint256 amountIn = 10 ** 18;
+        address wstUSR = 0x1202F5C7b4B9E47a1A484E8B270be34dbbC75055;
+        address USR = 0x66a1E37c9b0eAddca17d3662D6c05F4DECf3e110;
+        deal(USR, address(balancerV3Exposed), amountIn);
+        uint256 balanceBefore = IERC20(wstUSR).balanceOf(BOB);
 
         uint256 amountOut = balancerV3Exposed.swap(amountIn, protocolData);
 
-        uint256 balanceAfter = IERC20(aaveGHO_ADDR).balanceOf(BOB);
+        uint256 balanceAfter = IERC20(wstUSR).balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);
         assertEq(balanceAfter - balanceBefore, amountOut);
     }
@@ -185,45 +168,26 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
             loadCallDataFromFile("test_encode_balancer_v3_with_unwrap_out");
 
         uint256 amountIn = 5 ** 18;
-        address waEthUSDT_ADDR =
-            address(0x7Bc3485026Ac48b6cf9BaF0A377477Fff5703Af8);
-        deal(waEthUSDT_ADDR, address(balancerV3Exposed), amountIn);
-        uint256 balanceBefore = IERC20(GHO_ADDR).balanceOf(BOB);
+        address wstUSR = 0x1202F5C7b4B9E47a1A484E8B270be34dbbC75055;
+        address USR = 0x66a1E37c9b0eAddca17d3662D6c05F4DECf3e110;
+        deal(wstUSR, address(balancerV3Exposed), amountIn);
+        uint256 balanceBefore = IERC20(USR).balanceOf(BOB);
 
         uint256 amountOut = balancerV3Exposed.swap(amountIn, protocolData);
 
-        uint256 balanceAfter = IERC20(GHO_ADDR).balanceOf(BOB);
-        assertGt(balanceAfter, balanceBefore);
-        assertEq(balanceAfter - balanceBefore, amountOut);
-    }
-
-    function testSwapIntegrationWithWrapInAndUnwrapOut() public {
-        bytes memory protocolData = loadCallDataFromFile(
-            "test_encode_balancer_v3_with_wrap_in_and_unwrap_out"
-        );
-
-        uint256 amountIn = 10 ** 6;
-        address USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-        deal(USDT, address(balancerV3Exposed), amountIn);
-        uint256 balanceBefore = IERC20(GHO_ADDR).balanceOf(BOB);
-
-        uint256 amountOut = balancerV3Exposed.swap(amountIn, protocolData);
-
-        uint256 balanceAfter = IERC20(GHO_ADDR).balanceOf(BOB);
+        uint256 balanceAfter = IERC20(USR).balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);
         assertEq(balanceAfter - balanceBefore, amountOut);
     }
 
     function _packParams(
         uint8 transferType,
+        bool isBuffer,
         bool wrapIn,
-        bool unwrapIn,
-        bool wrapOut,
         bool unwrapOut
     ) internal pure returns (uint8 packed) {
-        packed = (transferType << 4) | ((unwrapOut ? 1 : 0) << 3)
-            | ((wrapOut ? 1 : 0) << 2) | ((unwrapIn ? 1 : 0) << 1)
-            | (wrapIn ? 1 : 0);
+        packed = (transferType << 3) | ((unwrapOut ? 1 : 0) << 2)
+            | ((wrapIn ? 1 : 0) << 1) | (isBuffer ? 1 : 0);
     }
 }
 
