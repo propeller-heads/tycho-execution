@@ -17,6 +17,7 @@ import {
 } from "@ekubo/types/sqrtRatio.sol";
 import {RestrictTransferFrom} from "../RestrictTransferFrom.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "../../lib/bytes/LibPrefixLengthEncodedByteArray.sol";
 
 contract EkuboExecutor is
     IExecutor,
@@ -34,7 +35,6 @@ contract EkuboExecutor is
     address immutable mevResist;
 
     uint256 constant POOL_DATA_OFFSET = 57;
-    uint256 constant HOP_BYTE_LEN = 52;
 
     bytes4 constant LOCKED_SELECTOR = 0xb45a3c0e; // locked(uint256)
     bytes4 constant PAY_CALLBACK_SELECTOR = 0x599d0714; // payCallback(uint256,address)
@@ -42,6 +42,7 @@ contract EkuboExecutor is
     uint256 constant SKIP_AHEAD = 0;
 
     using SafeERC20 for IERC20;
+    using LibPrefixLengthEncodedByteArray for bytes;
 
     constructor(address _core, address _mevResist, address _permit2)
         RestrictTransferFrom(_permit2)
@@ -59,7 +60,8 @@ contract EkuboExecutor is
         payable
         returns (uint256 calculatedAmount)
     {
-        if (data.length < 92) revert EkuboExecutor__InvalidDataLength();
+        // Minimum length: 1 byte transferType + 20 bytes receiver + 20 bytes tokenIn + 52 bytes first hop = 93 bytes
+        if (data.length < 93) revert EkuboExecutor__InvalidDataLength();
 
         // amountIn must be at most type(int128).MAX
         calculatedAmount =
@@ -144,60 +146,87 @@ contract EkuboExecutor is
 
         address nextTokenIn = tokenIn;
 
-        uint256 hopsLength = (swapData.length - POOL_DATA_OFFSET) / HOP_BYTE_LEN;
+        // First hop is always present (not PLE encoded)
+        bytes calldata firstHopData =
+            swapData[POOL_DATA_OFFSET:POOL_DATA_OFFSET + 52];
+        address nextTokenOut = address(bytes20(firstHopData[0:20]));
+        Config poolConfig = Config.wrap(bytes32(firstHopData[20:52]));
 
-        uint256 offset = POOL_DATA_OFFSET;
+        nextAmountIn =
+            _executeSwap(nextTokenIn, nextTokenOut, poolConfig, nextAmountIn);
+        nextTokenIn = nextTokenOut;
 
-        for (uint256 i = 0; i < hopsLength; i++) {
-            address nextTokenOut =
-                address(bytes20(LibBytes.loadCalldata(swapData, offset)));
-            Config poolConfig =
-                Config.wrap(LibBytes.loadCalldata(swapData, offset + 20));
+        // Remaining hops are PLE encoded
+        bytes calldata remainingHops = swapData[POOL_DATA_OFFSET + 52:];
+        bytes[] memory hops =
+            LibPrefixLengthEncodedByteArray.toArray(remainingHops);
 
-            (
-                address token0,
-                address token1,
-                bool isToken1,
-                SqrtRatio sqrtRatioLimit
-            ) = nextTokenIn > nextTokenOut
-                ? (nextTokenOut, nextTokenIn, true, MAX_SQRT_RATIO)
-                : (nextTokenIn, nextTokenOut, false, MIN_SQRT_RATIO);
+        for (uint256 i = 0; i < hops.length; i++) {
+            bytes memory hopData = hops[i];
 
-            PoolKey memory pk = PoolKey(token0, token1, poolConfig);
+            // Skip padding (Ekubo adds extra padding that PLE interprets as empty element)
+            if (hopData.length == 0) continue;
 
-            int128 delta0;
-            int128 delta1;
+            address tokenOut;
+            Config config;
 
-            if (poolConfig.extension() == mevResist) {
-                (delta0, delta1) = abi.decode(
-                    _forward(
-                        mevResist,
-                        abi.encode(
-                            pk,
-                            nextAmountIn,
-                            isToken1,
-                            sqrtRatioLimit,
-                            SKIP_AHEAD
-                        )
-                    ),
-                    (int128, int128)
-                );
-            } else {
-                // slither-disable-next-line calls-loop
-                (delta0, delta1) = core.swap_611415377(
-                    pk, nextAmountIn, isToken1, sqrtRatioLimit, SKIP_AHEAD
-                );
+            // Extract tokenOut (first 20 bytes) and config (next 32 bytes) from hopData
+            assembly {
+                tokenOut := mload(add(hopData, 20))
+                config := mload(add(hopData, 52))
             }
 
+            nextTokenOut = tokenOut;
+            poolConfig = config;
+            nextAmountIn = _executeSwap(
+                nextTokenIn, nextTokenOut, poolConfig, nextAmountIn
+            );
             nextTokenIn = nextTokenOut;
-            nextAmountIn = -(isToken1 ? delta0 : delta1);
-
-            offset += HOP_BYTE_LEN;
         }
 
         _pay(tokenIn, tokenInDebtAmount, transferType);
         core.withdraw(nextTokenIn, receiver, uint128(nextAmountIn));
         return nextAmountIn;
+    }
+
+    function _executeSwap(
+        address tokenIn,
+        address tokenOut,
+        Config poolConfig,
+        int128 amountIn
+    ) internal returns (int128 amountOut) {
+        (
+            address token0,
+            address token1,
+            bool isToken1,
+            SqrtRatio sqrtRatioLimit
+        ) = tokenIn > tokenOut
+            ? (tokenOut, tokenIn, true, MAX_SQRT_RATIO)
+            : (tokenIn, tokenOut, false, MIN_SQRT_RATIO);
+
+        PoolKey memory poolKey = PoolKey(token0, token1, poolConfig);
+
+        int128 delta0;
+        int128 delta1;
+
+        if (poolConfig.extension() == mevResist) {
+            (delta0, delta1) = abi.decode(
+                _forward(
+                    mevResist,
+                    abi.encode(
+                        poolKey, amountIn, isToken1, sqrtRatioLimit, SKIP_AHEAD
+                    )
+                ),
+                (int128, int128)
+            );
+        } else {
+            // slither-disable-next-line calls-loop
+            (delta0, delta1) = core.swap_611415377(
+                poolKey, amountIn, isToken1, sqrtRatioLimit, SKIP_AHEAD
+            );
+        }
+
+        amountOut = -(isToken1 ? delta0 : delta1);
     }
 
     function _forward(address to, bytes memory data)
