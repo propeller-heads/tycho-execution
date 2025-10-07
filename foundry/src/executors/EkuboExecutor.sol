@@ -34,6 +34,7 @@ contract EkuboExecutor is
     ICore immutable core;
     address immutable mevResist;
 
+    // slither-disable-next-line unused-state
     uint256 constant POOL_DATA_OFFSET = 57;
 
     bytes4 constant LOCKED_SELECTOR = 0xb45a3c0e; // locked(uint256)
@@ -171,6 +172,7 @@ contract EkuboExecutor is
             Config config;
 
             // Extract tokenOut (first 20 bytes) and config (next 32 bytes) from hopData
+            // slither-disable-next-line assembly
             assembly {
                 tokenOut := mload(add(hopData, 20))
                 config := mload(add(hopData, 52))
