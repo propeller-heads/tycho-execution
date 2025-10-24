@@ -24,9 +24,11 @@ contract ShibaswapV2Executor is IExecutor, ICallback, RestrictTransferFrom {
     bytes32 public immutable initCode;
     address private immutable self;
 
-    constructor(address _factory, bytes32 _initCode, address _permit2)
-        RestrictTransferFrom(_permit2)
-    {
+    constructor(
+        address _factory,
+        bytes32 _initCode,
+        address _permit2
+    ) RestrictTransferFrom(_permit2) {
         if (_factory == address(0)) {
             revert ShibaswapV2Executor__InvalidFactory();
         }
@@ -39,11 +41,10 @@ contract ShibaswapV2Executor is IExecutor, ICallback, RestrictTransferFrom {
     }
 
     // slither-disable-next-line locked-ether
-    function swap(uint256 amountIn, bytes calldata data)
-        external
-        payable
-        returns (uint256 amountOut)
-    {
+    function swap(
+        uint256 amountIn,
+        bytes calldata data
+    ) external payable returns (uint256 amountOut) {
         (
             address tokenIn,
             address tokenOut,
@@ -60,8 +61,12 @@ contract ShibaswapV2Executor is IExecutor, ICallback, RestrictTransferFrom {
         int256 amount1;
         IUniswapV3Pool pool = IUniswapV3Pool(target);
 
-        bytes memory callbackData =
-            _makeV3CallbackData(tokenIn, tokenOut, fee, transferType);
+        bytes memory callbackData = _makeV3CallbackData(
+            tokenIn,
+            tokenOut,
+            fee,
+            transferType
+        );
 
         {
             (amount0, amount1) = pool.swap(
@@ -81,10 +86,9 @@ contract ShibaswapV2Executor is IExecutor, ICallback, RestrictTransferFrom {
         }
     }
 
-    function handleCallback(bytes calldata msgData)
-        public
-        returns (bytes memory result)
-    {
+    function handleCallback(
+        bytes calldata msgData
+    ) public returns (bytes memory result) {
         // The data has the following layout:
         // - selector (4 bytes)
         // - amount0Delta (32 bytes)
@@ -93,16 +97,19 @@ contract ShibaswapV2Executor is IExecutor, ICallback, RestrictTransferFrom {
         // - dataLength (32 bytes)
         // - protocolData (variable length)
 
-        (int256 amount0Delta, int256 amount1Delta) =
-            abi.decode(msgData[4:68], (int256, int256));
+        (int256 amount0Delta, int256 amount1Delta) = abi.decode(
+            msgData[4:68],
+            (int256, int256)
+        );
 
         address tokenIn = address(bytes20(msgData[132:152]));
         TransferType transferType = TransferType(uint8(msgData[175]));
 
         verifyCallback(msgData[132:]);
 
-        uint256 amountOwed =
-            amount0Delta > 0 ? uint256(amount0Delta) : uint256(amount1Delta);
+        uint256 amountOwed = amount0Delta > 0
+            ? uint256(amount0Delta)
+            : uint256(amount1Delta);
 
         _transfer(msg.sender, transferType, tokenIn, amountOwed);
 
@@ -118,16 +125,16 @@ contract ShibaswapV2Executor is IExecutor, ICallback, RestrictTransferFrom {
     }
 
     function uniswapV3SwapCallback(
-        int256, /* amount0Delta */
-        int256, /* amount1Delta */
+        int256 /* amount0Delta */,
+        int256 /* amount1Delta */,
         bytes calldata /* data */
-    )
-        external
-    {
+    ) external {
         handleCallback(msg.data);
     }
 
-    function _decodeData(bytes calldata data)
+    function _decodeData(
+        bytes calldata data
+    )
         internal
         pure
         returns (
@@ -167,8 +174,9 @@ contract ShibaswapV2Executor is IExecutor, ICallback, RestrictTransferFrom {
         uint24 fee,
         address target
     ) internal view {
-        (address token0, address token1) =
-            tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
+        (address token0, address token1) = tokenA < tokenB
+            ? (tokenA, tokenB)
+            : (tokenB, tokenA);
         address pool = address(
             uint160(
                 uint256(
@@ -188,4 +196,3 @@ contract ShibaswapV2Executor is IExecutor, ICallback, RestrictTransferFrom {
         }
     }
 }
-

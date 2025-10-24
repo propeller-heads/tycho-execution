@@ -9,11 +9,15 @@ import {Permit2TestHelper} from "../Permit2TestHelper.sol";
 import {Test} from "../../lib/forge-std/src/Test.sol";
 
 contract ShibaswapV2ExecutorExposed is ShibaswapV2Executor {
-    constructor(address _factory, bytes32 _initCode, address _permit2)
-        ShibaswapV2Executor(_factory, _initCode, _permit2)
-    {}
+    constructor(
+        address _factory,
+        bytes32 _initCode,
+        address _permit2
+    ) ShibaswapV2Executor(_factory, _initCode, _permit2) {}
 
-    function decodeData(bytes calldata data)
+    function decodeData(
+        bytes calldata data
+    )
         external
         pure
         returns (
@@ -127,8 +131,11 @@ contract ShibaswapV2ExecutorTest is
     */
 
     function testDecodeParamsInvalidDataLength() public {
-        bytes memory invalidParams =
-            abi.encodePacked(WETH_ADDR, address(2), address(3));
+        bytes memory invalidParams = abi.encodePacked(
+            WETH_ADDR,
+            address(2),
+            address(3)
+        );
 
         vm.expectRevert(ShibaswapV2Executor__InvalidDataLength.selector);
         shibaswapV2Exposed.decodeData(invalidParams);
@@ -204,15 +211,16 @@ contract ShibaswapV2ExecutorTest is
         RestrictTransferFrom.TransferType transferType
     ) internal view returns (bytes memory) {
         IUniswapV3Pool pool = IUniswapV3Pool(target);
-        return abi.encodePacked(
-            tokenIn,
-            tokenOut,
-            pool.fee(),
-            receiver,
-            target,
-            zero2one,
-            transferType
-        );
+        return
+            abi.encodePacked(
+                tokenIn,
+                tokenOut,
+                pool.fee(),
+                receiver,
+                target,
+                zero2one,
+                transferType
+            );
     }
 
     function testExportContract() public {
@@ -267,4 +275,3 @@ contract TychoRouterForShibaswapV2Test is TychoRouterTestSetup {
     }
     */
 }
-
