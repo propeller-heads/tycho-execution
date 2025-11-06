@@ -445,6 +445,62 @@ contract UniswapV4ExecutorTestForEuler is Constants, TestUtils {
     }
 }
 
+contract UniswapV4ExecutorTestForAnsgtrom is Constants, TestUtils {
+    using SafeERC20 for IERC20;
+
+    UniswapV4ExecutorExposed uniswapV4Exposed;
+    IERC20 USDC = IERC20(USDC_ADDR);
+    IERC20 WETH = IERC20(WETH_ADDR);
+
+    function setUp() public {
+        uint256 forkBlock = 23740780;
+        vm.createSelectFork(vm.rpcUrl("mainnet"), forkBlock);
+        uniswapV4Exposed = new UniswapV4ExecutorExposed(
+            IPoolManager(POOL_MANAGER), PERMIT2_ADDRESS
+        );
+    }
+
+    function testSingleSwapAngstrom() public {
+        uint256 amountIn = 4160938619;
+        deal(USDC_ADDR, address(uniswapV4Exposed), amountIn);
+        uint256 poolManagerBalanceBefore = USDC.balanceOf(POOL_MANAGER);
+
+        UniswapV4Executor.UniswapV4Pool[] memory pools =
+            new UniswapV4Executor.UniswapV4Pool[](1);
+        pools[0] = UniswapV4Executor.UniswapV4Pool({
+            intermediaryToken: WETH_ADDR,
+            fee: uint24(8388608),
+            tickSpacing: int24(10),
+            hook: address(0x0000000aa232009084Bd71A5797d089AA4Edfad4),
+            hookData: hex"d437f3372f3add2c2bc3245e6bd6f9c202e61bb367c79a6f740c7c12ca9c54a760bead943516fafaf8a4fe65a907b31d45c2ab4b525f9f32ec2771033e0832359ceb2e38d9288a755c7c366ce889b0df24b5821b1c"
+        });
+        // got the hook data from their attestation API:
+        // curl -X 'POST' \
+        //  'https://attestations.angstrom.xyz/getAttestations' \
+        //  -H 'accept: application/json' \
+        //  -H 'X-Api-Key: <insert-key>' \
+        //  -H 'Content-Type: application/json' \
+        //  -d '{
+        //  "blocks_in_future": 5
+        //}'
+
+        bytes memory data = UniswapV4Utils.encodeExactInput(
+            USDC_ADDR,
+            WETH_ADDR,
+            true,
+            RestrictTransferFrom.TransferType.Transfer,
+            ALICE,
+            pools
+        );
+
+        uint256 amountOut = uniswapV4Exposed.swap(amountIn, data);
+        assertEq(
+            USDC.balanceOf(POOL_MANAGER), poolManagerBalanceBefore + amountIn
+        );
+        assertTrue(WETH.balanceOf(ALICE) == amountOut);
+    }
+}
+
 contract TychoRouterForBalancerV3Test is TychoRouterTestSetup {
     function testSingleSwapUSV4CallbackPermit2() public {
         vm.startPrank(ALICE);
