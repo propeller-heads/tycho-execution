@@ -48,9 +48,16 @@ const executors_to_deploy = {
                 "0x000000000022D473030F116dDEE9F6B43aC78BA3"
             ]
         },
-        // Args: Pool manager
+        // Args: Pool manager, permit2
         {
             exchange: "UniswapV4Executor", args: [
+                "0x000000000004444c5dc75cB358380D2e3dE08A90",
+                "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+            ]
+        },
+        //   Args: Pool manager, permit2
+        {
+            exchange: "UniswapV4AngstromExecutor", args: [
                 "0x000000000004444c5dc75cB358380D2e3dE08A90",
                 "0x000000000022D473030F116dDEE9F6B43aC78BA3"
             ]
