@@ -82,8 +82,8 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
     HashflowExecutor public hashflowExecutor;
     FluidV1Executor public fluidV1Executor;
     SlipstreamsExecutor public slipstreamsExecutor;
-
     ERC4626Executor public erc4626Executor;
+
     function getChain() public view virtual returns (string memory) {
         return "mainnet";
     }
@@ -159,7 +159,7 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
         );
         erc4626Executor = new ERC4626Executor(PERMIT2_ADDRESS);
 
-        address[] memory executors = new address[](13);
+        address[] memory executors = new address[](14);
         executors[0] = address(usv2Executor);
         executors[1] = address(usv3Executor);
         executors[2] = address(pancakev3Executor);
