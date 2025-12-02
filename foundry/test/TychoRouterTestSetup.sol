@@ -17,6 +17,7 @@ import {
 import {UniswapV4Executor} from "../src/executors/UniswapV4Executor.sol";
 import {FluidV1Executor} from "../src/executors/FluidV1Executor.sol";
 import {SlipstreamsExecutor} from "../src/executors/SlipstreamsExecutor.sol";
+import {ERC4626Executor} from "../src/executors/ERC4626Executor.sol";
 
 // Test utilities and mocks
 import "./Constants.sol";
@@ -82,6 +83,7 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
     FluidV1Executor public fluidV1Executor;
     SlipstreamsExecutor public slipstreamsExecutor;
 
+    ERC4626Executor public erc4626Executor;
     function getChain() public view virtual returns (string memory) {
         return "mainnet";
     }
@@ -155,6 +157,7 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
             SLIPSTREAMS_NEW_FACTORY_BASE,
             PERMIT2_ADDRESS
         );
+        erc4626Executor = new ERC4626Executor(PERMIT2_ADDRESS);
 
         address[] memory executors = new address[](13);
         executors[0] = address(usv2Executor);
@@ -170,6 +173,7 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
         executors[10] = address(hashflowExecutor);
         executors[11] = address(fluidV1Executor);
         executors[12] = address(slipstreamsExecutor);
+        executors[13] = address(erc4626Executor);
 
         return executors;
     }
