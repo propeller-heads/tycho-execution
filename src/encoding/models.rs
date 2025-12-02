@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use alloy::primitives::Address;
 use clap::ValueEnum;
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
@@ -7,7 +8,7 @@ use tycho_common::{
     models::protocol::ProtocolComponent, simulation::protocol_sim::ProtocolSim, Bytes,
 };
 
-use crate::encoding::serde_primitives::biguint_string;
+use crate::encoding::{evm::constants::ANGSTROM_HOOK_ADDRESS, serde_primitives::biguint_string};
 
 /// Specifies the method for transferring user funds into Tycho execution.
 ///
@@ -94,6 +95,30 @@ pub struct Swap {
     /// Optional estimated amount in for this Swap. This is necessary for RFQ protocols. This value
     /// is used to request the quote
     pub estimated_amount_in: Option<BigUint>,
+    /// The effective protocol system to use for this swap. This may differ from
+    /// component.protocol_system when special handling is needed (e.g., Angstrom hooks use
+    /// uniswap_v4_angstrom instead of uniswap_v4_hooks).
+    pub protocol_system: String,
+}
+
+/// Helper function to determine the effective protocol system for a swap.
+///
+/// For Angstrom hooks (uniswap_v4_hooks with the Angstrom hook address), this returns
+/// "uniswap_v4_angstrom" to ensure the correct executor is used. Otherwise, it returns
+/// the component's protocol_system unchanged.
+fn get_effective_protocol_system(component: &ProtocolComponent) -> String {
+    if component.protocol_system == "uniswap_v4_hooks" {
+        let hook_address = component
+            .static_attributes
+            .get("hooks")
+            .map(|hook| Address::from_slice(hook))
+            .unwrap_or(Address::ZERO);
+
+        if hook_address == *ANGSTROM_HOOK_ADDRESS {
+            return "uniswap_v4_angstrom".to_string();
+        }
+    }
+    component.protocol_system.clone()
 }
 
 impl Swap {
@@ -106,14 +131,18 @@ impl Swap {
         protocol_state: Option<Arc<dyn ProtocolSim>>,
         estimated_amount_in: Option<BigUint>,
     ) -> Self {
+        let component = component.into();
+        let protocol_system = get_effective_protocol_system(&component);
+
         Self {
-            component: component.into(),
+            component,
             token_in,
             token_out,
             split,
             user_data,
             protocol_state,
             estimated_amount_in,
+            protocol_system,
         }
     }
 }
@@ -125,7 +154,8 @@ impl PartialEq for Swap {
             self.token_out == other.token_out &&
             self.split == other.split &&
             self.user_data == other.user_data &&
-            self.estimated_amount_in == other.estimated_amount_in
+            self.estimated_amount_in == other.estimated_amount_in &&
+            self.protocol_system == other.protocol_system
         // Skip protocol_state comparison since trait objects don't implement PartialEq
     }
 }
@@ -178,6 +208,8 @@ impl SwapBuilder {
     }
 
     pub fn build(self) -> Swap {
+        let protocol_system = get_effective_protocol_system(&self.component);
+
         Swap {
             component: self.component,
             token_in: self.token_in,
@@ -186,6 +218,7 @@ impl SwapBuilder {
             user_data: self.user_data,
             protocol_state: self.protocol_state,
             estimated_amount_in: self.estimated_amount_in,
+            protocol_system,
         }
     }
 }
@@ -345,6 +378,7 @@ mod tests {
         assert_eq!(swap.token_in, Bytes::from("0x12"));
         assert_eq!(swap.token_out, Bytes::from("0x34"));
         assert_eq!(swap.component.protocol_system, "uniswap_v2");
+        assert_eq!(swap.protocol_system, "uniswap_v2");
         assert_eq!(swap.component.id, "i-am-an-id");
         assert_eq!(swap.split, 0.5);
         assert_eq!(swap.user_data, user_data);

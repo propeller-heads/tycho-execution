@@ -155,7 +155,6 @@ impl SwapEncoder for UniswapV3SwapEncoder {
 #[derive(Clone)]
 pub struct UniswapV4SwapEncoder {
     executor_address: Bytes,
-    angstrom_hook_address: Bytes,
 }
 
 impl UniswapV4SwapEncoder {
@@ -252,20 +251,9 @@ impl SwapEncoder for UniswapV4SwapEncoder {
     fn new(
         executor_address: Bytes,
         _chain: Chain,
-        config: Option<HashMap<String, String>>,
+        _config: Option<HashMap<String, String>>,
     ) -> Result<Self, EncodingError> {
-        let angstrom_hook_address = match config {
-            // Allow for no config, since Angstrom is not on every chain
-            None => Bytes::new(),
-            Some(cfg) => cfg
-                .get("angstrom_hook_address")
-                .map_or(Ok(Bytes::new()), |s| {
-                    Bytes::from_str(s).map_err(|_| {
-                        EncodingError::FatalError("Invalid Angstrom hook address".to_string())
-                    })
-                })?,
-        };
-        Ok(Self { executor_address, angstrom_hook_address })
+        Ok(Self { executor_address })
     }
 
     fn encode_swap(
@@ -289,8 +277,7 @@ impl SwapEncoder for UniswapV4SwapEncoder {
             Err(_) => Address::ZERO,
         };
 
-        let is_angstrom_hook = **hook_address == *self.angstrom_hook_address;
-        let hook_data = if is_angstrom_hook {
+        let hook_data = if swap.protocol_system == "uniswap_v4_angstrom" {
             // Angstrom hook - obtain hook data from API
             let attestations = Self::fetch_angstrom_attestations()?;
             Self::encode_angstrom_attestations(&attestations)?
@@ -1782,6 +1769,7 @@ mod tests {
             let usdc_weth_pool = ProtocolComponent {
                 id: String::from("0x000000000004444c5dc75cB358380D2e3dE08A90"),
                 static_attributes: usdc_weth_attributes,
+                protocol_system: "uniswap_v4_hooks".to_string(),
                 ..Default::default()
             };
 
@@ -1794,6 +1782,7 @@ mod tests {
             let weth_usdt_pool = ProtocolComponent {
                 id: String::from("0x000000000004444c5dc75cB358380D2e3dE08A90"),
                 static_attributes: weth_usdt_attributes,
+                protocol_system: "uniswap_v4_hooks".to_string(),
                 ..Default::default()
             };
 

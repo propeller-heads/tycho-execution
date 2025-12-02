@@ -77,6 +77,11 @@ impl SwapEncoderBuilder {
                 self.chain,
                 self.config,
             )?)),
+            "uniswap_v4_angstrom" => Ok(Box::new(UniswapV4SwapEncoder::new(
+                self.executor_address,
+                self.chain,
+                self.config,
+            )?)),
             "ekubo_v2" => {
                 Ok(Box::new(EkuboSwapEncoder::new(self.executor_address, self.chain, self.config)?))
             }

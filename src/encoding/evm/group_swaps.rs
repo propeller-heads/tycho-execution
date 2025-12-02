@@ -41,7 +41,7 @@ pub fn group_swaps(swaps: &Vec<Swap>) -> Vec<SwapGroup> {
     let mut groupable_protocol;
     let mut last_swap_out_token = Bytes::default();
     for swap in swaps {
-        let current_swap_protocol = swap.component.protocol_system.clone();
+        let current_swap_protocol = swap.protocol_system.clone();
         groupable_protocol = GROUPABLE_PROTOCOLS.contains(&current_swap_protocol.as_str());
 
         // Split 0 can also mean that the swap is the remaining part of a branch of splits,
@@ -57,7 +57,7 @@ pub fn group_swaps(swaps: &Vec<Swap>) -> Vec<SwapGroup> {
                 group.token_out = swap.token_out.clone();
             }
         } else {
-            // Not second or later USV4 pool. Push the current group (if it exists) and then
+            // Not second or later groupable pool. Push the current group (if it exists) and then
             // create a new group.
             if let Some(group) = current_group.as_mut() {
                 grouped_swaps.push(group.clone());

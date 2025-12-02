@@ -151,6 +151,7 @@ fn test_single_encoding_strategy_usv4_eth_in() {
         user_data: None,
         protocol_state: None,
         estimated_amount_in: None,
+        protocol_system: "uniswap_v4".to_string(),
     };
     let encoder = get_tycho_router_encoder(UserTransferType::TransferFromPermit2);
 
@@ -219,6 +220,7 @@ fn test_single_encoding_strategy_usv4_eth_out() {
         user_data: None,
         protocol_state: None,
         estimated_amount_in: None,
+        protocol_system: "uniswap_v4".to_string(),
     };
 
     let encoder = get_tycho_router_encoder(UserTransferType::TransferFromPermit2);
@@ -295,6 +297,7 @@ fn test_single_encoding_strategy_usv4_grouped_swap() {
         user_data: None,
         protocol_state: None,
         estimated_amount_in: None,
+        protocol_system: "uniswap_v4".to_string(),
     };
 
     let swap_eth_pepe = Swap {
@@ -310,6 +313,7 @@ fn test_single_encoding_strategy_usv4_grouped_swap() {
         user_data: None,
         protocol_state: None,
         estimated_amount_in: None,
+        protocol_system: "uniswap_v4".to_string(),
     };
     let encoder = get_tycho_router_encoder(UserTransferType::TransferFromPermit2);
 
@@ -425,6 +429,7 @@ fn test_single_encoding_strategy_ekubo_grouped_swap() {
         user_data: None,
         protocol_state: None,
         estimated_amount_in: None,
+        protocol_system: "ekubo_v2".to_string(),
     };
 
     // Second swap: USDC -> USDT
@@ -448,6 +453,7 @@ fn test_single_encoding_strategy_ekubo_grouped_swap() {
         user_data: None,
         protocol_state: None,
         estimated_amount_in: None,
+        protocol_system: "ekubo_v2".to_string(),
     };
 
     let encoder = get_tycho_router_encoder(UserTransferType::TransferFrom);
@@ -509,13 +515,14 @@ fn test_single_encoding_strategy_curve() {
     };
 
     let swap = Swap {
-        component,
+        component: component.clone(),
         token_in: token_in.clone(),
         token_out: token_out.clone(),
         split: 0f64,
         user_data: None,
         protocol_state: None,
         estimated_amount_in: None,
+        protocol_system: component.protocol_system.clone(),
     };
 
     let encoder = get_tycho_router_encoder(UserTransferType::TransferFrom);
@@ -578,13 +585,14 @@ fn test_single_encoding_strategy_curve_st_eth() {
     };
 
     let swap = Swap {
-        component,
+        component: component.clone(),
         token_in: token_in.clone(),
         token_out: token_out.clone(),
         split: 0f64,
         user_data: None,
         protocol_state: None,
         estimated_amount_in: None,
+        protocol_system: component.protocol_system.clone(),
     };
 
     let encoder = get_tycho_router_encoder(UserTransferType::TransferFrom);
@@ -633,13 +641,14 @@ fn test_single_encoding_strategy_balancer_v3() {
     let token_in = Bytes::from("0x097ffedb80d4b2ca6105a07a4d90eb739c45a666");
     let token_out = Bytes::from("0x30881baa943777f92dc934d53d3bfdf33382cab3");
     let swap = Swap {
-        component: balancer_pool,
+        component: balancer_pool.clone(),
         token_in: token_in.clone(),
         token_out: token_out.clone(),
         split: 0f64,
         user_data: None,
         protocol_state: None,
         estimated_amount_in: None,
+        protocol_system: balancer_pool.protocol_system.clone(),
     };
 
     let encoder = get_tycho_router_encoder(UserTransferType::TransferFrom);
@@ -1045,13 +1054,14 @@ fn test_single_encoding_strategy_slipstreams() {
     let token_in = Bytes::from("0x4200000000000000000000000000000000000006");
     let token_out = Bytes::from("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913");
     let swap = Swap {
-        component: slipstreams_pool,
+        component: slipstreams_pool.clone(),
         token_in: token_in.clone(),
         token_out: token_out.clone(),
         split: 0f64,
         user_data: None,
         protocol_state: None,
         estimated_amount_in: None,
+        protocol_system: slipstreams_pool.protocol_system.clone(),
     };
 
     let encoder = get_base_tycho_router_encoder(UserTransferType::TransferFrom);
@@ -1103,13 +1113,16 @@ fn test_sequential_encoding_strategy_slipstreams() {
     let weth = Bytes::from("0x4200000000000000000000000000000000000006");
     let usdc = Bytes::from("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913");
     let swap1 = Swap {
-        component: slipstreams_weth_usdc_pool,
+        component: slipstreams_weth_usdc_pool.clone(),
         token_in: weth.clone(),
         token_out: usdc.clone(),
         split: 0f64,
         user_data: None,
         protocol_state: None,
         estimated_amount_in: None,
+        protocol_system: slipstreams_weth_usdc_pool
+            .protocol_system
+            .clone(),
     };
     let slipstreams_cbbtc_usdc_pool = ProtocolComponent {
         id: String::from("0x4e962BB3889Bf030368F56810A9c96B83CB3E778"),
@@ -1122,13 +1135,16 @@ fn test_sequential_encoding_strategy_slipstreams() {
     };
     let btc = Bytes::from("0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf");
     let swap2 = Swap {
-        component: slipstreams_cbbtc_usdc_pool,
+        component: slipstreams_cbbtc_usdc_pool.clone(),
         token_in: usdc.clone(),
         token_out: btc.clone(),
         split: 0f64,
         user_data: None,
         protocol_state: None,
         estimated_amount_in: None,
+        protocol_system: slipstreams_cbbtc_usdc_pool
+            .protocol_system
+            .clone(),
     };
 
     let encoder = get_base_tycho_router_encoder(UserTransferType::TransferFrom);

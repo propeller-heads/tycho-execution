@@ -1,9 +1,24 @@
-use std::{collections::HashSet, sync::LazyLock};
+use std::{collections::HashSet, str::FromStr, sync::LazyLock};
+
+use alloy::primitives::Address;
+use serde_json::Value;
 
 pub const DEFAULT_EXECUTORS_JSON: &str = include_str!("../../../config/executor_addresses.json");
 pub const DEFAULT_ROUTERS_JSON: &str = include_str!("../../../config/router_addresses.json");
 pub const PROTOCOL_SPECIFIC_CONFIG: &str =
     include_str!("../../../config/protocol_specific_addresses.json");
+
+/// Lazily parse the Angstrom hook address from PROTOCOL_SPECIFIC_CONFIG
+pub static ANGSTROM_HOOK_ADDRESS: LazyLock<Address> = LazyLock::new(|| {
+    let config: Value = serde_json::from_str(PROTOCOL_SPECIFIC_CONFIG).unwrap_or_default();
+    config
+        .get("ethereum")
+        .and_then(|eth| eth.get("uniswap_v4_hooks"))
+        .and_then(|hooks| hooks.get("angstrom_hook_address"))
+        .and_then(|addr| addr.as_str())
+        .and_then(|s| Address::from_str(s).ok())
+        .unwrap_or(Address::ZERO)
+});
 
 /// The number of blocks in the future for which to fetch Angstrom Attestations
 ///
@@ -21,6 +36,7 @@ pub static GROUPABLE_PROTOCOLS: LazyLock<HashSet<&'static str>> = LazyLock::new(
     let mut set = HashSet::new();
     set.insert("uniswap_v4");
     set.insert("uniswap_v4_hooks");
+    set.insert("uniswap_v4_angstrom");
     set.insert("vm:balancer_v3");
     set.insert("ekubo_v2");
     set
@@ -38,6 +54,7 @@ pub static IN_TRANSFER_REQUIRED_PROTOCOLS: LazyLock<HashSet<&'static str>> = Laz
     set.insert("pancakeswap_v3");
     set.insert("uniswap_v4");
     set.insert("uniswap_v4_hooks");
+    set.insert("uniswap_v4_angstrom");
     set.insert("ekubo_v2");
     set.insert("vm:maverick_v2");
     set.insert("vm:balancer_v3");
@@ -58,6 +75,7 @@ pub static CALLBACK_CONSTRAINED_PROTOCOLS: LazyLock<HashSet<&'static str>> = Laz
     set.insert("pancakeswap_v3");
     set.insert("uniswap_v4");
     set.insert("uniswap_v4_hooks");
+    set.insert("uniswap_v4_angstrom");
     set.insert("ekubo_v2");
     set.insert("vm:balancer_v3");
     set.insert("fluid_v1");

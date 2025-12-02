@@ -84,6 +84,7 @@ fn main() {
         user_data: None,
         protocol_state: None,
         estimated_amount_in: None,
+        protocol_system: "uniswap_v3".to_string(),
     };
     let swap_usdc_usdt = Swap {
         component: ProtocolComponent {
@@ -103,6 +104,7 @@ fn main() {
         user_data: None,
         protocol_state: None,
         estimated_amount_in: None,
+        protocol_system: "uniswap_v3".to_string(),
     };
 
     // Then we create a solution object with the previous swap

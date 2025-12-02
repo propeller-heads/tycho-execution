@@ -45,6 +45,7 @@ fn main() {
         user_data: None,
         protocol_state: None,
         estimated_amount_in: None,
+        protocol_system: "uniswap_v2".to_string(),
     };
 
     // Then we create a solution object with the previous swap

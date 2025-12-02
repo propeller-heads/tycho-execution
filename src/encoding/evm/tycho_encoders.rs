@@ -96,7 +96,7 @@ impl TychoRouterEncoder {
         let protocols: HashSet<String> = solution
             .swaps
             .iter()
-            .map(|swap| swap.component.protocol_system.clone())
+            .map(|swap| swap.protocol_system.clone())
             .collect();
 
         let mut encoded_solution = if (solution.swaps.len() == 1) ||
