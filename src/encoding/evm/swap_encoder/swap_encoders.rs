@@ -1257,6 +1257,98 @@ impl SwapEncoder for SlipstreamsSwapEncoder {
     }
 }
 
+/// Encodes a swap on a Lido pool through the given executor address.
+///
+/// # Fields
+/// * `executor_address` - The address of the executor contract that will perform the swap.
+#[derive(Clone)]
+pub struct LidoSwapEncoder {
+    executor_address: Bytes,
+    st_eth_address: Bytes,
+    wst_eth_address: Bytes,
+    eth_address: Bytes,
+}
+
+#[repr(u8)]
+enum LidoPool {
+    StETH = 0,
+    WStETH = 1,
+}
+
+#[repr(u8)]
+enum LidoPoolDirection {
+    Stake = 0,
+    Wrap = 1,
+    Unwrap = 2,
+}
+
+impl LidoSwapEncoder {}
+
+impl SwapEncoder for LidoSwapEncoder {
+    fn new(
+        executor_address: Bytes,
+        chain: Chain,
+        _config: Option<HashMap<String, String>>,
+    ) -> Result<Self, EncodingError> {
+        Ok(Self {
+            executor_address,
+            st_eth_address: Bytes::from("0xae7ab96520de3a18e5e111b5eaab095312d7fe84"),
+            wst_eth_address: Bytes::from("0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"),
+            eth_address: chain.native_token().address,
+        })
+    }
+
+    fn encode_swap(
+        &self,
+        swap: &Swap,
+        encoding_context: &EncodingContext,
+    ) -> Result<Vec<u8>, EncodingError> {
+        let (pool, direction) = if swap.token_in == self.eth_address &&
+            swap.token_out == self.st_eth_address
+        {
+            (LidoPool::StETH, LidoPoolDirection::Stake)
+        } else if swap.token_in == self.st_eth_address && swap.token_out == self.wst_eth_address {
+            let token_approvals_manager = ProtocolApprovalsManager::new()?;
+            let token = bytes_to_address(&self.st_eth_address)?;
+            let mut approval_needed: bool = true;
+
+            if !encoding_context.historical_trade {
+                let tycho_router_address = bytes_to_address(router_address)?;
+                approval_needed = token_approvals_manager.approval_needed(
+                    token,
+                    tycho_router_address,
+                    bytes_to_address(&self.wst_eth_address)?,
+                )?;
+            }
+
+            (LidoPool::WStETH, LidoPoolDirection::Wrap)
+        } else if swap.token_in == self.wst_eth_address && swap.token_out == self.st_eth_address {
+            (LidoPool::WStETH, LidoPoolDirection::Unwrap)
+        } else {
+            return Err(EncodingError::InvalidInput("Combination not allowed".to_owned()))
+        };
+
+        // Token in address is always needed to perform a manual transfer from the router,
+        // since no optimizations are performed that send from one pool to the next
+        let args = (
+            bytes_to_address(&encoding_context.receiver)?,
+            (encoding_context.transfer_type as u8).to_be_bytes(),
+            (pool as u8).to_be_bytes(),
+            (direction as u8).to_be_bytes(),
+        );
+
+        Ok(args.abi_encode_packed())
+    }
+
+    fn executor_address(&self) -> &Bytes {
+        &self.executor_address
+    }
+
+    fn clone_box(&self) -> Box<dyn SwapEncoder> {
+        Box::new(self.clone())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
@@ -2700,6 +2792,179 @@ mod tests {
                 ))
                 .to_lowercase()
             );
+        }
+    }
+
+    mod lido {
+        use super::*;
+        use crate::encoding::models::SwapBuilder;
+        #[test]
+        fn test_encode_lido_steth() {
+            let lido_steth_pool = ProtocolComponent {
+                id: String::from("0xae7ab96520de3a18e5e111b5eaab095312d7fe84"),
+                ..Default::default()
+            };
+
+            let token_in = Bytes::from("0x0000000000000000000000000000000000000000");
+            let token_out = Bytes::from("0xae7ab96520de3a18e5e111b5eaab095312d7fe84");
+            let swap =
+                SwapBuilder::new(lido_steth_pool, token_in.clone(), token_out.clone()).build();
+            let encoding_context = EncodingContext {
+                receiver: Bytes::from("0x1D96F2f6BeF1202E4Ce1Ff6Dad0c2CB002861d3e"), // BOB
+                exact_out: false,
+                router_address: Some(Bytes::zero(20)),
+                group_token_in: token_in.clone(),
+                group_token_out: token_out.clone(),
+                transfer_type: TransferType::None,
+                historical_trade: false,
+            };
+            let encoder = LidoSwapEncoder::new(
+                Bytes::from("0x543778987b293C7E8Cf0722BB2e935ba6f4068D4"),
+                Chain::Ethereum,
+                None,
+            )
+            .unwrap();
+            let encoded_swap = encoder
+                .encode_swap(&swap, &encoding_context)
+                .unwrap();
+            let hex_swap = encode(&encoded_swap);
+            assert_eq!(
+                hex_swap,
+                String::from(concat!(
+                    // receiver
+                    "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
+                    // transfer type Transfer
+                    "02",
+                    // pool
+                    "00",
+                    // direction
+                    "00",
+                ))
+            );
+            write_calldata_to_file("test_encode_lido", hex_swap.as_str());
+        }
+
+        #[test]
+        fn test_encode_lido_wsteth_wrap() {
+            let lido_wsteth_pool = ProtocolComponent {
+                id: String::from("0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"),
+                ..Default::default()
+            };
+
+            let token_in = Bytes::from("0xae7ab96520de3a18e5e111b5eaab095312d7fe84");
+            let token_out = Bytes::from("0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0");
+            let swap =
+                SwapBuilder::new(lido_wsteth_pool, token_in.clone(), token_out.clone()).build();
+            let encoding_context = EncodingContext {
+                receiver: Bytes::from("0x1D96F2f6BeF1202E4Ce1Ff6Dad0c2CB002861d3e"), // BOB
+                exact_out: false,
+                router_address: Some(Bytes::zero(20)),
+                group_token_in: token_in.clone(),
+                group_token_out: token_out.clone(),
+                transfer_type: TransferType::None,
+                historical_trade: false,
+            };
+            let encoder = LidoSwapEncoder::new(
+                Bytes::from("0x543778987b293C7E8Cf0722BB2e935ba6f4068D4"),
+                Chain::Ethereum,
+                None,
+            )
+            .unwrap();
+            let encoded_swap = encoder
+                .encode_swap(&swap, &encoding_context)
+                .unwrap();
+            let hex_swap = encode(&encoded_swap);
+            assert_eq!(
+                hex_swap,
+                String::from(concat!(
+                    // receiver
+                    "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
+                    // transfer type Transfer
+                    "02",
+                    // pool
+                    "01",
+                    // direction
+                    "01",
+                ))
+            );
+            write_calldata_to_file("test_encode_lido", hex_swap.as_str());
+        }
+
+        #[test]
+        fn test_encode_lido_wsteth_unwrap() {
+            let lido_wsteth_pool = ProtocolComponent {
+                id: String::from("0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"),
+                ..Default::default()
+            };
+
+            let token_in = Bytes::from("0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0");
+            let token_out = Bytes::from("0xae7ab96520de3a18e5e111b5eaab095312d7fe84");
+            let swap =
+                SwapBuilder::new(lido_wsteth_pool, token_in.clone(), token_out.clone()).build();
+            let encoding_context = EncodingContext {
+                receiver: Bytes::from("0x1D96F2f6BeF1202E4Ce1Ff6Dad0c2CB002861d3e"), // BOB
+                exact_out: false,
+                router_address: Some(Bytes::zero(20)),
+                group_token_in: token_in.clone(),
+                group_token_out: token_out.clone(),
+                transfer_type: TransferType::None,
+                historical_trade: false,
+            };
+            let encoder = LidoSwapEncoder::new(
+                Bytes::from("0x543778987b293C7E8Cf0722BB2e935ba6f4068D4"),
+                Chain::Ethereum,
+                None,
+            )
+            .unwrap();
+            let encoded_swap = encoder
+                .encode_swap(&swap, &encoding_context)
+                .unwrap();
+            let hex_swap = encode(&encoded_swap);
+            assert_eq!(
+                hex_swap,
+                String::from(concat!(
+                    // receiver
+                    "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
+                    // transfer type Transfer
+                    "02",
+                    // pool
+                    "01",
+                    // direction
+                    "02",
+                ))
+            );
+            write_calldata_to_file("test_encode_lido", hex_swap.as_str());
+        }
+
+        #[test]
+        fn test_encode_lido_wrong_pool() {
+            let lido_wsteth_pool = ProtocolComponent {
+                id: String::from("0xae7ab96520de3a18e5e111b5eaab095312d7fe84"),
+                ..Default::default()
+            };
+
+            let token_in = Bytes::from("0xae7ab96520de3a18e5e111b5eaab095312d7fe84");
+            let token_out = Bytes::from("0x0000000000000000000000000000000000000000");
+            let swap =
+                SwapBuilder::new(lido_wsteth_pool, token_in.clone(), token_out.clone()).build();
+            let encoding_context = EncodingContext {
+                receiver: Bytes::from("0x1D96F2f6BeF1202E4Ce1Ff6Dad0c2CB002861d3e"), // BOB
+                exact_out: false,
+                router_address: Some(Bytes::zero(20)),
+                group_token_in: token_in.clone(),
+                group_token_out: token_out.clone(),
+                transfer_type: TransferType::None,
+                historical_trade: false,
+            };
+            let encoder = LidoSwapEncoder::new(
+                Bytes::from("0x543778987b293C7E8Cf0722BB2e935ba6f4068D4"),
+                Chain::Ethereum,
+                None,
+            )
+            .unwrap();
+
+            let encoded_swap = encoder.encode_swap(&swap, &encoding_context);
+            assert!(encoded_swap.is_err());
         }
     }
 }

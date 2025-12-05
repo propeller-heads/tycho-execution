@@ -81,6 +81,7 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
     HashflowExecutor public hashflowExecutor;
     FluidV1Executor public fluidV1Executor;
     SlipstreamsExecutor public slipstreamsExecutor;
+    // add lido executor here
 
     function getChain() public view virtual returns (string memory) {
         return "mainnet";
