@@ -15,6 +15,7 @@ import "./Dispatcher.sol";
 import {LibSwap} from "../lib/LibSwap.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {RestrictTransferFrom} from "./RestrictTransferFrom.sol";
+import {TychoVault} from "./TychoVault.sol";
 
 //                                         ✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷
 //                                   ✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷
@@ -70,8 +71,8 @@ contract TychoRouter is
     AccessControl,
     Dispatcher,
     Pausable,
-    ReentrancyGuard,
-    RestrictTransferFrom
+    RestrictTransferFrom,
+    TychoVault
 {
     IWETH private immutable _weth;
 
@@ -100,6 +101,16 @@ contract TychoRouter is
         permit2 = IAllowanceTransfer(_permit2);
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _weth = IWETH(weth);
+    }
+
+    /**
+     * @dev Override _debitVault from RestrictTransferFrom to implement vault debiting
+     */
+    function _debitVault(address user, address token, uint256 amount)
+        internal
+        override
+    {
+        _debitUserVaultBalance(user, token, amount);
     }
 
     /**
@@ -478,6 +489,12 @@ contract TychoRouter is
             receiver,
             amountIn
         );
+
+        // Credit any leftover tokens to the user's vault
+        address[] memory tokensToCheck = new address[](2);
+        tokensToCheck[0] = tokenIn;
+        tokensToCheck[1] = tokenOut;
+        _creditLeftoversToVault(msg.sender, tokensToCheck, 100);
     }
 
     /**
@@ -534,6 +551,12 @@ contract TychoRouter is
             receiver,
             amountIn
         );
+
+        // Credit any leftover tokens to the user's vault
+        address[] memory tokensToCheck = new address[](2);
+        tokensToCheck[0] = tokenIn;
+        tokensToCheck[1] = tokenOut;
+        _creditLeftoversToVault(msg.sender, tokensToCheck, 100);
     }
 
     /**
@@ -586,6 +609,12 @@ contract TychoRouter is
             receiver,
             amountIn
         );
+
+        // Credit any leftover tokens to the user's vault
+        address[] memory tokensToCheck = new address[](2);
+        tokensToCheck[0] = tokenIn;
+        tokensToCheck[1] = tokenOut;
+        _creditLeftoversToVault(msg.sender, tokensToCheck, 100);
     }
 
     /**
@@ -814,6 +843,25 @@ contract TychoRouter is
         return token == address(0)
             ? owner.balance
             : IERC20(token).balanceOf(owner);
+    }
+
+    /**
+     * @dev Credits any leftover tokens in the router to the user's vault balance
+     * @param user The user to credit
+     * @param tokensToCheck Array of token addresses to check for leftovers
+     * @param dustThreshold Minimum amount to credit (to avoid gas waste on tiny amounts)
+     */
+    function _creditLeftoversToVault(
+        address user,
+        address[] memory tokensToCheck,
+        uint256 dustThreshold
+    ) internal {
+        for (uint256 i = 0; i < tokensToCheck.length; i++) {
+            uint256 leftover = _balanceOf(tokensToCheck[i], address(this));
+            if (leftover > dustThreshold) {
+                _creditUserVault(user, tokensToCheck[i], leftover);
+            }
+        }
     }
 
     /**

@@ -679,7 +679,7 @@ mod tests {
             let encoder = SingleSwapStrategyEncoder::new(
                 eth_chain(),
                 swap_encoder_registry,
-                UserTransferType::None,
+                UserTransferType::UseVaultFunds,
                 router_address(),
                 false,
             )
@@ -707,7 +707,7 @@ mod tests {
                 "a478c2975ab1ea89e8196811f51a7b7ade33eb11", // component id
                 "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
                 "00",                                       // zero2one
-                "01",                                       // transfer type Transfer
+                "03",                                       // transfer type TransferFromVault
             ]
             .join("");
 

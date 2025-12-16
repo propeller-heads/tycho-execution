@@ -199,7 +199,7 @@ fn test_single_swap_strategy_encoder_no_transfer_in() {
         dai.clone(),
     )
     .build();
-    let encoder = get_tycho_router_encoder(UserTransferType::None);
+    let encoder = get_tycho_router_encoder(UserTransferType::UseVaultFunds);
 
     let solution = Solution {
         exact_out: false,
@@ -221,7 +221,7 @@ fn test_single_swap_strategy_encoder_no_transfer_in() {
         eth_chain().id(),
         encoded_solution,
         &solution,
-        &UserTransferType::None,
+        &UserTransferType::UseVaultFunds,
         &eth(),
         None,
     )
@@ -249,7 +249,7 @@ fn test_single_swap_strategy_encoder_no_transfer_in() {
         "a478c2975ab1ea89e8196811f51a7b7ade33eb11", // component id
         "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
         "00",                                       // zero2one
-        "01",                                       // transfer type Transfer
+        "03",                                       // transfer type TransferFromVault
         "0000000000000000000000000000",             // padding
     ]
     .join("");

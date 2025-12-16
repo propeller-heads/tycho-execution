@@ -21,17 +21,16 @@ use crate::encoding::serde_primitives::biguint_string;
 ///     - You must approve the Tycho Router contract to spend your tokens via standard `approve()`
 ///       calls.
 ///
-/// - `None`: No transfer will be performed.
-///     - Assumes the tokens are already present in the Tycho Router.
-///     - **Warning**: This is an advanced mode. Ensure your logic guarantees that the tokens are
-///       already in the router at the time of execution.
-///     - The Tycho router is **not** designed to safely hold tokens. If tokens are not transferred
-///       and used in the **same transaction**, they will be permanently lost.
+/// * `UseVaultFunds`:
+///     - Use tokens from the user's vault balance stored in the Tycho Router.
+///     - The user must have previously deposited tokens into the router vault.
+///     - Tokens in the vault are safely tracked per-user via ERC6909 accounting.
+///     - This is the safe way to store tokens in the router for future use.
 #[derive(Clone, Debug, PartialEq, ValueEnum)]
 pub enum UserTransferType {
     TransferFromPermit2,
     TransferFrom,
-    None,
+    UseVaultFunds,
 }
 
 /// Represents a solution containing details describing an order, and  instructions for filling
@@ -293,12 +292,14 @@ pub struct EncodingContext {
 /// * `TransferFrom`: Transfer the token from the sender to the protocol/router.
 /// * `Transfer`: Transfer the token from the router into the protocol.
 /// * `None`: No transfer is needed. Tokens are already in the pool.
+/// * `TransferFromVault`: Transfer from the user's vault balance in the router.
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum TransferType {
     TransferFrom = 0,
     Transfer = 1,
     None = 2,
+    TransferFromVault = 3,
 }
 
 mod tests {

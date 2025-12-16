@@ -50,20 +50,24 @@ impl TransferOptimization {
             TransferType::Transfer
         } else if is_first_swap {
             if in_transfer_required {
-                if self.user_transfer_type == UserTransferType::None {
-                    // Transfer from router to pool.
-                    TransferType::Transfer
-                } else {
-                    // Transfer from swapper to pool
-                    TransferType::TransferFrom
+                match self.user_transfer_type {
+                    UserTransferType::UseVaultFunds => {
+                        // Use vault funds - debit vault and transfer to pool
+                        TransferType::TransferFromVault
+                    }
+                    _ => {
+                        // TransferFromPermit2 or TransferFrom - pull from user to pool
+                        TransferType::TransferFrom
+                    }
                 }
             // in transfer is not necessary for these protocols. Only make a transfer from the
             // swapper to the router if the tokens are not already in the router
-            } else if self.user_transfer_type != UserTransferType::None {
-                // Transfer from swapper to router using.
-                TransferType::TransferFrom
+            } else if self.user_transfer_type == UserTransferType::UseVaultFunds {
+                // Use vault funds - debit vault and keep in router
+                TransferType::TransferFromVault
             } else {
-                TransferType::None
+                // Transfer from swapper to router
+                TransferType::TransferFrom
             }
         // all other swaps that not the first one
         } else if !in_transfer_required || in_between_swap_optimization {
@@ -154,9 +158,9 @@ mod tests {
     #[case(eth(), weth(),  "uniswap_v2".to_string(),true, UserTransferType::TransferFrom,false,TransferType::Transfer)]
     // USDC -(univ2)-> DAI and the tokens are already in the router. Only a transfer from the router
     // to the protocol is needed
-    #[case(usdc(), usdc(), "uniswap_v2".to_string(),false, UserTransferType::None,false, TransferType::Transfer)]
-    // USDC -(curve)-> DAI and the tokens are already in the router. No transfer is needed
-    #[case(usdc(), usdc(), "vm:curve".to_string(),false, UserTransferType::None, false,TransferType::None)]
+    #[case(usdc(), usdc(), "uniswap_v2".to_string(),false, UserTransferType::UseVaultFunds,false, TransferType::TransferFromVault)]
+    // USDC -(curve)-> DAI using vault funds. TransferFromVault debits vault and keeps in router
+    #[case(usdc(), usdc(), "vm:curve".to_string(),false, UserTransferType::UseVaultFunds, false,TransferType::TransferFromVault)]
     // other swaps tests
     // tokens need to be transferred into the pool
     #[case(weth(), usdc(), "uniswap_v2".to_string(), false, UserTransferType::TransferFrom,false, TransferType::Transfer)]

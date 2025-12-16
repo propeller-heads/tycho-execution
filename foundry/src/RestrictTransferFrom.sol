@@ -14,6 +14,9 @@ error RestrictTransferFrom__DifferentTokenIn(
     address tokenIn, address tokenInStorage
 );
 error RestrictTransferFrom__UnknownTransferType();
+error RestrictTransferFrom__InsufficientVaultBalance(
+    address user, address token, uint256 requested, uint256 available
+);
 
 /**
  * @title RestrictTransferFrom - Restrict transferFrom upto allowed amount of token
@@ -47,10 +50,20 @@ contract RestrictTransferFrom {
         permit2 = IAllowanceTransfer(_permit2);
     }
 
+    /**
+     * @dev Virtual function to debit vault - overridden by TychoRouter
+     */
+    function _debitVault(address user, address token, uint256 amount)
+        internal
+        virtual {
+        // Empty implementation - only TychoRouter uses this
+    }
+
     enum TransferType {
         TransferFrom,
         Transfer,
-        None
+        None,
+        TransferFromVault
     }
 
     /**
@@ -81,6 +94,7 @@ contract RestrictTransferFrom {
      * This function is called within the Executor contracts.
      * If the TransferType is TransferFrom, it will check if the amount is within the allowed amount and transfer those funds from the user.
      * If the TransferType is Transfer, it will transfer the funds from the TychoRouter to the receiver.
+     * If the TransferType is TransferFromVault, it will debit the user's vault balance and transfer from the router (funds already there).
      * If the TransferType is None, it will do nothing.
      */
     // slither-disable-next-line assembly
@@ -123,6 +137,20 @@ contract RestrictTransferFrom {
                 IERC20(tokenIn).safeTransferFrom(sender, receiver, amount);
             }
         } else if (transferType == TransferType.Transfer) {
+            if (tokenIn == address(0)) {
+                Address.sendValue(payable(receiver), amount);
+            } else {
+                IERC20(tokenIn).safeTransfer(receiver, amount);
+            }
+        } else if (transferType == TransferType.TransferFromVault) {
+            address sender;
+            assembly {
+                sender := tload(_SENDER_SLOT)
+            }
+            // Call router's debitUserVault (only works if router is TychoRouter)
+            _debitVault(sender, tokenIn, amount);
+
+            // Transfer from router to receiver
             if (tokenIn == address(0)) {
                 Address.sendValue(payable(receiver), amount);
             } else {
