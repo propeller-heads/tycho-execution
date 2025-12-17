@@ -59,6 +59,10 @@ pub struct Solution {
     pub swaps: Vec<Swap>,
     /// If set, the corresponding native action will be executed.
     pub native_action: Option<NativeAction>,
+    /// If true, the final swap output will be directed to the router for fee collection.
+    /// The router will then deduct the fee and transfer the remainder to the receiver.
+    #[serde(default)]
+    pub has_fee: bool,
 }
 
 /// Represents an action to be performed on the native token either before or after the swap.

@@ -112,8 +112,11 @@ impl StrategyEncoder for SingleSwapStrategyEncoder {
                 ))
             })?;
 
-        let swap_receiver =
-            if !unwrap { solution.receiver.clone() } else { self.router_address.clone() };
+        let swap_receiver = if !unwrap && !solution.has_fee {
+            solution.receiver.clone()
+        } else {
+            self.router_address.clone()
+        };
 
         let transfer = self
             .transfer_optimization
@@ -276,7 +279,7 @@ impl StrategyEncoder for SequentialSwapStrategyEncoder {
             let next_swap = grouped_swaps.get(i + 1);
             let (swap_receiver, next_swap_optimization) = self
                 .transfer_optimization
-                .get_receiver(&solution.receiver, next_swap, unwrap)?;
+                .get_receiver(&solution.receiver, next_swap, unwrap, solution.has_fee)?;
             next_in_between_swap_optimization_allowed = next_swap_optimization;
 
             let transfer = self
@@ -487,11 +490,13 @@ impl StrategyEncoder for SplitSwapStrategyEncoder {
                     ))
                 })?;
 
-            let swap_receiver = if !unwrap && grouped_swap.token_out == solution.checked_token {
-                solution.receiver.clone()
-            } else {
-                self.router_address.clone()
-            };
+            let swap_receiver =
+                if !unwrap && !solution.has_fee && grouped_swap.token_out == solution.checked_token
+                {
+                    solution.receiver.clone()
+                } else {
+                    self.router_address.clone()
+                };
             let transfer = self
                 .transfer_optimization
                 .get_transfers(grouped_swap, &solution.given_token, wrap, false);
