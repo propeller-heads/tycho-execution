@@ -34,9 +34,6 @@ abstract contract TychoFees is AccessControl, TychoVault {
     // Fee precision: 10000 basis points = 100%
     uint256 public constant FEE_BASIS_POINTS = 10000;
 
-    // Dust threshold: minimum leftover amount to credit (avoids gas waste on tiny amounts)
-    uint256 public constant DUST_THRESHOLD = 100;
-
     // Role for setting fees
     bytes32 public constant FEE_SETTER_ROLE = keccak256("FEE_SETTER_ROLE");
 
@@ -232,42 +229,4 @@ abstract contract TychoFees is AccessControl, TychoVault {
         }
     }
 
-    /**
-     * @dev Handle leftover crediting - credits any leftover tokens if no fee is involved
-     * @param tokenIn The input token
-     * @param tokenOut The output token
-     * @param balanceInBefore Router's balance of tokenIn before the swap
-     * @param balanceOutBefore Router's balance of tokenOut before the swap
-     */
-    function _handleLeftoverCrediting(
-        address tokenIn,
-        address tokenOut,
-        uint256 balanceInBefore,
-        uint256 balanceOutBefore
-    ) internal {
-        if (!_hasFee(msg.sender)) {
-            _creditLeftoverToVault(msg.sender, tokenIn, balanceInBefore);
-            _creditLeftoverToVault(msg.sender, tokenOut, balanceOutBefore);
-        }
-    }
-
-    /**
-     * @dev Credits leftover tokens in the router to the user's vault balance
-     * @param user The user to credit
-     * @param token Token address to check for leftovers
-     * @param balanceBefore Router's balance of the token before the swap
-     */
-    function _creditLeftoverToVault(
-        address user,
-        address token,
-        uint256 balanceBefore
-    ) internal {
-        uint256 balanceAfter = _balanceOf(token, address(this));
-        if (balanceAfter > balanceBefore) {
-            uint256 leftover = balanceAfter - balanceBefore;
-            if (leftover > DUST_THRESHOLD) {
-                _creditUserVault(user, token, leftover);
-            }
-        }
-    }
 }

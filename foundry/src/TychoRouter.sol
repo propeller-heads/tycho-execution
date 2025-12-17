@@ -474,11 +474,9 @@ contract TychoRouter is
             tokenIn = address(_weth);
         }
 
-        // Capture router's balances before swap
-        // Note: initialBalanceTokenOut tracks the receiver's balance (used to verify the amount out was fully received),
-        // while these track the router's balance (used for fee validation and leftover crediting).
+        // Capture router's balance before swap for fee validation
+        // Note: initialBalanceTokenOut tracks the receiver's balance (used to verify the amount out was fully received).
         address tokenOutToCheck = unwrapEth ? address(_weth) : tokenOut;
-        uint256 routerBalanceInBefore = _balanceOf(tokenIn, address(this));
         uint256 routerBalanceOutBefore = _balanceOf(tokenOutToCheck, address(this));
 
         amountOut = _splitSwap(amountIn, nTokens, swaps);
@@ -499,11 +497,6 @@ contract TychoRouter is
             amountOut,
             receiver,
             amountIn
-        );
-
-        // Credit any leftover tokens to the user's vault (skip if fee is involved as it's already credited)
-        _handleLeftoverCrediting(
-            tokenIn, tokenOut, routerBalanceInBefore, routerBalanceOutBefore
         );
     }
 
@@ -539,11 +532,9 @@ contract TychoRouter is
             tokenIn = address(_weth);
         }
 
-        // Capture router's balances before swap
-        // Note: initialBalanceTokenOut tracks the receiver's balance (used to verify the amount out was fully received),
-        // while these track the router's balance (used for fee validation and leftover crediting).
+        // Capture router's balance before swap for fee validation
+        // Note: initialBalanceTokenOut tracks the receiver's balance (used to verify the amount out was fully received).
         address tokenOutToCheck = unwrapEth ? address(_weth) : tokenOut;
-        uint256 routerBalanceInBefore = _balanceOf(tokenIn, address(this));
         uint256 routerBalanceOutBefore = _balanceOf(tokenOutToCheck, address(this));
 
         (address executor, bytes calldata protocolData) =
@@ -567,11 +558,6 @@ contract TychoRouter is
             amountOut,
             receiver,
             amountIn
-        );
-
-        // Credit any leftover tokens to the user's vault (skip if fee is involved as it's already credited)
-        _handleLeftoverCrediting(
-            tokenIn, tokenOut, routerBalanceInBefore, routerBalanceOutBefore
         );
     }
 
@@ -607,11 +593,9 @@ contract TychoRouter is
             tokenIn = address(_weth);
         }
 
-        // Capture router's balances before swap
-        // Note: initialBalanceTokenOut tracks the receiver's balance (used to verify the amount out was fully received),
-        // while these track the router's balance (used for fee validation and leftover crediting).
+        // Capture router's balance before swap for fee validation
+        // Note: initialBalanceTokenOut tracks the receiver's balance (used to verify the amount out was fully received).
         address tokenOutToCheck = unwrapEth ? address(_weth) : tokenOut;
-        uint256 routerBalanceInBefore = _balanceOf(tokenIn, address(this));
         uint256 routerBalanceOutBefore = _balanceOf(tokenOutToCheck, address(this));
 
         amountOut = _sequentialSwap(amountIn, swaps);
@@ -632,11 +616,6 @@ contract TychoRouter is
             amountOut,
             receiver,
             amountIn
-        );
-
-        // Credit any leftover tokens to the user's vault (skip if fee is involved as it's already credited)
-        _handleLeftoverCrediting(
-            tokenIn, tokenOut, routerBalanceInBefore, routerBalanceOutBefore
         );
     }
 
