@@ -117,6 +117,7 @@ abstract contract TychoVault is IERC6909, ReentrancyGuard {
      */
     function _creditUserVault(address user, address token, uint256 amount)
         internal
+        virtual
     {
         if (amount == 0) return;
         _vaultBalances[user][token] += amount;
