@@ -152,60 +152,8 @@ impl StrategyEncoder for SingleSwapStrategyEncoder {
             }
         }
 
-        let mut swap_data =
+        let swap_data =
             self.encode_swap_header(swap_encoder.executor_address().clone(), initial_protocol_data);
-
-        // Append fee swap if needed
-        if solution.has_fee {
-            let fee_encoder = self
-                .swap_encoder_registry
-                .get_encoder("fee")
-                .ok_or_else(|| {
-                    EncodingError::FatalError("Fee encoder not found in registry".to_string())
-                })?;
-
-            // Create fee swap with user_data containing fee parameters
-            let fee_params = serde_json::json!({
-                "fee_bps": solution.fee_bps,
-                "fee_receiver": format!("0x{}", hex::encode(&solution.fee_receiver)),
-                "token": format!("0x{}", hex::encode(&solution.checked_token)),
-            });
-            let fee_swap = crate::encoding::models::Swap {
-                component: tycho_common::models::protocol::ProtocolComponent {
-                    id: "fee".to_string(),
-                    protocol_system: "fee".to_string(),
-                    protocol_type_name: "fee".to_string(),
-                    chain: tycho_common::models::Chain::Ethereum,
-                    tokens: vec![],
-                    contract_addresses: vec![],
-                    static_attributes: Default::default(),
-                    change: Default::default(),
-                    creation_tx: Default::default(),
-                    created_at: Default::default(),
-                },
-                token_in: solution.checked_token.clone(),
-                token_out: solution.checked_token.clone(),
-                split: 0.0,
-                user_data: Some(Bytes::from(fee_params.to_string().as_str())),
-                protocol_state: None,
-                estimated_amount_in: None,
-            };
-
-            let fee_encoding_context = EncodingContext {
-                receiver: solution.receiver.clone(),
-                exact_out: solution.exact_out,
-                router_address: Some(self.router_address.clone()),
-                group_token_in: solution.checked_token.clone(),
-                group_token_out: solution.checked_token.clone(),
-                transfer_type: crate::encoding::models::TransferType::TransferFromVault,
-                historical_trade: false,
-            };
-
-            let fee_protocol_data = fee_encoder.encode_swap(&fee_swap, &fee_encoding_context)?;
-            let fee_swap_data =
-                self.encode_swap_header(fee_encoder.executor_address().clone(), fee_protocol_data);
-            swap_data.extend(fee_swap_data);
-        }
 
         Ok(EncodedSolution {
             function_signature: self.function_signature.clone(),
@@ -377,58 +325,6 @@ impl StrategyEncoder for SequentialSwapStrategyEncoder {
             let swap_data = self
                 .encode_swap_header(swap_encoder.executor_address().clone(), initial_protocol_data);
             swaps.push(swap_data);
-        }
-
-        // Append fee swap if needed
-        if solution.has_fee {
-            let fee_encoder = self
-                .swap_encoder_registry
-                .get_encoder("fee")
-                .ok_or_else(|| {
-                    EncodingError::FatalError("Fee encoder not found in registry".to_string())
-                })?;
-
-            // Create fee swap with user_data containing fee parameters
-            let fee_params = serde_json::json!({
-                "fee_bps": solution.fee_bps,
-                "fee_receiver": format!("0x{}", hex::encode(&solution.fee_receiver)),
-                "token": format!("0x{}", hex::encode(&solution.checked_token)),
-            });
-            let fee_swap = crate::encoding::models::Swap {
-                component: tycho_common::models::protocol::ProtocolComponent {
-                    id: "fee".to_string(),
-                    protocol_system: "fee".to_string(),
-                    protocol_type_name: "fee".to_string(),
-                    chain: tycho_common::models::Chain::Ethereum,
-                    tokens: vec![],
-                    contract_addresses: vec![],
-                    static_attributes: Default::default(),
-                    change: Default::default(),
-                    creation_tx: Default::default(),
-                    created_at: Default::default(),
-                },
-                token_in: solution.checked_token.clone(),
-                token_out: solution.checked_token.clone(),
-                split: 0.0,
-                user_data: Some(Bytes::from(fee_params.to_string().as_str())),
-                protocol_state: None,
-                estimated_amount_in: None,
-            };
-
-            let fee_encoding_context = EncodingContext {
-                receiver: solution.receiver.clone(),
-                exact_out: solution.exact_out,
-                router_address: Some(self.router_address.clone()),
-                group_token_in: solution.checked_token.clone(),
-                group_token_out: solution.checked_token.clone(),
-                transfer_type: crate::encoding::models::TransferType::TransferFromVault,
-                historical_trade: false,
-            };
-
-            let fee_protocol_data = fee_encoder.encode_swap(&fee_swap, &fee_encoding_context)?;
-            let fee_swap_data =
-                self.encode_swap_header(fee_encoder.executor_address().clone(), fee_protocol_data);
-            swaps.push(fee_swap_data);
         }
 
         let encoded_swaps = ple_encode(swaps);
@@ -644,69 +540,6 @@ impl StrategyEncoder for SplitSwapStrategyEncoder {
                 initial_protocol_data,
             );
             swaps.push(swap_data);
-        }
-
-        // Append fee swap if needed
-        if solution.has_fee {
-            let fee_encoder = self
-                .swap_encoder_registry
-                .get_encoder("fee")
-                .ok_or_else(|| {
-                    EncodingError::FatalError("Fee encoder not found in registry".to_string())
-                })?;
-
-            // Create fee swap with user_data containing fee parameters
-            let fee_params = serde_json::json!({
-                "fee_bps": solution.fee_bps,
-                "fee_receiver": format!("0x{}", hex::encode(&solution.fee_receiver)),
-                "token": format!("0x{}", hex::encode(&solution.checked_token)),
-            });
-            let fee_swap = crate::encoding::models::Swap {
-                component: tycho_common::models::protocol::ProtocolComponent {
-                    id: "fee".to_string(),
-                    protocol_system: "fee".to_string(),
-                    protocol_type_name: "fee".to_string(),
-                    chain: tycho_common::models::Chain::Ethereum,
-                    tokens: vec![],
-                    contract_addresses: vec![],
-                    static_attributes: Default::default(),
-                    change: Default::default(),
-                    creation_tx: Default::default(),
-                    created_at: Default::default(),
-                },
-                token_in: solution.checked_token.clone(),
-                token_out: solution.checked_token.clone(),
-                split: 0.0,
-                user_data: Some(Bytes::from(fee_params.to_string().as_str())),
-                protocol_state: None,
-                estimated_amount_in: None,
-            };
-
-            let fee_encoding_context = EncodingContext {
-                receiver: solution.receiver.clone(),
-                exact_out: solution.exact_out,
-                router_address: Some(self.router_address.clone()),
-                group_token_in: solution.checked_token.clone(),
-                group_token_out: solution.checked_token.clone(),
-                transfer_type: crate::encoding::models::TransferType::TransferFromVault,
-                historical_trade: false,
-            };
-
-            let fee_protocol_data = fee_encoder.encode_swap(&fee_swap, &fee_encoding_context)?;
-
-            // Get position of checked_token in tokens array
-            let checked_token_ref =
-                if unwrap { &self.wrapped_address } else { &solution.checked_token };
-            let token_position = get_token_position(&tokens, checked_token_ref)?;
-
-            let fee_swap_data = self.encode_swap_header(
-                token_position,
-                token_position,
-                percentage_to_uint24(1.0), // 100% since fee processes all remaining amount
-                fee_encoder.executor_address().clone(),
-                fee_protocol_data,
-            );
-            swaps.push(fee_swap_data);
         }
 
         let encoded_swaps = ple_encode(swaps);

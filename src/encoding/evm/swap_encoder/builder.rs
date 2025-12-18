@@ -6,9 +6,9 @@ use crate::encoding::{
     errors::EncodingError,
     evm::swap_encoder::swap_encoders::{
         BalancerV2SwapEncoder, BalancerV3SwapEncoder, BebopSwapEncoder, CurveSwapEncoder,
-        ERC4626SwapEncoder, EkuboSwapEncoder, FeeSwapEncoder, FluidV1SwapEncoder,
-        HashflowSwapEncoder, LidoSwapEncoder, MaverickV2SwapEncoder, RocketpoolSwapEncoder,
-        SlipstreamsSwapEncoder, UniswapV2SwapEncoder, UniswapV3SwapEncoder, UniswapV4SwapEncoder,
+        ERC4626SwapEncoder, EkuboSwapEncoder, FluidV1SwapEncoder, HashflowSwapEncoder,
+        LidoSwapEncoder, MaverickV2SwapEncoder, RocketpoolSwapEncoder, SlipstreamsSwapEncoder,
+        UniswapV2SwapEncoder, UniswapV3SwapEncoder, UniswapV4SwapEncoder,
     },
     swap_encoder::SwapEncoder,
 };
@@ -122,9 +122,6 @@ impl SwapEncoderBuilder {
                 self.chain,
                 self.config,
             )?)),
-            "fee" => {
-                Ok(Box::new(FeeSwapEncoder::new(self.executor_address, self.chain, self.config)?))
-            }
             "lido" => {
                 Ok(Box::new(LidoSwapEncoder::new(self.executor_address, self.chain, self.config)?))
             }
