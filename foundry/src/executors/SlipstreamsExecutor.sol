@@ -85,6 +85,11 @@ contract SlipstreamsExecutor is IExecutor, ICallback, RestrictTransferFrom {
         } else {
             amountOut = amount0 > 0 ? uint256(amount0) : uint256(-amount0);
         }
+
+        // Credit vault if funds came to router
+        if (receiver == address(this)) {
+            _creditVault(msg.sender, tokenOut, amountOut);
+        }
     }
 
     function handleCallback(bytes calldata msgData)

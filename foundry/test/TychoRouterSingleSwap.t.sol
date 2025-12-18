@@ -24,7 +24,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             WETH_DAI_POOL,
             ALICE,
             false,
-            RestrictTransferFrom.TransferType.TransferFrom
+            RestrictTransferFrom.TransferType.TransferFromSender
         );
 
         bytes memory swap =
@@ -65,7 +65,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             WETH_DAI_POOL,
             ALICE,
             false,
-            RestrictTransferFrom.TransferType.TransferFrom
+            RestrictTransferFrom.TransferType.TransferFromSender
         );
 
         bytes memory swap =
@@ -107,7 +107,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             WETH_DAI_POOL,
             ALICE,
             false,
-            RestrictTransferFrom.TransferType.None
+            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
         );
 
         bytes memory swap =
@@ -133,7 +133,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             WETH_DAI_POOL,
             ALICE,
             false,
-            RestrictTransferFrom.TransferType.TransferFrom
+            RestrictTransferFrom.TransferType.TransferFromSender
         );
 
         bytes memory swap =
@@ -169,7 +169,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             WETH_DAI_POOL,
             ALICE,
             false,
-            RestrictTransferFrom.TransferType.TransferFrom
+            RestrictTransferFrom.TransferType.TransferFromSender
         );
 
         bytes memory swap =
@@ -216,7 +216,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             WETH_DAI_POOL,
             ALICE,
             false,
-            RestrictTransferFrom.TransferType.Transfer // ETH has already been transferred to router
+            RestrictTransferFrom.TransferType.TransferFromVault // ETH has already been transferred to router
         );
 
         bytes memory swap =
@@ -259,7 +259,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             WETH_DAI_POOL,
             tychoRouterAddr,
             true,
-            RestrictTransferFrom.TransferType.TransferFrom
+            RestrictTransferFrom.TransferType.TransferFromSender
         );
 
         bytes memory swap =
@@ -300,7 +300,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             WETH_DAI_POOL,
             ALICE,
             false,
-            RestrictTransferFrom.TransferType.TransferFrom
+            RestrictTransferFrom.TransferType.TransferFromSender
         );
 
         bytes memory swap =

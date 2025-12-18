@@ -87,7 +87,7 @@ contract UniswapV2ExecutorTest is Constants, Permit2TestHelper, TestUtils {
             address(2),
             address(3),
             false,
-            RestrictTransferFrom.TransferType.Transfer
+            RestrictTransferFrom.TransferType.TransferFromVault
         );
 
         (
@@ -104,7 +104,7 @@ contract UniswapV2ExecutorTest is Constants, Permit2TestHelper, TestUtils {
         assertEq(zeroForOne, false);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.Transfer)
+            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
         );
     }
 
@@ -161,7 +161,7 @@ contract UniswapV2ExecutorTest is Constants, Permit2TestHelper, TestUtils {
             WETH_DAI_POOL,
             BOB,
             zeroForOne,
-            RestrictTransferFrom.TransferType.Transfer
+            RestrictTransferFrom.TransferType.TransferFromVault
         );
 
         deal(WETH_ADDR, address(uniswapV2Exposed), amountIn);
@@ -180,7 +180,7 @@ contract UniswapV2ExecutorTest is Constants, Permit2TestHelper, TestUtils {
             WETH_DAI_POOL,
             BOB,
             zeroForOne,
-            RestrictTransferFrom.TransferType.None
+            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
         );
 
         deal(WETH_ADDR, address(this), amountIn);
@@ -209,7 +209,7 @@ contract UniswapV2ExecutorTest is Constants, Permit2TestHelper, TestUtils {
         assertEq(zeroForOne, false);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.Transfer)
+            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
         );
     }
 
@@ -234,7 +234,7 @@ contract UniswapV2ExecutorTest is Constants, Permit2TestHelper, TestUtils {
             fakePool,
             BOB,
             zeroForOne,
-            RestrictTransferFrom.TransferType.Transfer
+            RestrictTransferFrom.TransferType.TransferFromVault
         );
 
         deal(WETH_ADDR, address(uniswapV2Exposed), amountIn);
@@ -254,7 +254,7 @@ contract UniswapV2ExecutorTest is Constants, Permit2TestHelper, TestUtils {
             USDC_MAG7_POOL,
             BOB,
             zeroForOne,
-            RestrictTransferFrom.TransferType.Transfer
+            RestrictTransferFrom.TransferType.TransferFromVault
         );
 
         deal(BASE_USDC, address(uniswapV2Exposed), amountIn);

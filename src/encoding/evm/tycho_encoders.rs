@@ -324,9 +324,9 @@ impl TychoExecutorEncoder {
                 .protocol_system
                 .as_str(),
         ) {
-            TransferType::Transfer
+            TransferType::TransferFromVault
         } else {
-            TransferType::None
+            TransferType::FundsAlreadyInProtocol
         };
         let encoding_context = EncodingContext {
             receiver: solution.receiver.clone(),
@@ -1138,6 +1138,7 @@ mod tests {
                 receiver: Bytes::from_str("0x1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e").unwrap(),
                 swaps: vec![swap],
                 native_action: None,
+                has_fee: false,
             };
 
             let encoded_solutions = encoder
@@ -1197,6 +1198,7 @@ mod tests {
                 receiver: Bytes::from_str("0x1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e").unwrap(),
                 swaps: vec![swap.clone(), swap],
                 native_action: None,
+                has_fee: false,
             };
 
             let result = encoder.encode_solutions(vec![solution]);

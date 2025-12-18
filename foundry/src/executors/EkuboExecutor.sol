@@ -200,6 +200,12 @@ contract EkuboExecutor is
 
         _pay(tokenIn, tokenInDebtAmount, transferType);
         core.withdraw(nextTokenIn, receiver, uint128(nextAmountIn));
+
+        // Credit vault if funds came to router
+        if (receiver == address(this)) {
+            _creditVault(msg.sender, nextTokenIn, uint256(uint128(nextAmountIn)));
+        }
+
         return nextAmountIn;
     }
 

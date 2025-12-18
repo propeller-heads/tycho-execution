@@ -1161,6 +1161,7 @@ impl SwapEncoder for FluidV1SwapEncoder {
             ))
         })?;
 
+        let token_out_address = bytes_to_address(&swap.token_out)?;
         let args = (
             dex_address,
             self.coerce_native_address(&swap.token_in) <
@@ -1168,6 +1169,7 @@ impl SwapEncoder for FluidV1SwapEncoder {
             bytes_to_address(&encoding_context.receiver)?,
             (encoding_context.transfer_type as u8).to_be_bytes(),
             swap.token_in == self.chain.native_token().address,
+            token_out_address,
         );
         Ok(args.abi_encode_packed())
     }
@@ -1507,7 +1509,7 @@ mod tests {
                 router_address: Some(Bytes::zero(20)),
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::Transfer,
+                transfer_type: TransferType::TransferFromVault,
                 historical_trade: false,
             };
             let encoder = UniswapV2SwapEncoder::new(
@@ -1563,7 +1565,7 @@ mod tests {
                 router_address: Some(Bytes::zero(20)),
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::Transfer,
+                transfer_type: TransferType::TransferFromVault,
                 historical_trade: false,
             };
             let encoder = UniswapV3SwapEncoder::new(
@@ -1621,7 +1623,7 @@ mod tests {
                 router_address: Some(Bytes::zero(20)),
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::None,
+                transfer_type: TransferType::FundsAlreadyInProtocol,
                 historical_trade: true,
             };
             let encoder = BalancerV2SwapEncoder::new(
@@ -1651,8 +1653,8 @@ mod tests {
                     "9964bff29baa37b47604f3f3f51f3b3c5149d6de",
                     // approval needed
                     "01",
-                    // transfer type None
-                    "02"
+                    // transfer type FundsAlreadyInProtocol
+                    "04"
                 ))
             );
             write_calldata_to_file("test_encode_balancer_v2", hex_swap.as_str());
@@ -1691,7 +1693,7 @@ mod tests {
 
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::Transfer,
+                transfer_type: TransferType::TransferFromVault,
                 historical_trade: false,
             };
             let encoder = UniswapV4SwapEncoder::new(
@@ -1762,7 +1764,7 @@ mod tests {
                 group_token_in: group_token_in.clone(),
                 // Token out is the same as the group token out
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::Transfer,
+                transfer_type: TransferType::TransferFromVault,
                 historical_trade: false,
             };
 
@@ -1810,7 +1812,7 @@ mod tests {
                 router_address: Some(router_address.clone()),
                 group_token_in: usde_address.clone(),
                 group_token_out: wbtc_address.clone(),
-                transfer_type: TransferType::Transfer,
+                transfer_type: TransferType::TransferFromVault,
                 historical_trade: false,
             };
 
@@ -1984,7 +1986,7 @@ mod tests {
                 router_address: Some(Bytes::from("0x5615deb798bb3e4dfa0139dfa1b3d433cc23b72f")),
                 group_token_in: usdc_address.clone(),
                 group_token_out: usdt_address.clone(),
-                transfer_type: TransferType::Transfer,
+                transfer_type: TransferType::TransferFromVault,
                 historical_trade: false,
             };
 
@@ -2078,7 +2080,7 @@ mod tests {
                 group_token_out: token_out.clone(),
                 exact_out: false,
                 router_address: Some(Bytes::default()),
-                transfer_type: TransferType::Transfer,
+                transfer_type: TransferType::TransferFromVault,
                 historical_trade: false,
             };
 
@@ -2121,7 +2123,7 @@ mod tests {
                 group_token_out: group_token_out.clone(),
                 exact_out: false,
                 router_address: Some(Bytes::default()),
-                transfer_type: TransferType::Transfer,
+                transfer_type: TransferType::TransferFromVault,
                 historical_trade: false,
             };
 
@@ -2319,7 +2321,7 @@ mod tests {
                 router_address: None,
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::None,
+                transfer_type: TransferType::FundsAlreadyInProtocol,
                 historical_trade: false,
             };
             let encoder = CurveSwapEncoder::new(
@@ -2350,8 +2352,8 @@ mod tests {
                     "01",
                     // approval needed
                     "01",
-                    // transfer type None
-                    "02",
+                    // transfer type FundsAlreadyInProtocol
+                    "04",
                     // receiver,
                     "9964bff29baa37b47604f3f3f51f3b3c5149d6de",
                 ))
@@ -2386,7 +2388,7 @@ mod tests {
                 router_address: None,
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::None,
+                transfer_type: TransferType::FundsAlreadyInProtocol,
                 historical_trade: false,
             };
             let encoder = CurveSwapEncoder::new(
@@ -2417,8 +2419,8 @@ mod tests {
                     "00",
                     // approval needed
                     "01",
-                    // transfer type None
-                    "02",
+                    // transfer type FundsAlreadyInProtocol
+                    "04",
                     // receiver
                     "9964bff29baa37b47604f3f3f51f3b3c5149d6de",
                 ))
@@ -2454,7 +2456,7 @@ mod tests {
                 router_address: None,
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::None,
+                transfer_type: TransferType::FundsAlreadyInProtocol,
                 historical_trade: false,
             };
             let encoder = CurveSwapEncoder::new(
@@ -2494,8 +2496,8 @@ mod tests {
                     "01",
                     // approval needed
                     "01",
-                    // transfer type None
-                    "02",
+                    // transfer type FundsAlreadyInProtocol
+                    "04",
                     // receiver
                     "9964bff29baa37b47604f3f3f51f3b3c5149d6de",
                 ))
@@ -2523,7 +2525,7 @@ mod tests {
                 router_address: Some(Bytes::zero(20)),
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::Transfer,
+                transfer_type: TransferType::TransferFromVault,
                 historical_trade: false,
             };
             let encoder = BalancerV3SwapEncoder::new(
@@ -2546,7 +2548,7 @@ mod tests {
                     "c71ea051a5f82c67adcf634c36ffe6334793d24c",
                     // pool id
                     "85b2b559bc2d21104c4defdd6efca8a20343361d",
-                    // transfer type None
+                    // transfer type FundsAlreadyInProtocol
                     "01",
                     // receiver
                     "9964bff29baa37b47604f3f3f51f3b3c5149d6de",
@@ -2576,7 +2578,7 @@ mod tests {
                 router_address: Some(Bytes::default()),
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::Transfer,
+                transfer_type: TransferType::TransferFromVault,
                 historical_trade: false,
             };
             let encoder = MaverickV2SwapEncoder::new(
@@ -2670,7 +2672,7 @@ mod tests {
                 router_address: Some(Bytes::zero(20)),
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::Transfer,
+                transfer_type: TransferType::TransferFromVault,
                 historical_trade: false,
             };
 
@@ -2745,7 +2747,7 @@ mod tests {
                 router_address: Some(Bytes::zero(20)),
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::Transfer,
+                transfer_type: TransferType::TransferFromVault,
                 historical_trade: false,
             };
 
@@ -2839,7 +2841,7 @@ mod tests {
                 router_address: Some(Bytes::zero(20)),
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::Transfer,
+                transfer_type: TransferType::TransferFromVault,
                 historical_trade: false,
             };
 
@@ -2883,7 +2885,7 @@ mod tests {
                 router_address: Some(Bytes::default()),
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::TransferFrom,
+                transfer_type: TransferType::TransferFromSender,
                 historical_trade: false,
             };
             let encoder = FluidV1SwapEncoder::new(
@@ -2910,7 +2912,9 @@ mod tests {
                     // transferFrom
                     "00",
                     // isNativeSell
-                    "00"
+                    "00",
+                    // tokenOut
+                    "dac17f958d2ee523a2206206994597c13d831ec7"
                 ))
                 .to_lowercase()
             );
@@ -2938,7 +2942,7 @@ mod tests {
                 router_address: Some(Bytes::default()),
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::Transfer,
+                transfer_type: TransferType::TransferFromVault,
                 historical_trade: false,
             };
             let encoder = RocketpoolSwapEncoder::new(
@@ -2988,7 +2992,7 @@ mod tests {
                 router_address: Some(Bytes::default()),
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::Transfer,
+                transfer_type: TransferType::TransferFromVault,
                 historical_trade: false,
             };
             let encoder = RocketpoolSwapEncoder::new(
@@ -3040,7 +3044,7 @@ mod tests {
                 router_address: Some(Bytes::zero(20)),
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::TransferFrom,
+                transfer_type: TransferType::TransferFromSender,
                 historical_trade: false,
             };
             let encoder = ERC4626SwapEncoder::new(
@@ -3091,7 +3095,7 @@ mod tests {
                 router_address: Some(Bytes::zero(20)),
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::TransferFrom,
+                transfer_type: TransferType::TransferFromSender,
                 historical_trade: false,
             };
             let encoder = ERC4626SwapEncoder::new(

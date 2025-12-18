@@ -47,7 +47,7 @@ contract TychoFeesTest is TychoRouterTestSetup {
             WETH_DAI_POOL,
             tychoRouterAddr, // IMPORTANT: receiver must be router when fees are involved
             false,
-            RestrictTransferFrom.TransferType.TransferFrom
+            RestrictTransferFrom.TransferType.TransferFromSender
         );
 
         bytes memory swap =
@@ -99,7 +99,7 @@ contract TychoFeesTest is TychoRouterTestSetup {
             WETH_DAI_POOL,
             BOB,
             false,
-            RestrictTransferFrom.TransferType.TransferFrom
+            RestrictTransferFrom.TransferType.TransferFromSender
         );
 
         bytes memory swap =
@@ -147,7 +147,7 @@ contract TychoFeesTest is TychoRouterTestSetup {
             WETH_DAI_POOL,
             BOB, // Wrong: should be router
             false,
-            RestrictTransferFrom.TransferType.TransferFrom
+            RestrictTransferFrom.TransferType.TransferFromSender
         );
 
         bytes memory swap =

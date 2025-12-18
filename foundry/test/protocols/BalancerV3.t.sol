@@ -47,7 +47,7 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
             osETH_ADDR,
             waEthWETH_ADDR,
             WETH_osETH_pool,
-            RestrictTransferFrom.TransferType.None,
+            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol,
             BOB
         );
 
@@ -65,7 +65,7 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
         assertEq(address(tokenOut), waEthWETH_ADDR);
         assertEq(poolId, WETH_osETH_pool);
         assertEq(
-            uint8(transferType), uint8(RestrictTransferFrom.TransferType.None)
+            uint8(transferType), uint8(RestrictTransferFrom.TransferType.FundsAlreadyInProtocol)
         );
         assertEq(receiver, BOB);
     }
@@ -75,7 +75,7 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
             osETH_ADDR,
             waEthWETH_ADDR,
             WETH_osETH_pool,
-            RestrictTransferFrom.TransferType.None
+            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
         );
 
         vm.expectRevert(BalancerV3Executor__InvalidDataLength.selector);
@@ -88,7 +88,7 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
             osETH_ADDR,
             waEthWETH_ADDR,
             WETH_osETH_pool,
-            RestrictTransferFrom.TransferType.Transfer,
+            RestrictTransferFrom.TransferType.TransferFromVault,
             BOB
         );
 

@@ -37,7 +37,7 @@ contract HashflowUtils is Test {
         returns (bytes memory)
     {
         return
-            encodeRfqtQuote(quote, true, RestrictTransferFrom.TransferType.None);
+            encodeRfqtQuote(quote, true, RestrictTransferFrom.TransferType.FundsAlreadyInProtocol);
     }
 }
 
@@ -111,7 +111,7 @@ contract HashflowExecutorECR20Test is Constants, TestUtils, HashflowUtils {
         assertEq(approvalNeeded, true, "Approval flag mismatch");
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.None),
+            uint8(RestrictTransferFrom.TransferType.FundsAlreadyInProtocol),
             "Transfer type mismatch"
         );
     }

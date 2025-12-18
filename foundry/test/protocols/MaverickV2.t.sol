@@ -44,7 +44,7 @@ contract MaverickV2ExecutorTest is TestUtils, Constants {
             GHO_ADDR,
             GHO_USDC_POOL,
             address(2),
-            RestrictTransferFrom.TransferType.Transfer
+            RestrictTransferFrom.TransferType.TransferFromVault
         );
 
         (
@@ -59,7 +59,7 @@ contract MaverickV2ExecutorTest is TestUtils, Constants {
         assertEq(receiver, address(2));
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.Transfer)
+            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
         );
     }
 
@@ -77,7 +77,7 @@ contract MaverickV2ExecutorTest is TestUtils, Constants {
             GHO_ADDR,
             GHO_USDC_POOL,
             BOB,
-            RestrictTransferFrom.TransferType.Transfer
+            RestrictTransferFrom.TransferType.TransferFromVault
         );
 
         deal(GHO_ADDR, address(maverickV2Exposed), amountIn);
@@ -107,7 +107,7 @@ contract MaverickV2ExecutorTest is TestUtils, Constants {
         assertEq(receiver, BOB);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.Transfer)
+            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
         );
     }
 

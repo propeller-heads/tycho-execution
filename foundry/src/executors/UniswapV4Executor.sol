@@ -153,6 +153,11 @@ contract UniswapV4Executor is
         bytes memory result = poolManager.unlock(swapData);
         uint128 amountOut = abi.decode(result, (uint128));
 
+        // Credit vault if funds came to router
+        if (receiver == address(this)) {
+            _creditVault(msg.sender, tokenOut, amountOut);
+        }
+
         return amountOut;
     }
 

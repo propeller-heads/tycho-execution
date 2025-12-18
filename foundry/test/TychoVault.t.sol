@@ -55,7 +55,7 @@ contract TychoVaultTest is TychoRouterTestSetup {
             WETH_DAI_POOL,
             ALICE,
             false,
-            RestrictTransferFrom.TransferType.TransferFrom
+            RestrictTransferFrom.TransferType.TransferFromSender
         );
 
         bytes memory swap =
@@ -127,7 +127,7 @@ contract TychoVaultTest is TychoRouterTestSetup {
             WETH_DAI_POOL,
             BOB,
             false,
-            RestrictTransferFrom.TransferType.TransferFrom
+            RestrictTransferFrom.TransferType.TransferFromSender
         );
 
         bytes memory swap =

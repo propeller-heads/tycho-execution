@@ -54,8 +54,9 @@ contract FluidV1Executor is IExecutor, ICallback, RestrictTransferFrom {
         address receiver;
         TransferType transferType;
         bool isNativeSell;
+        address tokenOut;
 
-        (dex, zero2one, receiver, transferType, isNativeSell) =
+        (dex, zero2one, receiver, transferType, isNativeSell, tokenOut) =
             _decodeData(data);
 
         if (!isNativeSell) {
@@ -68,6 +69,11 @@ contract FluidV1Executor is IExecutor, ICallback, RestrictTransferFrom {
             calculatedAmount = dex.swapIn{value: givenAmount}(
                 zero2one, givenAmount, 0, receiver
             );
+        }
+
+        // Credit vault if funds came to router
+        if (receiver == address(this)) {
+            _creditVault(msg.sender, tokenOut, calculatedAmount);
         }
     }
 
@@ -109,7 +115,8 @@ contract FluidV1Executor is IExecutor, ICallback, RestrictTransferFrom {
             bool zero2one,
             address receiver,
             TransferType transferType,
-            bool isNativeSell
+            bool isNativeSell,
+            address tokenOut
         )
     {
         // expected calldata layout
@@ -119,8 +126,9 @@ contract FluidV1Executor is IExecutor, ICallback, RestrictTransferFrom {
         // 21 | receiver
         // 41 | transferType
         // 42 | is_native
-        // 43 | EOF
-        if (data.length != 43) {
+        // 43 | tokenOut
+        // 63 | EOF
+        if (data.length != 63) {
             revert FluidV1Executor__InvalidDataLength();
         }
         dex = IFluidV1Dex(address(bytes20(data[0:20])));
@@ -128,6 +136,7 @@ contract FluidV1Executor is IExecutor, ICallback, RestrictTransferFrom {
         receiver = address(bytes20(data[21:41]));
         transferType = TransferType(uint8(data[41]));
         isNativeSell = uint8(data[42]) > 0;
+        tokenOut = address(bytes20(data[43:63]));
     }
 
     function handleCallback(bytes calldata data)

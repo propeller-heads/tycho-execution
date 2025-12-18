@@ -127,6 +127,18 @@ abstract contract TychoFees is AccessControl, TychoVault {
     function _getWethAddress() internal view virtual returns (address);
 
     /**
+     * @dev Abstract function to get balance of a token for an address - implemented by child contract
+     * @param token The token address (address(0) for native ETH)
+     * @param owner The address to check balance for
+     * @return The token balance
+     */
+    function _balanceOf(address token, address owner)
+        internal
+        view
+        virtual
+        returns (uint256);
+
+    /**
      * @dev Internal function to validate that the swap output was sent to the router
      * @param token The output token
      * @param balanceBefore Router's balance before the swap

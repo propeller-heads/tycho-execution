@@ -82,6 +82,11 @@ contract HashflowExecutor is IExecutor, RestrictTransferFrom {
         IHashflowRouter(hashflowRouter).tradeRFQT{value: ethValue}(quote);
         uint256 balanceAfter = _balanceOf(quote.trader, quote.quoteToken);
         calculatedAmount = balanceAfter - balanceBefore;
+
+        // Credit vault if funds came to router
+        if (quote.trader == address(this)) {
+            _creditVault(msg.sender, quote.quoteToken, calculatedAmount);
+        }
     }
 
     function _decodeData(bytes calldata data)

@@ -46,7 +46,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
     function testDecodeParams() public view {
         bytes memory params = abi.encodePacked(
             uint8(1), // isDeposit = true
-            RestrictTransferFrom.TransferType.Transfer,
+            RestrictTransferFrom.TransferType.TransferFromVault,
             BOB
         );
 
@@ -59,7 +59,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         assertTrue(isDeposit);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.Transfer)
+            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
         );
         assertEq(receiver, BOB);
     }
@@ -67,7 +67,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
     function testDecodeParamsBurn() public view {
         bytes memory params = abi.encodePacked(
             uint8(0), // isDeposit = false (burn)
-            RestrictTransferFrom.TransferType.Transfer,
+            RestrictTransferFrom.TransferType.TransferFromVault,
             ALICE
         );
 
@@ -80,7 +80,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         assertFalse(isDeposit);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.Transfer)
+            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
         );
         assertEq(receiver, ALICE);
     }
@@ -101,7 +101,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         uint256 amountIn = 4.5 ether;
         bytes memory protocolData = abi.encodePacked(
             uint8(1), // isDeposit = true
-            RestrictTransferFrom.TransferType.Transfer,
+            RestrictTransferFrom.TransferType.TransferFromVault,
             BOB
         );
 
@@ -125,7 +125,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         uint256 amountIn = 1 ether;
         bytes memory protocolData = abi.encodePacked(
             uint8(0), // isDeposit = false (burn)
-            RestrictTransferFrom.TransferType.Transfer,
+            RestrictTransferFrom.TransferType.TransferFromVault,
             BOB
         );
 
@@ -155,7 +155,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         assertTrue(isDeposit);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.Transfer)
+            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
         );
         assertEq(receiver, BOB);
     }
@@ -174,7 +174,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         assertFalse(isDeposit);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.Transfer)
+            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
         );
         assertEq(receiver, BOB);
     }

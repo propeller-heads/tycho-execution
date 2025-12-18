@@ -69,7 +69,7 @@ contract SlipstreamsExecutorTest is
             BASE_WETH,
             BASE_USDC,
             expectedTickSpacing,
-            RestrictTransferFrom.TransferType.Transfer,
+            RestrictTransferFrom.TransferType.TransferFromVault,
             address(2),
             address(3),
             false
@@ -93,7 +93,7 @@ contract SlipstreamsExecutorTest is
         assertEq(zeroForOne, false);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.Transfer)
+            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
         );
     }
 
@@ -107,7 +107,7 @@ contract SlipstreamsExecutorTest is
             BASE_WETH,
             BASE_USDC,
             IUniswapV3Pool(SLIPSTREAMS_WETH_USDC_POOL).tickSpacing(),
-            RestrictTransferFrom.TransferType.Transfer,
+            RestrictTransferFrom.TransferType.TransferFromVault,
             address(this),
             SLIPSTREAMS_WETH_USDC_POOL,
             zeroForOne
@@ -129,7 +129,7 @@ contract SlipstreamsExecutorTest is
             BASE_WETH,
             BASE_BMI,
             IUniswapV3Pool(SLIPSTREAMS_WETH_BMI_POOL).tickSpacing(),
-            RestrictTransferFrom.TransferType.Transfer,
+            RestrictTransferFrom.TransferType.TransferFromVault,
             address(this),
             SLIPSTREAMS_WETH_BMI_POOL,
             zeroForOne
@@ -167,7 +167,7 @@ contract SlipstreamsExecutorTest is
             BASE_WETH,
             BASE_USDC,
             poolTickSpacing,
-            RestrictTransferFrom.TransferType.Transfer,
+            RestrictTransferFrom.TransferType.TransferFromVault,
             address(slipstreamsExposed)
         );
         uint256 dataOffset = 3; // some offset
@@ -199,7 +199,7 @@ contract SlipstreamsExecutorTest is
             BASE_WETH,
             BASE_USDC,
             uint24(100),
-            RestrictTransferFrom.TransferType.Transfer,
+            RestrictTransferFrom.TransferType.TransferFromVault,
             address(this),
             fakePool,
             zeroForOne

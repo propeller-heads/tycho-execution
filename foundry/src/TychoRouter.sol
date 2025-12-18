@@ -111,6 +111,16 @@ contract TychoRouter is
     }
 
     /**
+     * @dev Override _creditVault from RestrictTransferFrom to credit user vault
+     */
+    function _creditVault(address user, address token, uint256 amount)
+        internal
+        override
+    {
+        _creditUserVault(user, token, amount);
+    }
+
+    /**
      * @dev Override _getWethAddress from TychoFees to provide WETH address
      */
     function _getWethAddress() internal view override returns (address) {

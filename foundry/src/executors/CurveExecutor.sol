@@ -113,6 +113,9 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
             } else {
                 IERC20(tokenOut).safeTransfer(receiver, amountOut);
             }
+        } else {
+            // Credit vault if funds stayed in router
+            _creditVault(msg.sender, tokenOut, amountOut);
         }
         return amountOut;
     }

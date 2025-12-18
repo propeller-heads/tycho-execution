@@ -76,7 +76,7 @@ contract UniswapV3ExecutorTest is
             address(2),
             address(3),
             false,
-            RestrictTransferFrom.TransferType.Transfer
+            RestrictTransferFrom.TransferType.TransferFromVault
         );
 
         (
@@ -97,7 +97,7 @@ contract UniswapV3ExecutorTest is
         assertEq(zeroForOne, false);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.Transfer)
+            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
         );
     }
 
@@ -114,7 +114,7 @@ contract UniswapV3ExecutorTest is
             address(this),
             DAI_WETH_USV3,
             zeroForOne,
-            RestrictTransferFrom.TransferType.Transfer
+            RestrictTransferFrom.TransferType.TransferFromVault
         );
 
         uint256 amountOut = uniswapV3Exposed.swap(amountIn, data);
@@ -155,7 +155,7 @@ contract UniswapV3ExecutorTest is
             WETH_ADDR,
             DAI_ADDR,
             poolFee,
-            RestrictTransferFrom.TransferType.Transfer,
+            RestrictTransferFrom.TransferType.TransferFromVault,
             address(uniswapV3Exposed)
         );
         uint256 dataOffset = 3; // some offset
@@ -189,7 +189,7 @@ contract UniswapV3ExecutorTest is
             address(this),
             fakePool,
             zeroForOne,
-            RestrictTransferFrom.TransferType.Transfer
+            RestrictTransferFrom.TransferType.TransferFromVault
         );
 
         vm.expectRevert(UniswapV3Executor__InvalidTarget.selector);
@@ -243,7 +243,7 @@ contract TychoRouterForUniswapV3Test is TychoRouterTestSetup {
             ALICE,
             DAI_WETH_USV3,
             zeroForOne,
-            RestrictTransferFrom.TransferType.TransferFrom
+            RestrictTransferFrom.TransferType.TransferFromSender
         );
         bytes memory swap =
             encodeSingleSwap(address(usv3Executor), protocolData);
@@ -288,7 +288,7 @@ contract TychoRouterForUniswapV3Test is TychoRouterTestSetup {
             BOB,
             PANCAKESWAPV3_cbBTC_USDC_POOL,
             zeroForOne,
-            RestrictTransferFrom.TransferType.Transfer
+            RestrictTransferFrom.TransferType.TransferFromVault
         );
 
         deal(BASE_USDC, address(basePancakeV3Exposed), amountIn);

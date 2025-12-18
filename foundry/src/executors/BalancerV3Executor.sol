@@ -87,6 +87,12 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
         // slither-disable-next-line unused-return
         VAULT.settle(tokenIn, amountIn);
         VAULT.sendTo(tokenOut, receiver, amountOut);
+
+        // Credit vault if funds came to router
+        if (receiver == address(this)) {
+            _creditVault(msg.sender, address(tokenOut), amountOut);
+        }
+
         return abi.encode(amountCalculated);
     }
 

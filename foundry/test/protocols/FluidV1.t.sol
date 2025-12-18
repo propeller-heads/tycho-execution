@@ -19,7 +19,8 @@ contract FluidV1ExecutorExposed is FluidV1Executor {
             bool zero2one,
             address receiver,
             TransferType transferType,
-            bool isNative
+            bool isNative,
+            address tokenOut
         )
     {
         return _decodeData(data);
@@ -56,20 +57,23 @@ contract FluidV1ExecutorTest is Test, Constants {
 
     function testDecodeData() public view {
         address dex = 0x1DD125C32e4B5086c63CC13B3cA02C4A2a61Fa9b;
+        address expectedTokenOut = 0xdAC17F958D2ee523a2206206994597C13D831ec7; // USDT
         bytes memory params = abi.encodePacked(
             dex,
             true,
             address(this),
-            RestrictTransferFrom.TransferType.Transfer,
-            false
+            RestrictTransferFrom.TransferType.TransferFromVault,
+            false,
+            expectedTokenOut
         );
         IFluidV1Dex dexVal;
         bool zero2oneVal;
         address receiverVal;
         RestrictTransferFrom.TransferType transferTypeVal;
         bool isNative;
+        address tokenOut;
 
-        (dexVal, zero2oneVal, receiverVal, transferTypeVal, isNative) =
+        (dexVal, zero2oneVal, receiverVal, transferTypeVal, isNative, tokenOut) =
             executor.decodeData(params);
 
         assertEq(address(dexVal), dex);
@@ -77,15 +81,16 @@ contract FluidV1ExecutorTest is Test, Constants {
         assertEq(receiverVal, address(this));
         assertEq(
             uint8(transferTypeVal),
-            uint8(RestrictTransferFrom.TransferType.Transfer)
+            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
         );
+        assertEq(tokenOut, expectedTokenOut);
     }
 
     function testSwapParamsRoundtrip() public {
         address dexAddress = 0x1DD125C32e4B5086c63CC13B3cA02C4A2a61Fa9b;
         IFluidV1Dex dex = IFluidV1Dex(dexAddress);
         RestrictTransferFrom.TransferType transferType =
-        RestrictTransferFrom.TransferType.Transfer;
+        RestrictTransferFrom.TransferType.TransferFromVault;
 
         executor.setSwapParams(dex, transferType);
         address dexVal = executor.getCurrentDex();
@@ -95,14 +100,14 @@ contract FluidV1ExecutorTest is Test, Constants {
         assertEq(dexVal, dexAddress);
         assertEq(
             uint8(transferTypeVal),
-            uint8(RestrictTransferFrom.TransferType.Transfer)
+            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
         );
     }
 
     function testVerifyCallbackOk() public {
         address dexAddress = 0x1DD125C32e4B5086c63CC13B3cA02C4A2a61Fa9b;
         executor.setSwapParams(
-            IFluidV1Dex(dexAddress), RestrictTransferFrom.TransferType.Transfer
+            IFluidV1Dex(dexAddress), RestrictTransferFrom.TransferType.TransferFromVault
         );
         bytes memory param = abi.encodePacked(bytes4(0x9410ae88));
 
@@ -113,7 +118,7 @@ contract FluidV1ExecutorTest is Test, Constants {
     function testVerifyCallbackBadSender() public {
         address dexAddress = 0x1DD125C32e4B5086c63CC13B3cA02C4A2a61Fa9b;
         executor.setSwapParams(
-            IFluidV1Dex(dexAddress), RestrictTransferFrom.TransferType.Transfer
+            IFluidV1Dex(dexAddress), RestrictTransferFrom.TransferType.TransferFromVault
         );
         bytes memory param = abi.encodePacked(bytes4(0x9410ae88));
 
@@ -124,7 +129,7 @@ contract FluidV1ExecutorTest is Test, Constants {
     function testVerifyCallbackBadSelector() public {
         address dexAddress = 0x1DD125C32e4B5086c63CC13B3cA02C4A2a61Fa9b;
         executor.setSwapParams(
-            IFluidV1Dex(dexAddress), RestrictTransferFrom.TransferType.Transfer
+            IFluidV1Dex(dexAddress), RestrictTransferFrom.TransferType.TransferFromVault
         );
         bytes memory param = abi.encodePacked(bytes4(0x00000000));
 
@@ -142,8 +147,9 @@ contract FluidV1ExecutorTest is Test, Constants {
             dex,
             true,
             address(BOB),
-            RestrictTransferFrom.TransferType.Transfer,
-            false
+            RestrictTransferFrom.TransferType.TransferFromVault,
+            false,
+            address(USDT)
         );
         deal(address(sUSDe), address(executor), amountIn);
         uint256 balanceBefore = USDT.balanceOf(BOB);
@@ -162,8 +168,9 @@ contract FluidV1ExecutorTest is Test, Constants {
             dex,
             false,
             address(BOB),
-            RestrictTransferFrom.TransferType.Transfer,
-            true
+            RestrictTransferFrom.TransferType.TransferFromVault,
+            true,
+            address(ezETH)
         );
         deal(address(executor), amountIn);
         uint256 balanceBefore = ezETH.balanceOf(BOB);
@@ -182,8 +189,9 @@ contract FluidV1ExecutorTest is Test, Constants {
             dex,
             true,
             address(BOB),
-            RestrictTransferFrom.TransferType.Transfer,
-            false
+            RestrictTransferFrom.TransferType.TransferFromVault,
+            false,
+            address(0) // native ETH output
         );
         deal(address(ezETH), address(executor), amountIn);
         uint256 balanceBefore = BOB.balance;

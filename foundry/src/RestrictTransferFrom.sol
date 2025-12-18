@@ -59,11 +59,20 @@ contract RestrictTransferFrom {
         // Empty implementation - only TychoRouter uses this
     }
 
+    /**
+     * @dev Virtual function to credit vault - overridden by TychoRouter
+     */
+    function _creditVault(address user, address token, uint256 amount)
+        internal
+        virtual {
+        // Empty implementation - only TychoRouter uses this
+    }
+
     enum TransferType {
-        TransferFrom,
-        Transfer,
-        None,
-        TransferFromVault
+        TransferFromSender,
+        TransferFromVault,
+        FundsAlreadyInProtocol,
+        ProtocolWillDebit
     }
 
     /**
@@ -95,7 +104,7 @@ contract RestrictTransferFrom {
      * If the TransferType is TransferFrom, it will check if the amount is within the allowed amount and transfer those funds from the user.
      * If the TransferType is Transfer, it will transfer the funds from the TychoRouter to the receiver.
      * If the TransferType is TransferFromVault, it will debit the user's vault balance and transfer from the router (funds already there).
-     * If the TransferType is None, it will do nothing.
+     * If the TransferType is None, it will debit the user's vault balance and expect the protocol to take care of any transfers.
      */
     // slither-disable-next-line assembly
     function _transfer(
@@ -104,7 +113,7 @@ contract RestrictTransferFrom {
         address tokenIn,
         uint256 amount
     ) internal {
-        if (transferType == TransferType.TransferFrom) {
+        if (transferType == TransferType.TransferFromSender) {
             address tokenInStorage;
             bool isPermit2;
             address sender;
@@ -136,12 +145,6 @@ contract RestrictTransferFrom {
                 // slither-disable-next-line arbitrary-send-erc20
                 IERC20(tokenIn).safeTransferFrom(sender, receiver, amount);
             }
-        } else if (transferType == TransferType.Transfer) {
-            if (tokenIn == address(0)) {
-                Address.sendValue(payable(receiver), amount);
-            } else {
-                IERC20(tokenIn).safeTransfer(receiver, amount);
-            }
         } else if (transferType == TransferType.TransferFromVault) {
             address sender;
             assembly {
@@ -156,7 +159,17 @@ contract RestrictTransferFrom {
             } else {
                 IERC20(tokenIn).safeTransfer(receiver, amount);
             }
-        } else if (transferType == TransferType.None) {
+        } else if (transferType == TransferType.ProtocolWillDebit) {
+            address sender;
+            assembly {
+                sender := tload(_SENDER_SLOT)
+            }
+            // Protocol will pull funds from router via transferFrom
+            // We need to debit the vault, but NOT transfer (protocol does that)
+            _debitVault(sender, tokenIn, amount);
+        } else if (transferType == TransferType.FundsAlreadyInProtocol) {
+            // Funds were sent directly from the previous pool without passing through our router
+            // Nothing to do here
             return;
         } else {
             revert RestrictTransferFrom__UnknownTransferType();

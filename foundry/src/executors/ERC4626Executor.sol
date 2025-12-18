@@ -35,15 +35,23 @@ contract ERC4626Executor is IExecutor, RestrictTransferFrom {
         }
         _transfer(address(this), transferType, address(tokenIn), givenAmount);
 
+        address tokenOut;
         if (address(tokenIn) == target) {
             // shares --> asset
+            tokenOut = IERC4626(target).asset();
             calculatedAmount =
                 IERC4626(target).redeem(givenAmount, receiver, address(this));
         } else if (address(tokenIn) == IERC4626(target).asset()) {
             // asset --> shares
+            tokenOut = target;
             calculatedAmount = IERC4626(target).deposit(givenAmount, receiver);
         } else {
             revert ERC4626Executor__InvalidTarget();
+        }
+
+        // Credit vault if funds came to router
+        if (receiver == address(this)) {
+            _creditVault(msg.sender, tokenOut, calculatedAmount);
         }
     }
 

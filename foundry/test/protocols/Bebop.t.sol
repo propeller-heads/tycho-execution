@@ -60,7 +60,7 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
         bytes memory params = abi.encodePacked(
             USDC_ADDR,
             ONDO_ADDR,
-            uint8(RestrictTransferFrom.TransferType.Transfer),
+            uint8(RestrictTransferFrom.TransferType.TransferFromVault),
             uint8(2),
             originalAmountIn,
             true,
@@ -83,7 +83,7 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
         assertEq(tokenOut, ONDO_ADDR, "tokenOut mismatch");
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.Transfer),
+            uint8(RestrictTransferFrom.TransferType.TransferFromVault),
             "transferType mismatch"
         );
         assertEq(
@@ -115,7 +115,7 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
         address tokenIn = WETH_ADDR;
         address tokenOut = WBTC_ADDR;
         RestrictTransferFrom.TransferType transferType =
-        RestrictTransferFrom.TransferType.None;
+        RestrictTransferFrom.TransferType.FundsAlreadyInProtocol;
         uint8 partialFillOffset = 12;
         uint256 amountIn = 1000000000000000000;
         bool approvalNeeded = true;
@@ -166,7 +166,7 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
         address tokenIn = address(0);
         address tokenOut = WBTC_ADDR;
         RestrictTransferFrom.TransferType transferType =
-        RestrictTransferFrom.TransferType.None;
+        RestrictTransferFrom.TransferType.FundsAlreadyInProtocol;
         uint8 partialFillOffset = 12;
         uint256 amountIn = 1000000000000000000;
         bool approvalNeeded = false;
@@ -213,7 +213,7 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
         address tokenIn = WETH_ADDR;
         address tokenOut = WBTC_ADDR;
         RestrictTransferFrom.TransferType transferType =
-        RestrictTransferFrom.TransferType.None;
+        RestrictTransferFrom.TransferType.FundsAlreadyInProtocol;
         uint8 partialFillOffset = 12;
         // filling only half of the quote
         uint256 amountIn = 1000000000000000000 / 2;
@@ -265,7 +265,7 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
         address tokenIn = USDC_ADDR;
         address tokenOut = ONDO_ADDR;
         RestrictTransferFrom.TransferType transferType =
-        RestrictTransferFrom.TransferType.None;
+        RestrictTransferFrom.TransferType.FundsAlreadyInProtocol;
         uint8 partialFillOffset = 2;
         // filling only half of the quote
         uint256 amountIn = 20000000000;
@@ -319,7 +319,7 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
         address tokenIn = USDC_ADDR;
         address tokenOut = ONDO_ADDR;
         RestrictTransferFrom.TransferType transferType =
-        RestrictTransferFrom.TransferType.None;
+        RestrictTransferFrom.TransferType.FundsAlreadyInProtocol;
         uint8 partialFillOffset = 2;
         // filling only half of the quote
         uint256 amountIn = 20000000000 / 2;
@@ -375,7 +375,7 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
         bytes memory validParams = abi.encodePacked(
             WETH_ADDR,
             USDC_ADDR,
-            uint8(RestrictTransferFrom.TransferType.Transfer),
+            uint8(RestrictTransferFrom.TransferType.TransferFromVault),
             uint8(2),
             originalAmountIn,
             true,
@@ -397,7 +397,7 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
         bytes memory tooShortParams = abi.encodePacked(
             WETH_ADDR,
             USDC_ADDR,
-            uint8(RestrictTransferFrom.TransferType.Transfer)
+            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
         );
         // Missing rest of the data
 

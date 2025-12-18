@@ -63,6 +63,11 @@ contract BalancerV2Executor is IExecutor, RestrictTransferFrom {
 
         calculatedAmount =
             IVault(VAULT).swap(singleSwap, funds, limit, block.timestamp);
+
+        // Credit vault if funds came to router
+        if (receiver == address(this)) {
+            _creditVault(msg.sender, address(tokenOut), calculatedAmount);
+        }
     }
 
     function _decodeData(bytes calldata data)

@@ -84,6 +84,11 @@ contract BebopExecutor is IExecutor, RestrictTransferFrom {
 
         uint256 balanceAfter = _balanceOf(tokenOut, receiver);
         calculatedAmount = balanceAfter - balanceBefore;
+
+        // Credit vault if funds came to router
+        if (receiver == address(this)) {
+            _creditVault(msg.sender, tokenOut, calculatedAmount);
+        }
     }
 
     /// @dev Decodes the packed calldata

@@ -712,7 +712,7 @@ mod tests {
                 "a478c2975ab1ea89e8196811f51a7b7ade33eb11", // component id
                 "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
                 "00",                                       // zero2one
-                "03",                                       // transfer type TransferFromVault
+                "01",                                       // transfer type TransferFromVault
             ]
             .join("");
 
@@ -805,7 +805,7 @@ mod tests {
                 "004375dff511095cc5a197a54140a24efef3a416", // component id
                 "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver (final user)
                 "01",                                       // zero to one
-                "02",                                       // transfer type None
+                "04",                                       // transfer type FundsAlreadyInProtocol
             ));
 
             assert_eq!(hex_calldata, expected);
