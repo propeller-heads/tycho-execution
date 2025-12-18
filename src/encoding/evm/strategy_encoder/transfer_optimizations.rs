@@ -92,7 +92,6 @@ impl TransferOptimization {
         solution_receiver: &Bytes,
         next_swap: Option<&SwapGroup>,
         unwrap: bool,
-        has_fee: bool,
     ) -> Result<(Bytes, bool), EncodingError> {
         if let Some(next) = next_swap {
             // if the protocol of the next swap supports transfer in optimization
@@ -114,8 +113,8 @@ impl TransferOptimization {
                 Ok((self.router_address.clone(), false))
             }
         } else {
-            // last swap - there is no next swap
-            if unwrap || has_fee {
+            // last swap - the receiver is always the TychoRouter since fees are handled inline
+            if unwrap {
                 Ok((self.router_address.clone(), false))
             } else {
                 Ok((solution_receiver.clone(), false))
@@ -262,7 +261,7 @@ mod tests {
             })
         };
 
-        let result = optimization.get_receiver(&receiver(), next_swap.as_ref(), unwrap, false);
+        let result = optimization.get_receiver(&receiver(), next_swap.as_ref(), unwrap);
 
         assert!(result.is_ok());
         let (actual_receiver, optimization_flag) = result.unwrap();

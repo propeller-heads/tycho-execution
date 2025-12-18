@@ -59,14 +59,10 @@ pub struct Solution {
     pub swaps: Vec<Swap>,
     /// If set, the corresponding native action will be executed.
     pub native_action: Option<NativeAction>,
-    /// If true, the final swap output will be directed to the router for fee collection.
-    /// The router will then deduct the fee and transfer the remainder to the receiver.
-    #[serde(default)]
-    pub has_fee: bool,
-    /// Fee in basis points (0-10000, where 10000 = 100%). Only used if has_fee is true.
+    /// Fee in basis points (0-10000, where 10000 = 100%).
     #[serde(default)]
     pub fee_bps: u16,
-    /// Address to receive the fee. Only used if has_fee is true.
+    /// Address to receive the fee.
     #[serde(default)]
     pub fee_receiver: Bytes,
 }

@@ -96,11 +96,10 @@ impl StrategyEncoder for SingleSwapStrategyEncoder {
             ))
         }
 
-        let (mut unwrap, mut wrap) = (false, false);
+        let mut wrap = false;
         if let Some(action) = &solution.native_action {
-            match *action {
-                NativeAction::Wrap => wrap = true,
-                NativeAction::Unwrap => unwrap = true,
+            if *action == NativeAction::Wrap {
+                wrap = true;
             }
         }
         let protocol = &grouped_swap.protocol_system;
@@ -112,11 +111,8 @@ impl StrategyEncoder for SingleSwapStrategyEncoder {
                 ))
             })?;
 
-        let swap_receiver = if !unwrap && !solution.has_fee {
-            solution.receiver.clone()
-        } else {
-            self.router_address.clone()
-        };
+        // Final swap always goes to router since fees are handled inline
+        let swap_receiver = self.router_address.clone();
 
         let transfer = self
             .transfer_optimization
@@ -280,7 +276,7 @@ impl StrategyEncoder for SequentialSwapStrategyEncoder {
             let next_swap = grouped_swaps.get(i + 1);
             let (swap_receiver, next_swap_optimization) = self
                 .transfer_optimization
-                .get_receiver(&solution.receiver, next_swap, unwrap, solution.has_fee)?;
+                .get_receiver(&solution.receiver, next_swap, unwrap)?;
             next_in_between_swap_optimization_allowed = next_swap_optimization;
 
             let transfer = self
@@ -458,11 +454,11 @@ impl StrategyEncoder for SplitSwapStrategyEncoder {
         // runs)
         intermediary_tokens.sort();
 
-        let (mut unwrap, mut wrap) = (false, false);
+        let (unwrap, mut wrap) = (false, false);
         if let Some(action) = &solution.native_action {
             match *action {
                 NativeAction::Wrap => wrap = true,
-                NativeAction::Unwrap => unwrap = true,
+                NativeAction::Unwrap => {} // unwrap is handled by the router
             }
         }
 
@@ -491,13 +487,8 @@ impl StrategyEncoder for SplitSwapStrategyEncoder {
                     ))
                 })?;
 
-            let swap_receiver =
-                if !unwrap && !solution.has_fee && grouped_swap.token_out == solution.checked_token
-                {
-                    solution.receiver.clone()
-                } else {
-                    self.router_address.clone()
-                };
+            // Final swap always goes to router since fees are handled inline
+            let swap_receiver = self.router_address.clone();
             let transfer = self
                 .transfer_optimization
                 .get_transfers(grouped_swap, &solution.given_token, wrap, false);

@@ -1138,7 +1138,6 @@ mod tests {
                 receiver: Bytes::from_str("0x1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e").unwrap(),
                 swaps: vec![swap],
                 native_action: None,
-                has_fee: false,
                 fee_bps: 0,
                 fee_receiver: Bytes::from_str("0x0000000000000000000000000000000000000000")
                     .unwrap(),
@@ -1201,7 +1200,6 @@ mod tests {
                 receiver: Bytes::from_str("0x1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e").unwrap(),
                 swaps: vec![swap.clone(), swap],
                 native_action: None,
-                has_fee: false,
                 fee_bps: 0,
                 fee_receiver: Bytes::from_str("0x0000000000000000000000000000000000000000")
                     .unwrap(),
