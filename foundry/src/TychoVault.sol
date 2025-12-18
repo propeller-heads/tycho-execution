@@ -103,6 +103,17 @@ abstract contract TychoVault is IERC6909, ReentrancyGuard {
     }
 
     /**
+     * @dev Internal function to get vault balance
+     */
+    function _getVaultBalance(address user, address token)
+        internal
+        view
+        returns (uint256)
+    {
+        return _vaultBalances[user][token];
+    }
+
+    /**
      * @dev Internal function to credit leftover funds to user's vault
      */
     function _creditUserVault(address user, address token, uint256 amount)

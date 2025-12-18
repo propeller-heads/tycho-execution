@@ -10,7 +10,13 @@ contract FeeExecutorExposed is FeeExecutor {
     function decodeData(bytes calldata data)
         external
         pure
-        returns (uint16 feeBps, address feeReceiver, address token)
+        returns (
+            uint16 solutionFeeBps,
+            address solutionFeeReceiver,
+            uint16 routerFeeBps,
+            address routerFeeReceiver,
+            address token
+        )
     {
         return _decodeData(data);
     }
@@ -24,19 +30,32 @@ contract FeeExecutorTest is Constants, TestUtils {
     }
 
     function testDecodeData() public view {
-        uint16 expectedFeeBps = 100; // 1%
-        address expectedFeeReceiver = address(0x123);
+        uint16 expectedSolutionFeeBps = 100; // 1%
+        address expectedSolutionFeeReceiver = address(0x123);
+        uint16 expectedRouterFeeBps = 50; // 0.5%
+        address expectedRouterFeeReceiver = address(0x456);
         address expectedToken = DAI_ADDR;
 
         bytes memory data = abi.encodePacked(
-            expectedFeeBps, expectedFeeReceiver, expectedToken
+            expectedSolutionFeeBps,
+            expectedSolutionFeeReceiver,
+            expectedRouterFeeBps,
+            expectedRouterFeeReceiver,
+            expectedToken
         );
 
-        (uint16 feeBps, address feeReceiver, address token) =
-            feeExecutor.decodeData(data);
+        (
+            uint16 solutionFeeBps,
+            address solutionFeeReceiver,
+            uint16 routerFeeBps,
+            address routerFeeReceiver,
+            address token
+        ) = feeExecutor.decodeData(data);
 
-        assertEq(feeBps, expectedFeeBps);
-        assertEq(feeReceiver, expectedFeeReceiver);
+        assertEq(solutionFeeBps, expectedSolutionFeeBps);
+        assertEq(solutionFeeReceiver, expectedSolutionFeeReceiver);
+        assertEq(routerFeeBps, expectedRouterFeeBps);
+        assertEq(routerFeeReceiver, expectedRouterFeeReceiver);
         assertEq(token, expectedToken);
     }
 
@@ -49,11 +68,19 @@ contract FeeExecutorTest is Constants, TestUtils {
 
     function testSwapDeductsFee() public {
         uint256 amountIn = 1000 ether;
-        uint16 feeBps = 100; // 1%
-        address feeReceiver = address(0x456);
+        uint16 solutionFeeBps = 100; // 1%
+        address solutionFeeReceiver = address(0x456);
+        uint16 routerFeeBps = 0; // no router fee
+        address routerFeeReceiver = address(0);
         address token = DAI_ADDR;
 
-        bytes memory data = abi.encodePacked(feeBps, feeReceiver, token);
+        bytes memory data = abi.encodePacked(
+            solutionFeeBps,
+            solutionFeeReceiver,
+            routerFeeBps,
+            routerFeeReceiver,
+            token
+        );
 
         uint256 amountOut = feeExecutor.swap(amountIn, data);
 
@@ -64,11 +91,19 @@ contract FeeExecutorTest is Constants, TestUtils {
 
     function testSwapWithZeroFee() public {
         uint256 amountIn = 1000 ether;
-        uint16 feeBps = 0; // 0% fee
-        address feeReceiver = address(0x456);
+        uint16 solutionFeeBps = 0; // 0% fee
+        address solutionFeeReceiver = address(0x456);
+        uint16 routerFeeBps = 0; // 0% fee
+        address routerFeeReceiver = address(0x789);
         address token = DAI_ADDR;
 
-        bytes memory data = abi.encodePacked(feeBps, feeReceiver, token);
+        bytes memory data = abi.encodePacked(
+            solutionFeeBps,
+            solutionFeeReceiver,
+            routerFeeBps,
+            routerFeeReceiver,
+            token
+        );
 
         uint256 amountOut = feeExecutor.swap(amountIn, data);
 
@@ -78,11 +113,19 @@ contract FeeExecutorTest is Constants, TestUtils {
 
     function testSwapFeeTooHigh() public {
         uint256 amountIn = 1000 ether;
-        uint16 feeBps = 5001; // 50.01% - above max
-        address feeReceiver = address(0x456);
+        uint16 solutionFeeBps = 5001; // 50.01% - above max
+        address solutionFeeReceiver = address(0x456);
+        uint16 routerFeeBps = 0;
+        address routerFeeReceiver = address(0);
         address token = DAI_ADDR;
 
-        bytes memory data = abi.encodePacked(feeBps, feeReceiver, token);
+        bytes memory data = abi.encodePacked(
+            solutionFeeBps,
+            solutionFeeReceiver,
+            routerFeeBps,
+            routerFeeReceiver,
+            token
+        );
 
         vm.expectRevert(FeeExecutor__FeeTooHigh.selector);
         feeExecutor.swap(amountIn, data);
@@ -90,11 +133,19 @@ contract FeeExecutorTest is Constants, TestUtils {
 
     function testSwapMaxFee() public {
         uint256 amountIn = 1000 ether;
-        uint16 feeBps = 5000; // 50% - at max
-        address feeReceiver = address(0x456);
+        uint16 solutionFeeBps = 5000; // 50% - at max
+        address solutionFeeReceiver = address(0x456);
+        uint16 routerFeeBps = 0;
+        address routerFeeReceiver = address(0);
         address token = DAI_ADDR;
 
-        bytes memory data = abi.encodePacked(feeBps, feeReceiver, token);
+        bytes memory data = abi.encodePacked(
+            solutionFeeBps,
+            solutionFeeReceiver,
+            routerFeeBps,
+            routerFeeReceiver,
+            token
+        );
 
         uint256 amountOut = feeExecutor.swap(amountIn, data);
 

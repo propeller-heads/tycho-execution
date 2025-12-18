@@ -70,6 +70,8 @@ contract TychoVaultTest is TychoRouterTestSetup {
             false,
             ALICE,
             true,
+            0,
+            address(0),
             swap
         );
         vm.stopPrank();
@@ -142,6 +144,8 @@ contract TychoVaultTest is TychoRouterTestSetup {
             false,
             BOB,
             true,
+            0,
+            address(0),
             swap
         );
 

@@ -40,6 +40,8 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             ALICE,
             permitSingle,
             signature,
+            0,
+            address(0),
             swap
         );
 
@@ -81,6 +83,8 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             false,
             ALICE,
             true,
+            0,
+            address(0),
             swap
         );
 
@@ -115,7 +119,17 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
 
         vm.expectRevert(TychoRouter__UndefinedMinAmountOut.selector);
         tychoRouter.singleSwap(
-            amountIn, WETH_ADDR, DAI_ADDR, 0, false, false, ALICE, true, swap
+            amountIn,
+            WETH_ADDR,
+            DAI_ADDR,
+            0,
+            false,
+            false,
+            ALICE,
+            true,
+            0,
+            address(0),
+            swap
         );
     }
 
@@ -150,6 +164,8 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             false,
             ALICE,
             true,
+            0,
+            address(0),
             swap
         );
     }
@@ -193,6 +209,8 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             false,
             ALICE,
             true,
+            0,
+            address(0),
             swap
         );
     }
@@ -232,6 +250,8 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             ALICE,
             emptyPermitSingle,
             "",
+            0,
+            address(0),
             swap
         );
         uint256 expectedAmount = 2018817438608734439722;
@@ -275,6 +295,8 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             ALICE,
             permitSingle,
             signature,
+            0,
+            address(0),
             swap
         );
 
@@ -322,6 +344,8 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             false,
             ALICE,
             false,
+            0,
+            address(0),
             swap
         );
 
