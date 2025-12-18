@@ -1654,7 +1654,7 @@ mod tests {
                     // approval needed
                     "01",
                     // transfer type FundsAlreadyInProtocol
-                    "04"
+                    "02"
                 ))
             );
             write_calldata_to_file("test_encode_balancer_v2", hex_swap.as_str());
@@ -2353,7 +2353,7 @@ mod tests {
                     // approval needed
                     "01",
                     // transfer type FundsAlreadyInProtocol
-                    "04",
+                    "02",
                     // receiver,
                     "9964bff29baa37b47604f3f3f51f3b3c5149d6de",
                 ))
@@ -2420,7 +2420,7 @@ mod tests {
                     // approval needed
                     "01",
                     // transfer type FundsAlreadyInProtocol
-                    "04",
+                    "02",
                     // receiver
                     "9964bff29baa37b47604f3f3f51f3b3c5149d6de",
                 ))
@@ -2497,7 +2497,7 @@ mod tests {
                     // approval needed
                     "01",
                     // transfer type FundsAlreadyInProtocol
-                    "04",
+                    "02",
                     // receiver
                     "9964bff29baa37b47604f3f3f51f3b3c5149d6de",
                 ))
@@ -3163,7 +3163,7 @@ mod tests {
                 router_address: Some(Bytes::zero(20)),
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::None,
+                transfer_type: TransferType::TransferFromSender,
                 historical_trade: false,
             };
             let encoder = LidoSwapEncoder::new(
@@ -3182,7 +3182,7 @@ mod tests {
                     // receiver
                     "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
                     // transfer type Transfer
-                    "02",
+                    "00",
                     // pool
                     "00",
                     // direction
@@ -3210,7 +3210,7 @@ mod tests {
                 router_address: Some(Bytes::zero(20)),
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::None,
+                transfer_type: TransferType::TransferFromSender,
                 historical_trade: false,
             };
             let encoder = LidoSwapEncoder::new(
@@ -3229,7 +3229,7 @@ mod tests {
                     // receiver
                     "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
                     // transfer type Transfer
-                    "02",
+                    "00",
                     // pool
                     "01",
                     // direction
@@ -3257,7 +3257,7 @@ mod tests {
                 router_address: Some(Bytes::zero(20)),
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::None,
+                transfer_type: TransferType::TransferFromSender,
                 historical_trade: false,
             };
             let encoder = LidoSwapEncoder::new(
@@ -3276,7 +3276,7 @@ mod tests {
                     // receiver
                     "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
                     // transfer type Transfer
-                    "02",
+                    "00",
                     // pool
                     "01",
                     // direction
@@ -3304,7 +3304,7 @@ mod tests {
                 router_address: Some(Bytes::zero(20)),
                 group_token_in: token_in.clone(),
                 group_token_out: token_out.clone(),
-                transfer_type: TransferType::None,
+                transfer_type: TransferType::TransferFromSender,
                 historical_trade: false,
             };
             let encoder = LidoSwapEncoder::new(

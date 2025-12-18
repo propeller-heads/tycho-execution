@@ -47,9 +47,9 @@ impl SingleSwapStrategyEncoder {
         historical_trade: bool,
     ) -> Result<Self, EncodingError> {
         let function_signature = if user_transfer_type == UserTransferType::TransferFromPermit2 {
-            "singleSwapPermit2(uint256,address,address,uint256,bool,bool,address,((address,uint160,uint48,uint48),address,uint256),bytes,bytes)"
+            "singleSwapPermit2(uint256,address,address,uint256,bool,bool,address,((address,uint160,uint48,uint48),address,uint256),bytes,uint256,address,bytes)"
         } else {
-            "singleSwap(uint256,address,address,uint256,bool,bool,address,bool,bytes)"
+            "singleSwap(uint256,address,address,uint256,bool,bool,address,bool,uint256,address,bytes)"
         }.to_string();
 
         Ok(Self {
@@ -204,9 +204,9 @@ impl SequentialSwapStrategyEncoder {
         historical_trade: bool,
     ) -> Result<Self, EncodingError> {
         let function_signature = if user_transfer_type == UserTransferType::TransferFromPermit2 {
-            "sequentialSwapPermit2(uint256,address,address,uint256,bool,bool,address,((address,uint160,uint48,uint48),address,uint256),bytes,bytes)"
+            "sequentialSwapPermit2(uint256,address,address,uint256,bool,bool,address,((address,uint160,uint48,uint48),address,uint256),bytes,uint256,address,bytes)"
         } else {
-            "sequentialSwap(uint256,address,address,uint256,bool,bool,address,bool,bytes)"
+            "sequentialSwap(uint256,address,address,uint256,bool,bool,address,bool,uint256,address,bytes)"
 
         }.to_string();
         let native_token_address = chain.native_token().address;
@@ -377,9 +377,9 @@ impl SplitSwapStrategyEncoder {
         historical_trade: bool,
     ) -> Result<Self, EncodingError> {
         let function_signature = if user_transfer_type == UserTransferType::TransferFromPermit2 {
-           "splitSwapPermit2(uint256,address,address,uint256,bool,bool,uint256,address,((address,uint160,uint48,uint48),address,uint256),bytes,bytes)"
+           "splitSwapPermit2(uint256,address,address,uint256,bool,bool,uint256,address,((address,uint160,uint48,uint48),address,uint256),bytes,uint256,address,bytes)"
         } else {
-                "splitSwap(uint256,address,address,uint256,bool,bool,uint256,address,bool,bytes)"
+                "splitSwap(uint256,address,address,uint256,bool,bool,uint256,address,bool,uint256,address,bytes)"
         }.to_string();
         let native_token_address = chain.native_token().address;
         let wrapped_token_address = chain.wrapped_native_token().address;
@@ -641,14 +641,14 @@ mod tests {
                 "5615deb798bb3e4dfa0139dfa1b3d433cc23b72f", // executor address
                 "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token in
                 "a478c2975ab1ea89e8196811f51a7b7ade33eb11", // component id
-                "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
+                "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver (router)
                 "00",                                       // zero2one
                 "00",                                       // transfer type TransferFrom
             ));
             let hex_calldata = encode(&encoded_solution.swaps);
 
             assert_eq!(hex_calldata, expected_swap);
-            assert_eq!(encoded_solution.function_signature, "singleSwapPermit2(uint256,address,address,uint256,bool,bool,address,((address,uint160,uint48,uint48),address,uint256),bytes,bytes)".to_string());
+            assert_eq!(encoded_solution.function_signature, "singleSwapPermit2(uint256,address,address,uint256,bool,bool,address,((address,uint160,uint48,uint48),address,uint256),bytes,uint256,address,bytes)".to_string());
             assert_eq!(encoded_solution.interacting_with, router_address());
         }
 
@@ -702,7 +702,7 @@ mod tests {
                 "5615deb798bb3e4dfa0139dfa1b3d433cc23b72f", // executor address
                 "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token in
                 "a478c2975ab1ea89e8196811f51a7b7ade33eb11", // component id
-                "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
+                "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver (router)
                 "00",                                       // zero2one
                 "01",                                       // transfer type TransferFromVault
             ]
@@ -713,7 +713,7 @@ mod tests {
             assert_eq!(hex_calldata, expected_input);
             assert_eq!(
                 encoded_solution.function_signature,
-                "singleSwap(uint256,address,address,uint256,bool,bool,address,bool,bytes)"
+                "singleSwap(uint256,address,address,uint256,bool,bool,address,bool,uint256,address,bytes)"
                     .to_string()
             );
             assert_eq!(encoded_solution.interacting_with, router_address());
@@ -795,15 +795,15 @@ mod tests {
                 "5615deb798bb3e4dfa0139dfa1b3d433cc23b72f", // executor address
                 "2260fac5e5542a773aa44fbcfedf7c193bc2c599", // token in
                 "004375dff511095cc5a197a54140a24efef3a416", // component id
-                "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver (final user)
+                "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver (router)
                 "01",                                       // zero to one
-                "04",                                       // transfer type FundsAlreadyInProtocol
+                "02",                                       // transfer type FundsAlreadyInProtocol
             ));
 
             assert_eq!(hex_calldata, expected);
             assert_eq!(
                 encoded_solution.function_signature,
-                "sequentialSwap(uint256,address,address,uint256,bool,bool,address,bool,bytes)"
+                "sequentialSwap(uint256,address,address,uint256,bool,bool,address,bool,uint256,address,bytes)"
                     .to_string()
             );
             assert_eq!(encoded_solution.interacting_with, router_address());
@@ -952,15 +952,15 @@ mod tests {
                 "5615deb798bb3e4dfa0139dfa1b3d433cc23b72f", // executor address,
                 "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token in
                 "b4e16d0168e52d35cacd2c6185b44281ec28c9dc", // component id,
-                "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
+                "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver (router)
                 "00",                                       // zero2one
-                "01",                                       // transfer type Transfer
+                "01",                                       // transfer type FundsAlreadyInProtocol
             ]
             .join("");
             assert_eq!(hex_calldata, expected_swaps);
             assert_eq!(
                 encoded_solution.function_signature,
-                "splitSwapPermit2(uint256,address,address,uint256,bool,bool,uint256,address,((address,uint160,uint48,uint48),address,uint256),bytes,bytes)"
+                "splitSwapPermit2(uint256,address,address,uint256,bool,bool,uint256,address,((address,uint160,uint48,uint48),address,uint256),bytes,uint256,address,bytes)"
                     .to_string()
             );
             assert_eq!(encoded_solution.interacting_with, router_address());
@@ -1088,10 +1088,10 @@ mod tests {
                 "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token in
                 "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // token out
                 "0001f4",                                   // pool fee
-                "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
+                "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver (router)
                 "88e6a0c2ddd26feeb64f039a2c41296fcb3f5640", // component id
                 "00",                                       // zero2one
-                "01",                                       // transfer type Transfer
+                "01",                                       // transfer type FundsAlreadyInProtocol
                 "006e",                                     // ple encoded swaps
                 "01",                                       // token in index
                 "00",                                       // token out index
@@ -1100,17 +1100,17 @@ mod tests {
                 "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token in
                 "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // token out
                 "000bb8",                                   // pool fee
-                "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
+                "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver (router)
                 "8ad599c3a0ff1de082011efddc58f1908eb6e6d8", // component id
                 "00",                                       // zero2one
-                "01",                                       // transfer type Transfer
+                "01",                                       // transfer type FundsAlreadyInProtocol
             ]
             .join("");
 
             assert_eq!(hex_calldata, expected_swaps);
             assert_eq!(
                 encoded_solution.function_signature,
-                "splitSwap(uint256,address,address,uint256,bool,bool,uint256,address,bool,bytes)"
+                "splitSwap(uint256,address,address,uint256,bool,bool,uint256,address,bool,uint256,address,bytes)"
                     .to_string()
             );
             assert_eq!(encoded_solution.interacting_with, router_address());

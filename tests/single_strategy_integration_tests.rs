@@ -249,7 +249,7 @@ fn test_single_swap_strategy_encoder_no_transfer_in() {
         "a478c2975ab1ea89e8196811f51a7b7ade33eb11", // component id
         "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
         "00",                                       // zero2one
-        "03",                                       // transfer type TransferFromVault
+        "01",                                       // transfer type TransferFromVault
         "0000000000000000000000000000",             // padding
     ]
     .join("");

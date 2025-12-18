@@ -304,8 +304,8 @@ pub struct EncodingContext {
 pub enum TransferType {
     TransferFromSender = 0,
     TransferFromVault = 1,
-    FundsAlreadyInProtocol = 4,
-    ProtocolWillDebit = 5,
+    FundsAlreadyInProtocol = 2,
+    ProtocolWillDebit = 3,
 }
 
 mod tests {

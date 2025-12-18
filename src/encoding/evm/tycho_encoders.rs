@@ -530,10 +530,15 @@ mod tests {
                 swaps: vec![swap],
                 receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
                 native_action: Some(NativeAction::Wrap),
+                fee_bps: 0,
+                fee_receiver: Bytes::from_str("0x0000000000000000000000000000000000000000").unwrap(),
                 ..Default::default()
             };
 
             let transactions = encoder.encode_full_calldata(vec![solution]);
+            if let Err(e) = &transactions {
+                eprintln!("Error encoding single swap: {:?}", e);
+            }
             assert!(transactions.is_ok());
             let transactions = transactions.unwrap();
             assert_eq!(transactions.len(), 1);
@@ -542,8 +547,8 @@ mod tests {
                 transactions[0].to,
                 Bytes::from_str("0x3ede3eca2a72b3aecc820e955b36f38437d01395").unwrap()
             );
-            // single swap selector
-            assert_eq!(&hex::encode(transactions[0].clone().data)[..8], "5c4b639c");
+            // single swap selector (for new signature with fee params)
+            assert_eq!(&hex::encode(transactions[0].clone().data)[..8], "176c0484");
         }
 
         #[test]
@@ -559,6 +564,8 @@ mod tests {
                 sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
                 receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
                 swaps: vec![swap_usdc_eth_univ4(), swap_eth_pepe_univ4()],
+                fee_bps: 0,
+                fee_receiver: Bytes::from_str("0x0000000000000000000000000000000000000000").unwrap(),
                 ..Default::default()
             };
 
@@ -566,8 +573,8 @@ mod tests {
             assert!(transactions.is_ok());
             let transactions = transactions.unwrap();
             assert_eq!(transactions.len(), 1);
-            // single swap selector
-            assert_eq!(&hex::encode(transactions[0].clone().data)[..8], "5c4b639c");
+            // single swap selector (for new signature with fee params)
+            assert_eq!(&hex::encode(transactions[0].clone().data)[..8], "176c0484");
         }
 
         #[test]
@@ -606,6 +613,8 @@ mod tests {
                 receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
                 native_action: Some(NativeAction::Wrap),
                 checked_amount: BigUint::from(1000u32),
+                fee_bps: 0,
+                fee_receiver: Bytes::from_str("0x0000000000000000000000000000000000000000").unwrap(),
                 ..Default::default()
             };
 
@@ -614,8 +623,8 @@ mod tests {
             let transactions = transactions.unwrap();
             assert_eq!(transactions.len(), 1);
             assert_eq!(transactions[0].value, eth_amount_in);
-            // sequential swap selector
-            assert_eq!(&hex::encode(transactions[0].clone().data)[..8], "e21dd0d3");
+            // sequential swap selector (for new signature with fee params)
+            assert_eq!(&hex::encode(transactions[0].clone().data)[..8], "c1a4ac98");
         }
 
         #[test]

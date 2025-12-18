@@ -172,7 +172,7 @@ fn test_sequential_swap_strategy_encoder_no_permit2() {
         "004375dff511095cc5a197a54140a24efef3a416",         // component id
         "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2",         // receiver (final user)
         "01",                                               // zero to one
-        "02",                                               // transfer type None
+        "02",                                               // transfer type FundsAlreadyInProtocol
         "000000000000000000000000000000000000000000000000", // padding
     ));
 

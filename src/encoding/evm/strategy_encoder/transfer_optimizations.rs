@@ -89,9 +89,9 @@ impl TransferOptimization {
     // is necessary for the next swap transfer type decision).
     pub fn get_receiver(
         &self,
-        solution_receiver: &Bytes,
+        _solution_receiver: &Bytes,
         next_swap: Option<&SwapGroup>,
-        unwrap: bool,
+        _unwrap: bool,
     ) -> Result<(Bytes, bool), EncodingError> {
         if let Some(next) = next_swap {
             // if the protocol of the next swap supports transfer in optimization
@@ -114,11 +114,7 @@ impl TransferOptimization {
             }
         } else {
             // last swap - the receiver is always the TychoRouter since fees are handled inline
-            if unwrap {
-                Ok((self.router_address.clone(), false))
-            } else {
-                Ok((solution_receiver.clone(), false))
-            }
+            Ok((self.router_address.clone(), false))
         }
     }
 }
@@ -219,8 +215,8 @@ mod tests {
     #[rstest]
     // there is no next swap but there is an unwrap -> receiver is the router
     #[case(None, true, router_address(), false)]
-    // there is no next swap and no unwrap -> receiver is the solution receiver
-    #[case(None, false, receiver(), false)]
+    // there is no next swap and no unwrap -> receiver is always the router (for fee handling)
+    #[case(None, false, router_address(), false)]
     // protocol of next swap supports transfer in optimization
     #[case(Some("uniswap_v2"), false, component_id(), true)]
     // protocol of next swap supports transfer in optimization but is callback constrained
