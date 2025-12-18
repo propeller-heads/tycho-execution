@@ -520,22 +520,28 @@ contract TychoRouter is
             revert TychoRouter__NegativeSlippage(amountOut, minAmountOut);
         }
 
-        // Transfer tokens to receiver
-        if (unwrapEth) {
-            // Debit WETH from user's vault, unwrap and send ETH to receiver
-            _debitVault(msg.sender, address(_weth), amountOut);
-            _unwrapETH(amountOut);
-            Address.sendValue(payable(receiver), amountOut);
-        } else {
-            // Debit from user's vault and transfer ERC20 tokens to receiver
-            _debitVault(msg.sender, tokenOut, amountOut);
-            SafeERC20.safeTransfer(IERC20(tokenOut), receiver, amountOut);
+        // Credit output tokens that arrived at router to sender's vault (transient)
+        address settlementToken = unwrapEth ? address(_weth) : tokenOut;
+        uint256 routerOutputBalance = _balanceOf(settlementToken, address(this));
+        if (routerOutputBalance > 0) {
+            _creditVault(msg.sender, settlementToken, routerOutputBalance);
         }
 
-        // Credit any leftover tokenIn funds to sender's vault
+        // Credit any leftover tokenIn funds to sender's vault (transient)
         uint256 leftoverAmount = _balanceOf(tokenIn, address(this));
         if (leftoverAmount > 0) {
             _creditVault(msg.sender, tokenIn, leftoverAmount);
+        }
+
+        // Settle all transient deltas to persistent storage
+        _settle(msg.sender, tokenIn, amountIn, settlementToken, amountOut);
+
+        // Transfer tokens to receiver from router balance
+        if (unwrapEth) {
+            _unwrapETH(amountOut);
+            Address.sendValue(payable(receiver), amountOut);
+        } else {
+            SafeERC20.safeTransfer(IERC20(tokenOut), receiver, amountOut);
         }
 
         _verifyAmountOutWasReceived(
@@ -596,22 +602,28 @@ contract TychoRouter is
             revert TychoRouter__NegativeSlippage(amountOut, minAmountOut);
         }
 
-        // Transfer tokens to receiver
-        if (unwrapEth) {
-            // Debit WETH from user's vault, unwrap and send ETH to receiver
-            _debitVault(msg.sender, address(_weth), amountOut);
-            _unwrapETH(amountOut);
-            Address.sendValue(payable(receiver), amountOut);
-        } else {
-            // Debit from user's vault and transfer ERC20 tokens to receiver
-            _debitVault(msg.sender, tokenOut, amountOut);
-            SafeERC20.safeTransfer(IERC20(tokenOut), receiver, amountOut);
+        // Credit output tokens that arrived at router to sender's vault (transient)
+        address settlementToken = unwrapEth ? address(_weth) : tokenOut;
+        uint256 routerOutputBalance = _balanceOf(settlementToken, address(this));
+        if (routerOutputBalance > 0) {
+            _creditVault(msg.sender, settlementToken, routerOutputBalance);
         }
 
-        // Credit any leftover tokenIn funds to sender's vault
+        // Credit any leftover tokenIn funds to sender's vault (transient)
         uint256 leftoverAmount = _balanceOf(tokenIn, address(this));
         if (leftoverAmount > 0) {
             _creditVault(msg.sender, tokenIn, leftoverAmount);
+        }
+
+        // Settle all transient deltas to persistent storage
+        _settle(msg.sender, tokenIn, amountIn, settlementToken, amountOut);
+
+        // Transfer tokens to receiver from router balance
+        if (unwrapEth) {
+            _unwrapETH(amountOut);
+            Address.sendValue(payable(receiver), amountOut);
+        } else {
+            SafeERC20.safeTransfer(IERC20(tokenOut), receiver, amountOut);
         }
 
         _verifyAmountOutWasReceived(
@@ -669,22 +681,28 @@ contract TychoRouter is
             revert TychoRouter__NegativeSlippage(amountOut, minAmountOut);
         }
 
-        // Transfer tokens to receiver
-        if (unwrapEth) {
-            // Debit WETH from user's vault, unwrap and send ETH to receiver
-            _debitVault(msg.sender, address(_weth), amountOut);
-            _unwrapETH(amountOut);
-            Address.sendValue(payable(receiver), amountOut);
-        } else {
-            // Debit from user's vault and transfer ERC20 tokens to receiver
-            _debitVault(msg.sender, tokenOut, amountOut);
-            SafeERC20.safeTransfer(IERC20(tokenOut), receiver, amountOut);
+        // Credit output tokens that arrived at router to sender's vault (transient)
+        address settlementToken = unwrapEth ? address(_weth) : tokenOut;
+        uint256 routerOutputBalance = _balanceOf(settlementToken, address(this));
+        if (routerOutputBalance > 0) {
+            _creditVault(msg.sender, settlementToken, routerOutputBalance);
         }
 
-        // Credit any leftover tokenIn funds to sender's vault
+        // Credit any leftover tokenIn funds to sender's vault (transient)
         uint256 leftoverAmount = _balanceOf(tokenIn, address(this));
         if (leftoverAmount > 0) {
             _creditVault(msg.sender, tokenIn, leftoverAmount);
+        }
+
+        // Settle all transient deltas to persistent storage
+        _settle(msg.sender, tokenIn, amountIn, settlementToken, amountOut);
+
+        // Transfer tokens to receiver from router balance
+        if (unwrapEth) {
+            _unwrapETH(amountOut);
+            Address.sendValue(payable(receiver), amountOut);
+        } else {
+            SafeERC20.safeTransfer(IERC20(tokenOut), receiver, amountOut);
         }
 
         _verifyAmountOutWasReceived(

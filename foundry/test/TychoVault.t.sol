@@ -52,7 +52,7 @@ contract TychoVaultTest is TychoRouterTestSetup {
         bytes memory protocolData = encodeUniswapV2Swap(
             WETH_ADDR,
             WETH_DAI_POOL,
-            ALICE,
+            tychoRouterAddr,
             false,
             RestrictTransferFrom.TransferType.TransferFromSender
         );
@@ -112,7 +112,7 @@ contract TychoVaultTest is TychoRouterTestSetup {
     }
 
     function testLeftoversCreditedToVault() public {
-        // Bob does a swap that leaves funds in the router
+        // Bob does a swap that leaves input token funds in the router (which are ignored)
         uint256 swapAmount = 1 ether;
         deal(WETH_ADDR, BOB, swapAmount);
 
@@ -126,7 +126,7 @@ contract TychoVaultTest is TychoRouterTestSetup {
         bytes memory protocolData = encodeUniswapV2Swap(
             WETH_ADDR,
             WETH_DAI_POOL,
-            BOB,
+            tychoRouterAddr,
             false,
             RestrictTransferFrom.TransferType.TransferFromSender
         );
@@ -149,10 +149,10 @@ contract TychoVaultTest is TychoRouterTestSetup {
             swap
         );
 
-        // Check that leftovers (dust) were credited to Bob's vault
-        // The vault should have the dust amount credited
+        // Check that leftovers (dust) were NOT credited to Bob's vault
+        // Input token leftovers are ignored per design
         uint256 vaultBalance = tychoRouter.vaultBalanceOf(BOB, WETH_ADDR);
-        assertEq(vaultBalance, dustAmount);
+        assertEq(vaultBalance, 0);
 
         vm.stopPrank();
     }

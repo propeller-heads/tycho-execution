@@ -45,7 +45,7 @@ contract LidoExecutorTest is Constants, Permit2TestHelper, TestUtils {
     function testDecodeParams() public view {
         bytes memory params = abi.encodePacked(
             BOB,
-            RestrictTransferFrom.TransferType.None,
+            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol,
             LidoPoolType.stETH,
             LidoPoolDirection.Stake,
             false
@@ -61,7 +61,8 @@ contract LidoExecutorTest is Constants, Permit2TestHelper, TestUtils {
 
         assertEq(receiver, BOB);
         assertEq(
-            uint8(transferType), uint8(RestrictTransferFrom.TransferType.None)
+            uint8(transferType),
+            uint8(RestrictTransferFrom.TransferType.FundsAlreadyInProtocol)
         );
         assertEq(uint8(pool), uint8(LidoPoolType.stETH));
         assertEq(uint8(direction), uint8(LidoPoolDirection.Stake));
@@ -69,7 +70,9 @@ contract LidoExecutorTest is Constants, Permit2TestHelper, TestUtils {
 
     function testDecodeParamsInvalidDataLength() public {
         bytes memory invalidParams = abi.encodePacked(
-            BOB, RestrictTransferFrom.TransferType.None, LidoPoolType.stETH
+            BOB,
+            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol,
+            LidoPoolType.stETH
         );
 
         vm.expectRevert(LidoExecutor__InvalidDataLength.selector);
@@ -82,7 +85,7 @@ contract LidoExecutorTest is Constants, Permit2TestHelper, TestUtils {
 
         bytes memory protocolData = abi.encodePacked(
             BOB,
-            RestrictTransferFrom.TransferType.None,
+            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol,
             LidoPoolType.stETH,
             LidoPoolDirection.Stake,
             false
@@ -112,7 +115,7 @@ contract LidoExecutorTest is Constants, Permit2TestHelper, TestUtils {
 
         bytes memory protocolData = abi.encodePacked(
             BOB,
-            RestrictTransferFrom.TransferType.None,
+            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol,
             LidoPoolType.wstETH,
             LidoPoolDirection.Wrap,
             true
@@ -136,7 +139,7 @@ contract LidoExecutorTest is Constants, Permit2TestHelper, TestUtils {
         deal(WSTETH_ADDR, address(LidoExposed), amountIn);
         bytes memory protocolData = abi.encodePacked(
             BOB,
-            RestrictTransferFrom.TransferType.None,
+            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol,
             LidoPoolType.wstETH,
             LidoPoolDirection.Unwrap,
             false
