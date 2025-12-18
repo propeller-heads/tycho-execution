@@ -3319,3 +3319,71 @@ mod tests {
         }
     }
 }
+
+/// Encodes a fee deduction operation through the FeeExecutor.
+///
+/// This encoder creates a "swap" that deducts a fee from the input amount
+/// and credits it to a fee receiver's vault.
+///
+/// # Fields
+/// * `executor_address` - The address of the FeeExecutor contract.
+#[derive(Clone)]
+pub struct FeeSwapEncoder {
+    executor_address: Bytes,
+}
+
+impl SwapEncoder for FeeSwapEncoder {
+    fn new(
+        executor_address: Bytes,
+        _chain: Chain,
+        _config: Option<HashMap<String, String>>,
+    ) -> Result<Self, EncodingError> {
+        Ok(Self { executor_address })
+    }
+
+    fn encode_swap(
+        &self,
+        swap: &Swap,
+        _encoding_context: &EncodingContext,
+    ) -> Result<Vec<u8>, EncodingError> {
+        // Extract fee parameters from swap.user_data
+        // Expected format: JSON with fields { "fee_bps": u16, "fee_receiver": "0x...", "token": "0x..." }
+        let user_data = swap
+            .user_data
+            .as_ref()
+            .ok_or(EncodingError::FatalError(
+                "Fee swap requires user_data with fee parameters".to_string(),
+            ))?;
+
+        #[derive(Deserialize)]
+        struct FeeParams {
+            fee_bps: u16,
+            fee_receiver: String,
+            token: String,
+        }
+
+        let params: FeeParams = serde_json::from_slice(user_data).map_err(|e| {
+            EncodingError::FatalError(format!("Failed to parse fee parameters: {}", e))
+        })?;
+
+        let fee_receiver = Address::from_str(&params.fee_receiver).map_err(|_| {
+            EncodingError::FatalError("Invalid fee_receiver address".to_string())
+        })?;
+
+        let token = Address::from_str(&params.token)
+            .map_err(|_| EncodingError::FatalError("Invalid token address".to_string()))?;
+
+        // Encode: feeBps (uint16) | feeReceiver (address) | token (address)
+        let args = (params.fee_bps.to_be_bytes(), fee_receiver, token);
+
+        Ok(args.abi_encode_packed())
+    }
+
+    fn executor_address(&self) -> &Bytes {
+        &self.executor_address
+    }
+
+    fn clone_box(&self) -> Box<dyn SwapEncoder> {
+        Box::new(self.clone())
+    }
+}

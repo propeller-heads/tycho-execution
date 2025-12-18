@@ -15,7 +15,7 @@ import "./Dispatcher.sol";
 import {LibSwap} from "../lib/LibSwap.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {RestrictTransferFrom} from "./RestrictTransferFrom.sol";
-import {TychoFees} from "./TychoFees.sol";
+import {TychoVault} from "./TychoVault.sol";
 
 //                                         ✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷
 //                                   ✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷✷
@@ -69,7 +69,7 @@ contract TychoRouter is
     Dispatcher,
     Pausable,
     RestrictTransferFrom,
-    TychoFees
+    TychoVault
 {
     IWETH private immutable _weth;
 
@@ -118,13 +118,6 @@ contract TychoRouter is
         override
     {
         _creditUserVault(user, token, amount);
-    }
-
-    /**
-     * @dev Override _getWethAddress from TychoFees to provide WETH address
-     */
-    function _getWethAddress() internal view override returns (address) {
-        return address(_weth);
     }
 
     /**
@@ -484,21 +477,23 @@ contract TychoRouter is
             tokenIn = address(_weth);
         }
 
-        // Capture router's balance before swap for fee validation
-        // Note: initialBalanceTokenOut tracks the receiver's balance (used to verify the amount out was fully received).
-        address tokenOutToCheck = unwrapEth ? address(_weth) : tokenOut;
-        uint256 routerBalanceOutBefore = _balanceOf(tokenOutToCheck, address(this));
-
         amountOut = _splitSwap(amountIn, nTokens, swaps);
 
         if (amountOut < minAmountOut) {
             revert TychoRouter__NegativeSlippage(amountOut, minAmountOut);
         }
 
-        // Handle fee collection and transfer to user
-        amountOut = _handleFeeAndTransfer(
-            tokenOut, unwrapEth, routerBalanceOutBefore, amountOut, receiver
-        );
+        // Unwrap ETH if needed
+        if (unwrapEth) {
+            _unwrapETH(amountOut);
+            Address.sendValue(payable(receiver), amountOut);
+        }
+
+        // Credit any leftover tokenIn funds to sender's vault
+        uint256 leftoverAmount = _balanceOf(tokenIn, address(this));
+        if (leftoverAmount > 0) {
+            _creditVault(msg.sender, tokenIn, leftoverAmount);
+        }
 
         _verifyAmountOutWasReceived(
             tokenIn,
@@ -542,11 +537,6 @@ contract TychoRouter is
             tokenIn = address(_weth);
         }
 
-        // Capture router's balance before swap for fee validation
-        // Note: initialBalanceTokenOut tracks the receiver's balance (used to verify the amount out was fully received).
-        address tokenOutToCheck = unwrapEth ? address(_weth) : tokenOut;
-        uint256 routerBalanceOutBefore = _balanceOf(tokenOutToCheck, address(this));
-
         (address executor, bytes calldata protocolData) =
             swap_.decodeSingleSwap();
 
@@ -556,10 +546,17 @@ contract TychoRouter is
             revert TychoRouter__NegativeSlippage(amountOut, minAmountOut);
         }
 
-        // Handle fee collection and transfer to user
-        amountOut = _handleFeeAndTransfer(
-            tokenOut, unwrapEth, routerBalanceOutBefore, amountOut, receiver
-        );
+        // Unwrap ETH if needed
+        if (unwrapEth) {
+            _unwrapETH(amountOut);
+            Address.sendValue(payable(receiver), amountOut);
+        }
+
+        // Credit any leftover tokenIn funds to sender's vault
+        uint256 leftoverAmount = _balanceOf(tokenIn, address(this));
+        if (leftoverAmount > 0) {
+            _creditVault(msg.sender, tokenIn, leftoverAmount);
+        }
 
         _verifyAmountOutWasReceived(
             tokenIn,
@@ -603,21 +600,23 @@ contract TychoRouter is
             tokenIn = address(_weth);
         }
 
-        // Capture router's balance before swap for fee validation
-        // Note: initialBalanceTokenOut tracks the receiver's balance (used to verify the amount out was fully received).
-        address tokenOutToCheck = unwrapEth ? address(_weth) : tokenOut;
-        uint256 routerBalanceOutBefore = _balanceOf(tokenOutToCheck, address(this));
-
         amountOut = _sequentialSwap(amountIn, swaps);
 
         if (amountOut < minAmountOut) {
             revert TychoRouter__NegativeSlippage(amountOut, minAmountOut);
         }
 
-        // Handle fee collection and transfer to user
-        amountOut = _handleFeeAndTransfer(
-            tokenOut, unwrapEth, routerBalanceOutBefore, amountOut, receiver
-        );
+        // Unwrap ETH if needed
+        if (unwrapEth) {
+            _unwrapETH(amountOut);
+            Address.sendValue(payable(receiver), amountOut);
+        }
+
+        // Credit any leftover tokenIn funds to sender's vault
+        uint256 leftoverAmount = _balanceOf(tokenIn, address(this));
+        if (leftoverAmount > 0) {
+            _creditVault(msg.sender, tokenIn, leftoverAmount);
+        }
 
         _verifyAmountOutWasReceived(
             tokenIn,
@@ -833,7 +832,7 @@ contract TychoRouter is
      * @dev Unwraps a defined amount of WETH.
      * @param amount of WETH to unwrap.
      */
-    function _unwrapETH(uint256 amount) internal override {
+    function _unwrapETH(uint256 amount) internal {
         _weth.withdraw(amount);
     }
 
@@ -850,7 +849,6 @@ contract TychoRouter is
     function _balanceOf(address token, address owner)
         internal
         view
-        override
         returns (uint256)
     {
         return token == address(0)
@@ -858,5 +856,35 @@ contract TychoRouter is
             : IERC20(token).balanceOf(owner);
     }
 
+    /**
+     * @dev Verifies that the expected amount of output tokens was received by the receiver.
+     * @param tokenIn The input token
+     * @param tokenOut The output token
+     * @param initialBalanceReceiver The receiver's initial balance
+     * @param amountOut The amount received
+     * @param receiver The intended receiver
+     * @param amountIn The input amount
+     */
+    function _verifyAmountOutWasReceived(
+        address tokenIn,
+        address tokenOut,
+        uint256 initialBalanceReceiver,
+        uint256 amountOut,
+        address receiver,
+        uint256 amountIn
+    ) internal view {
+        uint256 currentBalance = _balanceOf(tokenOut, receiver);
+        uint256 initialBalance = initialBalanceReceiver;
+
+        if (tokenIn == tokenOut) {
+            // If it is an arbitrage, we need to remove the amountIn from the initial balance
+            initialBalance -= amountIn;
+        }
+
+        uint256 userAmount = currentBalance - initialBalance;
+        if (userAmount != amountOut) {
+            revert TychoRouter__NegativeSlippage(userAmount, amountOut);
+        }
+    }
 
 }

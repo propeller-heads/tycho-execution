@@ -63,6 +63,12 @@ pub struct Solution {
     /// The router will then deduct the fee and transfer the remainder to the receiver.
     #[serde(default)]
     pub has_fee: bool,
+    /// Fee in basis points (0-10000, where 10000 = 100%). Only used if has_fee is true.
+    #[serde(default)]
+    pub fee_bps: u16,
+    /// Address to receive the fee. Only used if has_fee is true.
+    #[serde(default)]
+    pub fee_receiver: Bytes,
 }
 
 /// Represents an action to be performed on the native token either before or after the swap.
