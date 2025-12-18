@@ -172,7 +172,8 @@ mod tests {
     #[case(weth(), usdc(), "uniswap_v2".to_string(), false, UserTransferType::TransferFrom,false, TransferType::TransferFromVault)]
     // tokens are already in the pool (optimization)
     #[case(weth(), usdc(), "uniswap_v2".to_string(), false, UserTransferType::TransferFrom, true, TransferType::FundsAlreadyInProtocol)]
-    // tokens are already in the router and don't need a transfer - protocol will pull via transferFrom
+    // tokens are already in the router and don't need a transfer - protocol will pull via
+    // transferFrom
     #[case(weth(), usdc(), "vm:curve".to_string(), false, UserTransferType::TransferFrom, false, TransferType::ProtocolWillDebit)]
     fn test_get_transfers(
         #[case] given_token: Bytes,

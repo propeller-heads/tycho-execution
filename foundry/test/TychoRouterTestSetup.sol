@@ -122,6 +122,9 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
         tychoRouter.grantRole(
             keccak256("EXECUTOR_SETTER_ROLE"), EXECUTOR_SETTER
         );
+        tychoRouter.grantRole(
+            tychoRouter.ROUTER_FEE_SETTER_ROLE(), address(this)
+        );
         return tychoRouter;
     }
 

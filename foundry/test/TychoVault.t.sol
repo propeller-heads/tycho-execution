@@ -6,7 +6,6 @@ import "@src/TychoVault.sol";
 import "./TychoRouterTestSetup.sol";
 
 contract TychoVaultTest is TychoRouterTestSetup {
-
     function testDepositAndWithdrawFromVault() public {
         // Bob deposits 10 WETH into the vault
         uint256 depositAmount = 10 ether;
@@ -220,7 +219,9 @@ contract TychoVaultTest is TychoRouterTestSetup {
         vm.deal(BOB, depositAmount);
 
         vm.startPrank(BOB);
-        tychoRouter.depositToVault{value: depositAmount}(address(0), depositAmount);
+        tychoRouter.depositToVault{value: depositAmount}(
+            address(0), depositAmount
+        );
 
         // Check Bob's vault balance for native ETH
         uint256 vaultBalance = tychoRouter.vaultBalanceOf(BOB, address(0));

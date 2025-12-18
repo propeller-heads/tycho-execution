@@ -1140,7 +1140,8 @@ mod tests {
                 native_action: None,
                 has_fee: false,
                 fee_bps: 0,
-                fee_receiver: Bytes::from_str("0x0000000000000000000000000000000000000000").unwrap(),
+                fee_receiver: Bytes::from_str("0x0000000000000000000000000000000000000000")
+                    .unwrap(),
             };
 
             let encoded_solutions = encoder
@@ -1202,7 +1203,8 @@ mod tests {
                 native_action: None,
                 has_fee: false,
                 fee_bps: 0,
-                fee_receiver: Bytes::from_str("0x0000000000000000000000000000000000000000").unwrap(),
+                fee_receiver: Bytes::from_str("0x0000000000000000000000000000000000000000")
+                    .unwrap(),
             };
 
             let result = encoder.encode_solutions(vec![solution]);

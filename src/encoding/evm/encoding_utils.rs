@@ -94,6 +94,8 @@ pub fn encode_tycho_router_call(
     let checked_token = bytes_to_address(&solution.checked_token)?;
     let receiver = bytes_to_address(&solution.receiver)?;
     let n_tokens = U256::from(encoded_solution.n_tokens);
+    let solution_fee_bps = solution.fee_bps;
+    let solution_fee_receiver = bytes_to_address(&solution.fee_receiver)?;
     let (permit, signature) = if let Some(p) = encoded_solution.permit {
         let permit = Some(
             PermitSingle::try_from(&p)
@@ -123,6 +125,8 @@ pub fn encode_tycho_router_call(
                 "permit2 object must be set to use permit2".to_string(),
             ))?,
             signature,
+            solution_fee_bps,
+            solution_fee_receiver,
             encoded_solution.swaps,
         )
             .abi_encode()
@@ -139,6 +143,8 @@ pub fn encode_tycho_router_call(
             unwrap,
             receiver,
             user_transfer_type == &UserTransferType::TransferFrom,
+            solution_fee_bps,
+            solution_fee_receiver,
             encoded_solution.swaps,
         )
             .abi_encode()
@@ -158,6 +164,8 @@ pub fn encode_tycho_router_call(
                 "permit2 object must be set to use permit2".to_string(),
             ))?,
             signature,
+            solution_fee_bps,
+            solution_fee_receiver,
             encoded_solution.swaps,
         )
             .abi_encode()
@@ -174,6 +182,8 @@ pub fn encode_tycho_router_call(
             unwrap,
             receiver,
             user_transfer_type == &UserTransferType::TransferFrom,
+            solution_fee_bps,
+            solution_fee_receiver,
             encoded_solution.swaps,
         )
             .abi_encode()
@@ -194,6 +204,8 @@ pub fn encode_tycho_router_call(
                 "permit2 object must be set to use permit2".to_string(),
             ))?,
             signature,
+            solution_fee_bps,
+            solution_fee_receiver,
             encoded_solution.swaps,
         )
             .abi_encode()
@@ -211,6 +223,8 @@ pub fn encode_tycho_router_call(
             n_tokens,
             receiver,
             user_transfer_type == &UserTransferType::TransferFrom,
+            solution_fee_bps,
+            solution_fee_receiver,
             encoded_solution.swaps,
         )
             .abi_encode()

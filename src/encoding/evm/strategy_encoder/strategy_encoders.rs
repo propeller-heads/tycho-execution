@@ -695,11 +695,8 @@ impl StrategyEncoder for SplitSwapStrategyEncoder {
             let fee_protocol_data = fee_encoder.encode_swap(&fee_swap, &fee_encoding_context)?;
 
             // Get position of checked_token in tokens array
-            let checked_token_ref = if unwrap {
-                &self.wrapped_address
-            } else {
-                &solution.checked_token
-            };
+            let checked_token_ref =
+                if unwrap { &self.wrapped_address } else { &solution.checked_token };
             let token_position = get_token_position(&tokens, checked_token_ref)?;
 
             let fee_swap_data = self.encode_swap_header(

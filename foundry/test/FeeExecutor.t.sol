@@ -28,8 +28,9 @@ contract FeeExecutorTest is Constants, TestUtils {
         address expectedFeeReceiver = address(0x123);
         address expectedToken = DAI_ADDR;
 
-        bytes memory data =
-            abi.encodePacked(expectedFeeBps, expectedFeeReceiver, expectedToken);
+        bytes memory data = abi.encodePacked(
+            expectedFeeBps, expectedFeeReceiver, expectedToken
+        );
 
         (uint16 feeBps, address feeReceiver, address token) =
             feeExecutor.decodeData(data);

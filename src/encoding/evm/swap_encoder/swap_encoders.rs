@@ -3347,7 +3347,8 @@ impl SwapEncoder for FeeSwapEncoder {
         _encoding_context: &EncodingContext,
     ) -> Result<Vec<u8>, EncodingError> {
         // Extract fee parameters from swap.user_data
-        // Expected format: JSON with fields { "fee_bps": u16, "fee_receiver": "0x...", "token": "0x..." }
+        // Expected format: JSON with fields { "fee_bps": u16, "fee_receiver": "0x...", "token":
+        // "0x..." }
         let user_data = swap
             .user_data
             .as_ref()
@@ -3366,9 +3367,8 @@ impl SwapEncoder for FeeSwapEncoder {
             EncodingError::FatalError(format!("Failed to parse fee parameters: {}", e))
         })?;
 
-        let fee_receiver = Address::from_str(&params.fee_receiver).map_err(|_| {
-            EncodingError::FatalError("Invalid fee_receiver address".to_string())
-        })?;
+        let fee_receiver = Address::from_str(&params.fee_receiver)
+            .map_err(|_| EncodingError::FatalError("Invalid fee_receiver address".to_string()))?;
 
         let token = Address::from_str(&params.token)
             .map_err(|_| EncodingError::FatalError("Invalid token address".to_string()))?;

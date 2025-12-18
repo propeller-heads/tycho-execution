@@ -72,6 +72,8 @@ contract TychoRouter is
     TychoVault
 {
     IWETH private immutable _weth;
+    uint16 private _routerFeeBps; // Router platform fee in basis points (e.g., 1 = 0.01%)
+    address private _feeExecutor; // Address of the fee executor contract
 
     using SafeERC20 for IERC20;
     using LibPrefixLengthEncodedByteArray for bytes;
@@ -86,10 +88,14 @@ contract TychoRouter is
         0x427da25fe773164f88948d3e215c94b6554e2ed5e5f203a821c9f2f6131cf75a;
     bytes32 public constant FUND_RESCUER_ROLE =
         0x912e45d663a6f4cc1d0491d8f046e06c616f40352565ea1cdb86a0e1aaefa41b;
+    bytes32 public constant ROUTER_FEE_SETTER_ROLE =
+        0x8c2f2db0d2b0e5a5c8b5e8f8b5e8f8b5e8f8b5e8f8b5e8f8b5e8f8b5e8f8b5e8;
 
     event Withdrawal(
         address indexed token, uint256 amount, address indexed receiver
     );
+    event RouterFeeUpdated(uint16 oldFeeBps, uint16 newFeeBps);
+    event FeeExecutorUpdated(address oldExecutor, address newExecutor);
 
     constructor(address _permit2, address weth) RestrictTransferFrom(_permit2) {
         if (_permit2 == address(0) || weth == address(0)) {
@@ -154,6 +160,8 @@ contract TychoRouter is
         uint256 nTokens,
         address receiver,
         bool isTransferFromAllowed,
+        uint16 solutionFeeBps,
+        address solutionFeeReceiver,
         bytes calldata swaps
     ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
         uint256 initialBalanceTokenOut = _balanceOf(tokenOut, receiver);
@@ -169,6 +177,8 @@ contract TychoRouter is
             unwrapEth,
             nTokens,
             receiver,
+            solutionFeeBps,
+            solutionFeeReceiver,
             swaps
         );
     }
@@ -210,6 +220,8 @@ contract TychoRouter is
         address receiver,
         IAllowanceTransfer.PermitSingle calldata permitSingle,
         bytes calldata signature,
+        uint16 solutionFeeBps,
+        address solutionFeeReceiver,
         bytes calldata swaps
     ) external payable whenNotPaused nonReentrant returns (uint256 amountOut) {
         uint256 initialBalanceTokenOut = _balanceOf(tokenOut, receiver);
@@ -229,6 +241,8 @@ contract TychoRouter is
             unwrapEth,
             nTokens,
             receiver,
+            solutionFeeBps,
+            solutionFeeReceiver,
             swaps
         );
     }
@@ -265,6 +279,8 @@ contract TychoRouter is
         bool unwrapEth,
         address receiver,
         bool isTransferFromAllowed,
+        uint16 solutionFeeBps,
+        address solutionFeeReceiver,
         bytes calldata swaps
     ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
         uint256 initialBalanceTokenOut = _balanceOf(tokenOut, receiver);
@@ -279,6 +295,8 @@ contract TychoRouter is
             wrapEth,
             unwrapEth,
             receiver,
+            solutionFeeBps,
+            solutionFeeReceiver,
             swaps
         );
     }
@@ -317,6 +335,8 @@ contract TychoRouter is
         address receiver,
         IAllowanceTransfer.PermitSingle calldata permitSingle,
         bytes calldata signature,
+        uint16 solutionFeeBps,
+        address solutionFeeReceiver,
         bytes calldata swaps
     ) external payable whenNotPaused nonReentrant returns (uint256 amountOut) {
         uint256 initialBalanceTokenOut = _balanceOf(tokenOut, receiver);
@@ -336,6 +356,8 @@ contract TychoRouter is
             wrapEth,
             unwrapEth,
             receiver,
+            solutionFeeBps,
+            solutionFeeReceiver,
             swaps
         );
     }
@@ -370,6 +392,8 @@ contract TychoRouter is
         bool unwrapEth,
         address receiver,
         bool isTransferFromAllowed,
+        uint16 solutionFeeBps,
+        address solutionFeeReceiver,
         bytes calldata swapData
     ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
         uint256 initialBalanceTokenOut = _balanceOf(tokenOut, receiver);
@@ -384,6 +408,8 @@ contract TychoRouter is
             wrapEth,
             unwrapEth,
             receiver,
+            solutionFeeBps,
+            solutionFeeReceiver,
             swapData
         );
     }
@@ -422,6 +448,8 @@ contract TychoRouter is
         address receiver,
         IAllowanceTransfer.PermitSingle calldata permitSingle,
         bytes calldata signature,
+        uint16 solutionFeeBps,
+        address solutionFeeReceiver,
         bytes calldata swapData
     ) external payable whenNotPaused nonReentrant returns (uint256 amountOut) {
         uint256 initialBalanceTokenOut = _balanceOf(tokenOut, receiver);
@@ -440,6 +468,8 @@ contract TychoRouter is
             wrapEth,
             unwrapEth,
             receiver,
+            solutionFeeBps,
+            solutionFeeReceiver,
             swapData
         );
     }
@@ -462,6 +492,8 @@ contract TychoRouter is
         bool unwrapEth,
         uint256 nTokens,
         address receiver,
+        uint16 solutionFeeBps,
+        address solutionFeeReceiver,
         bytes calldata swaps
     ) internal returns (uint256 amountOut) {
         if (receiver == address(0)) {
@@ -479,14 +511,25 @@ contract TychoRouter is
 
         amountOut = _splitSwap(amountIn, nTokens, swaps);
 
+        // Deduct fees (both solution and router fees)
+        amountOut = _takeFees(
+            amountOut, tokenOut, unwrapEth, solutionFeeBps, solutionFeeReceiver
+        );
+
         if (amountOut < minAmountOut) {
             revert TychoRouter__NegativeSlippage(amountOut, minAmountOut);
         }
 
-        // Unwrap ETH if needed
+        // Transfer tokens to receiver
         if (unwrapEth) {
+            // Debit WETH from user's vault, unwrap and send ETH to receiver
+            _debitVault(msg.sender, address(_weth), amountOut);
             _unwrapETH(amountOut);
             Address.sendValue(payable(receiver), amountOut);
+        } else {
+            // Debit from user's vault and transfer ERC20 tokens to receiver
+            _debitVault(msg.sender, tokenOut, amountOut);
+            SafeERC20.safeTransfer(IERC20(tokenOut), receiver, amountOut);
         }
 
         // Credit any leftover tokenIn funds to sender's vault
@@ -522,6 +565,8 @@ contract TychoRouter is
         bool wrapEth,
         bool unwrapEth,
         address receiver,
+        uint16 solutionFeeBps,
+        address solutionFeeReceiver,
         bytes calldata swap_
     ) internal returns (uint256 amountOut) {
         if (receiver == address(0)) {
@@ -542,14 +587,25 @@ contract TychoRouter is
 
         amountOut = _callSwapOnExecutor(executor, amountIn, protocolData);
 
+        // Deduct fees (both solution and router fees)
+        amountOut = _takeFees(
+            amountOut, tokenOut, unwrapEth, solutionFeeBps, solutionFeeReceiver
+        );
+
         if (amountOut < minAmountOut) {
             revert TychoRouter__NegativeSlippage(amountOut, minAmountOut);
         }
 
-        // Unwrap ETH if needed
+        // Transfer tokens to receiver
         if (unwrapEth) {
+            // Debit WETH from user's vault, unwrap and send ETH to receiver
+            _debitVault(msg.sender, address(_weth), amountOut);
             _unwrapETH(amountOut);
             Address.sendValue(payable(receiver), amountOut);
+        } else {
+            // Debit from user's vault and transfer ERC20 tokens to receiver
+            _debitVault(msg.sender, tokenOut, amountOut);
+            SafeERC20.safeTransfer(IERC20(tokenOut), receiver, amountOut);
         }
 
         // Credit any leftover tokenIn funds to sender's vault
@@ -585,6 +641,8 @@ contract TychoRouter is
         bool wrapEth,
         bool unwrapEth,
         address receiver,
+        uint16 solutionFeeBps,
+        address solutionFeeReceiver,
         bytes calldata swaps
     ) internal returns (uint256 amountOut) {
         if (receiver == address(0)) {
@@ -602,14 +660,25 @@ contract TychoRouter is
 
         amountOut = _sequentialSwap(amountIn, swaps);
 
+        // Deduct fees (both solution and router fees)
+        amountOut = _takeFees(
+            amountOut, tokenOut, unwrapEth, solutionFeeBps, solutionFeeReceiver
+        );
+
         if (amountOut < minAmountOut) {
             revert TychoRouter__NegativeSlippage(amountOut, minAmountOut);
         }
 
-        // Unwrap ETH if needed
+        // Transfer tokens to receiver
         if (unwrapEth) {
+            // Debit WETH from user's vault, unwrap and send ETH to receiver
+            _debitVault(msg.sender, address(_weth), amountOut);
             _unwrapETH(amountOut);
             Address.sendValue(payable(receiver), amountOut);
+        } else {
+            // Debit from user's vault and transfer ERC20 tokens to receiver
+            _debitVault(msg.sender, tokenOut, amountOut);
+            SafeERC20.safeTransfer(IERC20(tokenOut), receiver, amountOut);
         }
 
         // Credit any leftover tokenIn funds to sender's vault
@@ -782,6 +851,47 @@ contract TychoRouter is
     }
 
     /**
+     * @dev Sets the router platform fee in basis points
+     * @param feeBps The fee in basis points (e.g., 1 = 0.01%, 100 = 1%)
+     */
+    function setRouterFee(uint16 feeBps)
+        external
+        onlyRole(ROUTER_FEE_SETTER_ROLE)
+    {
+        uint16 oldFeeBps = _routerFeeBps;
+        _routerFeeBps = feeBps;
+        emit RouterFeeUpdated(oldFeeBps, feeBps);
+    }
+
+    /**
+     * @dev Returns the current router platform fee in basis points
+     * @return The fee in basis points
+     */
+    function getRouterFee() external view returns (uint16) {
+        return _routerFeeBps;
+    }
+
+    /**
+     * @notice Sets the fee executor contract address
+     * @param feeExecutor The address of the fee executor contract (set to address(0) to disable)
+     */
+    function setFeeExecutor(address feeExecutor)
+        external
+        onlyRole(EXECUTOR_SETTER_ROLE)
+    {
+        address oldExecutor = _feeExecutor;
+        _feeExecutor = feeExecutor;
+        emit FeeExecutorUpdated(oldExecutor, feeExecutor);
+    }
+
+    /**
+     * @dev Returns the current fee executor address
+     */
+    function getFeeExecutor() external view returns (address) {
+        return _feeExecutor;
+    }
+
+    /**
      * @dev Allows withdrawing any ERC20 funds if funds get stuck in case of a bug.
      */
     function withdraw(IERC20[] memory tokens, address receiver)
@@ -857,6 +967,43 @@ contract TychoRouter is
     }
 
     /**
+     * @dev Deducts both solution and router fees using the fee executor
+     * @dev Calls FeeExecutor with encoded fee data via delegatecall
+     * @param amountOut The amount before fee deduction
+     * @param tokenOut The output token address
+     * @param unwrapEth Whether ETH will be unwrapped (fee is in WETH if true)
+     * @param solutionFeeBps Solution fee in basis points
+     * @param solutionFeeReceiver Address to receive the solution fee
+     * @return The amount after fee deductions
+     */
+    function _takeFees(
+        uint256 amountOut,
+        address tokenOut,
+        bool unwrapEth,
+        uint16 solutionFeeBps,
+        address solutionFeeReceiver
+    ) private returns (uint256) {
+        if (
+            _feeExecutor != address(0)
+                && (solutionFeeBps > 0 || _routerFeeBps > 0)
+        ) {
+            address feeToken = unwrapEth ? address(_weth) : tokenOut;
+
+            // Encode fee data: solutionFeeBps | solutionFeeReceiver | routerFeeBps | routerFeeReceiver | token
+            bytes memory feeData = abi.encodePacked(
+                solutionFeeBps, // solutionFeeBps
+                solutionFeeReceiver, // solutionFeeReceiver
+                _routerFeeBps, // routerFeeBps
+                address(this), // routerFeeReceiver = router
+                feeToken // token
+            );
+
+            amountOut = _callTakeFees(_feeExecutor, amountOut, feeData);
+        }
+        return amountOut;
+    }
+
+    /**
      * @dev Verifies that the expected amount of output tokens was received by the receiver.
      * @param tokenIn The input token
      * @param tokenOut The output token
@@ -886,5 +1033,4 @@ contract TychoRouter is
             revert TychoRouter__NegativeSlippage(userAmount, amountOut);
         }
     }
-
 }

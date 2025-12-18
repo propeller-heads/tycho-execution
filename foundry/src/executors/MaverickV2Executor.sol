@@ -56,7 +56,8 @@ contract MaverickV2Executor is IExecutor, RestrictTransferFrom {
 
         // Credit vault if funds came to router
         if (receiver == address(this)) {
-            address tokenOut = isTokenAIn ? address(pool.tokenB()) : address(pool.tokenA());
+            address tokenOut =
+                isTokenAIn ? address(pool.tokenB()) : address(pool.tokenA());
             _creditVault(msg.sender, tokenOut, calculatedAmount);
         }
     }

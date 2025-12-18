@@ -93,7 +93,8 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
         assertEq(j, 0);
         assertEq(tokenApprovalNeeded, true);
         assertEq(
-            uint8(transferType), uint8(RestrictTransferFrom.TransferType.FundsAlreadyInProtocol)
+            uint8(transferType),
+            uint8(RestrictTransferFrom.TransferType.FundsAlreadyInProtocol)
         );
         assertEq(receiver, ALICE);
     }

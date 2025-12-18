@@ -92,6 +92,42 @@ contract Dispatcher {
         calculatedAmount = abi.decode(result, (uint256));
     }
 
+    /**
+     * @dev Calls the fee executor to deduct fees from user's vault
+     * @dev Does not set transient storage since fee executors don't use callbacks
+     * @param feeExecutor Address of the fee executor contract
+     * @param amount Amount before fee deduction
+     * @param data Encoded fee parameters (solution fee + router fee)
+     * @return amountAfterFee Amount remaining after fee deductions
+     */
+    // slither-disable-next-line delegatecall-loop
+    function _callTakeFees(
+        address feeExecutor,
+        uint256 amount,
+        bytes memory data
+    ) internal returns (uint256 amountAfterFee) {
+        if (!executors[feeExecutor]) {
+            revert Dispatcher__UnapprovedExecutor(feeExecutor);
+        }
+
+        // slither-disable-next-line controlled-delegatecall,low-level-calls
+        (bool success, bytes memory result) = feeExecutor.delegatecall(
+            abi.encodeWithSelector(IExecutor.swap.selector, amount, data)
+        );
+
+        if (!success) {
+            revert(
+                string(
+                    result.length > 0
+                        ? result
+                        : abi.encodePacked("Fee deduction failed")
+                )
+            );
+        }
+
+        amountAfterFee = abi.decode(result, (uint256));
+    }
+
     // slither-disable-next-line assembly
     function _callHandleCallbackOnExecutor(bytes calldata data)
         internal

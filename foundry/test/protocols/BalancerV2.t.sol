@@ -64,7 +64,8 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
         assertEq(receiver, address(2));
         assertEq(needsApproval, true);
         assertEq(
-            uint8(transferType), uint8(RestrictTransferFrom.TransferType.FundsAlreadyInProtocol)
+            uint8(transferType),
+            uint8(RestrictTransferFrom.TransferType.FundsAlreadyInProtocol)
         );
     }
 
@@ -115,7 +116,8 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
         assertEq(receiver, BOB);
         assertEq(needsApproval, true);
         assertEq(
-            uint8(transferType), uint8(RestrictTransferFrom.TransferType.FundsAlreadyInProtocol)
+            uint8(transferType),
+            uint8(RestrictTransferFrom.TransferType.FundsAlreadyInProtocol)
         );
     }
 

@@ -102,9 +102,11 @@ abstract contract TychoFees is AccessControl, TychoVault {
             // Deduct fee and get amount after fee
             if (unwrapEth) {
                 _unwrapETH(amountOut);
-                finalAmount = _deductFeeAndTransfer(receiver, address(0), amountOut);
+                finalAmount =
+                    _deductFeeAndTransfer(receiver, address(0), amountOut);
             } else {
-                finalAmount = _deductFeeAndTransfer(receiver, tokenOut, amountOut);
+                finalAmount =
+                    _deductFeeAndTransfer(receiver, tokenOut, amountOut);
             }
         } else {
             // No fee - current behavior
@@ -169,10 +171,11 @@ abstract contract TychoFees is AccessControl, TychoVault {
      * @param amount The total amount before fee
      * @return amountAfterFee The amount after deducting the fee
      */
-    function _deductFeeAndTransfer(address receiver, address token, uint256 amount)
-        internal
-        returns (uint256 amountAfterFee)
-    {
+    function _deductFeeAndTransfer(
+        address receiver,
+        address token,
+        uint256 amount
+    ) internal returns (uint256 amountAfterFee) {
         // Check fee percentage for msg.sender (the caller/fee payer)
         uint256 feePercentage = _feePercentages[msg.sender];
         if (feePercentage == 0) {
@@ -240,5 +243,4 @@ abstract contract TychoFees is AccessControl, TychoVault {
             IERC20(token).safeTransfer(to, amount);
         }
     }
-
 }

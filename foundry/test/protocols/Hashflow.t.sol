@@ -36,8 +36,11 @@ contract HashflowUtils is Test {
         pure
         returns (bytes memory)
     {
-        return
-            encodeRfqtQuote(quote, true, RestrictTransferFrom.TransferType.FundsAlreadyInProtocol);
+        return encodeRfqtQuote(
+            quote,
+            true,
+            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
+        );
     }
 }
 

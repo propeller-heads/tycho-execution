@@ -58,7 +58,8 @@ contract ERC4626ExecutorTest is Constants, TestUtils {
         assertEq(address(target), address(spETH));
         assertEq(receiver, address(2));
         assertEq(
-            uint8(transferType), uint8(RestrictTransferFrom.TransferType.FundsAlreadyInProtocol)
+            uint8(transferType),
+            uint8(RestrictTransferFrom.TransferType.FundsAlreadyInProtocol)
         );
         assertEq(approvalNeeded, false);
     }

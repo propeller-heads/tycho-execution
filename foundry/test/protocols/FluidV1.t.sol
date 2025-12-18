@@ -73,8 +73,14 @@ contract FluidV1ExecutorTest is Test, Constants {
         bool isNative;
         address tokenOut;
 
-        (dexVal, zero2oneVal, receiverVal, transferTypeVal, isNative, tokenOut) =
-            executor.decodeData(params);
+        (
+            dexVal,
+            zero2oneVal,
+            receiverVal,
+            transferTypeVal,
+            isNative,
+            tokenOut
+        ) = executor.decodeData(params);
 
         assertEq(address(dexVal), dex);
         assert(zero2oneVal);
@@ -107,7 +113,8 @@ contract FluidV1ExecutorTest is Test, Constants {
     function testVerifyCallbackOk() public {
         address dexAddress = 0x1DD125C32e4B5086c63CC13B3cA02C4A2a61Fa9b;
         executor.setSwapParams(
-            IFluidV1Dex(dexAddress), RestrictTransferFrom.TransferType.TransferFromVault
+            IFluidV1Dex(dexAddress),
+            RestrictTransferFrom.TransferType.TransferFromVault
         );
         bytes memory param = abi.encodePacked(bytes4(0x9410ae88));
 
@@ -118,7 +125,8 @@ contract FluidV1ExecutorTest is Test, Constants {
     function testVerifyCallbackBadSender() public {
         address dexAddress = 0x1DD125C32e4B5086c63CC13B3cA02C4A2a61Fa9b;
         executor.setSwapParams(
-            IFluidV1Dex(dexAddress), RestrictTransferFrom.TransferType.TransferFromVault
+            IFluidV1Dex(dexAddress),
+            RestrictTransferFrom.TransferType.TransferFromVault
         );
         bytes memory param = abi.encodePacked(bytes4(0x9410ae88));
 
@@ -129,7 +137,8 @@ contract FluidV1ExecutorTest is Test, Constants {
     function testVerifyCallbackBadSelector() public {
         address dexAddress = 0x1DD125C32e4B5086c63CC13B3cA02C4A2a61Fa9b;
         executor.setSwapParams(
-            IFluidV1Dex(dexAddress), RestrictTransferFrom.TransferType.TransferFromVault
+            IFluidV1Dex(dexAddress),
+            RestrictTransferFrom.TransferType.TransferFromVault
         );
         bytes memory param = abi.encodePacked(bytes4(0x00000000));
 

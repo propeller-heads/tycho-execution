@@ -65,7 +65,8 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
         assertEq(address(tokenOut), waEthWETH_ADDR);
         assertEq(poolId, WETH_osETH_pool);
         assertEq(
-            uint8(transferType), uint8(RestrictTransferFrom.TransferType.FundsAlreadyInProtocol)
+            uint8(transferType),
+            uint8(RestrictTransferFrom.TransferType.FundsAlreadyInProtocol)
         );
         assertEq(receiver, BOB);
     }
