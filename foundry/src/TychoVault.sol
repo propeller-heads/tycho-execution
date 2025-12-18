@@ -56,11 +56,6 @@ abstract contract TychoVault is IERC6909, ReentrancyGuard {
             _vaultBalances[msg.sender][token] += amount;
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         }
-
-        emit VaultDeposit(msg.sender, token, amount);
-        emit Transfer(
-            msg.sender, address(0), msg.sender, uint256(uint160(token)), amount
-        );
     }
 
     /**
@@ -91,11 +86,6 @@ abstract contract TychoVault is IERC6909, ReentrancyGuard {
         } else {
             IERC20(token).safeTransfer(msg.sender, amount);
         }
-
-        emit VaultWithdrawal(msg.sender, token, amount);
-        emit Transfer(
-            msg.sender, msg.sender, address(0), uint256(uint160(token)), amount
-        );
     }
 
     /**
@@ -121,9 +111,6 @@ abstract contract TychoVault is IERC6909, ReentrancyGuard {
     {
         if (amount == 0) return;
         _vaultBalances[user][token] += amount;
-        emit Transfer(
-            address(this), address(0), user, uint256(uint160(token)), amount
-        );
     }
 
     /**
@@ -138,9 +125,6 @@ abstract contract TychoVault is IERC6909, ReentrancyGuard {
             revert TychoVault__InsufficientBalance(user, token, amount, balance);
         }
         _vaultBalances[user][token] = balance - amount;
-        emit Transfer(
-            address(this), user, address(0), uint256(uint160(token)), amount
-        );
     }
 
     // ============ IERC6909 Implementation ============
