@@ -100,31 +100,6 @@ abstract contract TychoVault is IERC6909, ReentrancyGuard {
     }
 
     /**
-     * @notice Get vault balance for a user and token
-     * @param user The user address
-     * @param token The token address
-     * @return The vault balance
-     */
-    function vaultBalanceOf(address user, address token)
-        external
-        view
-        returns (uint256)
-    {
-        return _vaultBalances[user][token];
-    }
-
-    /**
-     * @dev Internal function to get vault balance
-     */
-    function _getVaultBalance(address user, address token)
-        internal
-        view
-        returns (uint256)
-    {
-        return _vaultBalances[user][token];
-    }
-
-    /**
      * @dev Internal helper to get transient storage slot for a user/token delta
      */
     function _getDeltaSlot(address user, address token)

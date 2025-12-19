@@ -71,7 +71,7 @@ contract TychoRouterFeeTest is TychoRouterTestSetup {
 
         // Verify router received the fee in its vault (should be ~1% of output)
         uint256 routerVaultBalance =
-            tychoRouter.vaultBalanceOf(tychoRouterAddr, DAI_ADDR);
+            tychoRouter.balanceOf(tychoRouterAddr, uint256(uint160(DAI_ADDR)));
         assertGt(routerVaultBalance, 0);
         // Fee should be approximately 1% of total output
         uint256 totalOutput = aliceBalance + routerVaultBalance;
@@ -196,7 +196,7 @@ contract TychoRouterFeeTest is TychoRouterTestSetup {
 
         // Verify router received WETH fee in its vault (fee is in WETH before unwrap)
         uint256 routerVaultBalance =
-            tychoRouter.vaultBalanceOf(tychoRouterAddr, WETH_ADDR);
+            tychoRouter.balanceOf(tychoRouterAddr, uint256(uint160(WETH_ADDR)));
         assertGt(routerVaultBalance, 0);
     }
 
@@ -246,7 +246,7 @@ contract TychoRouterFeeTest is TychoRouterTestSetup {
 
         // Verify router vault has no fees
         uint256 routerVaultBalance =
-            tychoRouter.vaultBalanceOf(tychoRouterAddr, DAI_ADDR);
+            tychoRouter.balanceOf(tychoRouterAddr, uint256(uint160(DAI_ADDR)));
         assertEq(routerVaultBalance, 0);
     }
 }

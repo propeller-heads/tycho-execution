@@ -47,7 +47,7 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
         }
 
         // Verify msg.sender has sufficient balance in vault
-        uint256 userVaultBalance = _getVaultBalance(msg.sender, token);
+        uint256 userVaultBalance = this.balanceOf(msg.sender, uint256(uint160(token)));
         if (userVaultBalance < amountIn) {
             revert FeeExecutor__InsufficientVaultBalance(
                 msg.sender, token, amountIn, userVaultBalance
