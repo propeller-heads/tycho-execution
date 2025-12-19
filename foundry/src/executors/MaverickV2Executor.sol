@@ -54,11 +54,11 @@ contract MaverickV2Executor is IExecutor, RestrictTransferFrom {
         // slither-disable-next-line unused-return
         (, calculatedAmount) = pool.swap(receiver, swapParams, "");
 
-        // Credit vault if funds came to router
+        // Credit delta accounting with the output amount of the swap
         if (receiver == address(this)) {
             address tokenOut =
                 isTokenAIn ? address(pool.tokenB()) : address(pool.tokenA());
-            _creditDeltaAccounting(msg.sender, tokenOut, calculatedAmount);
+            _updateDeltaAccounting(msg.sender, tokenOut, int256(calculatedAmount));
         }
     }
 

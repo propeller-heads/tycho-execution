@@ -24,21 +24,11 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
     /**
      * @dev Override to resolve multiple inheritance
      */
-    function _creditDeltaAccounting(address user, address token, uint256 amount)
+    function _updateDeltaAccounting(address user, address token, int256 deltaChange)
         internal
         override(RestrictTransferFrom, TychoVault)
     {
-        super._creditDeltaAccounting(user, token, amount);
-    }
-
-    /**
-     * @dev Override to resolve multiple inheritance
-     */
-    function _debitDeltaAccounting(address user, address token, uint256 amount)
-        internal
-        override(RestrictTransferFrom, TychoVault)
-    {
-        super._debitDeltaAccounting(user, token, amount);
+        super._updateDeltaAccounting(user, token, deltaChange);
     }
 
     /**
@@ -90,16 +80,16 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
         if (solutionFeeBps > 0) {
             uint256 solutionFee = (amountOut * solutionFeeBps) / 10000;
             amountOut -= solutionFee;
-            _debitDeltaAccounting(msg.sender, token, solutionFee);
-            _creditDeltaAccounting(solutionFeeReceiver, token, solutionFee);
+            _updateDeltaAccounting(msg.sender, token, -int256(solutionFee));  // Negative to debit
+            _updateDeltaAccounting(solutionFeeReceiver, token, int256(solutionFee));  // Positive to credit
         }
 
         // Deduct router fee if > 0
         if (routerFeeBps > 0) {
             uint256 routerFee = (amountOut * routerFeeBps) / 10000;
             amountOut -= routerFee;
-            _debitDeltaAccounting(msg.sender, token, routerFee);
-            _creditDeltaAccounting(routerFeeReceiver, token, routerFee);
+            _updateDeltaAccounting(msg.sender, token, -int256(routerFee));  // Negative to debit
+            _updateDeltaAccounting(routerFeeReceiver, token, int256(routerFee));  // Positive to credit
         }
 
         return amountOut;

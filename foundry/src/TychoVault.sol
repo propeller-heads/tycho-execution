@@ -156,41 +156,27 @@ abstract contract TychoVault is IERC6909, ReentrancyGuard {
     }
 
     /**
-     * @dev Internal function to credit delta accounting (transient storage)
+     * @dev Update delta accounting (transient storage)
      * @notice This updates the transient delta, not the persistent vault balance
+     * @param user The user whose delta to update
+     * @param token The token to update
+     * @param deltaChange The change to apply (positive to credit, negative to debit)
      */
-    function _creditDeltaAccounting(address user, address token, uint256 amount)
+    function _updateDeltaAccounting(address user, address token, int256 deltaChange)
         internal
         virtual
     {
-        if (amount == 0) return;
+        if (deltaChange == 0) return;
 
         int256 oldDelta = _getTDelta(user, token);
-        int256 newDelta = oldDelta + int256(amount);
+        int256 newDelta = oldDelta + deltaChange;
 
-        // If delta was negative and becomes non-negative, decrement counter
+        // Update negative delta counter based on transitions
         if (oldDelta < 0 && newDelta >= 0) {
+            // Was negative, now non-negative: decrement counter
             _setNegativeDeltaCount(_getNegativeDeltaCount() - 1);
-        }
-
-        _setTDelta(user, token, newDelta);
-    }
-
-    /**
-     * @dev Internal helper to debit delta accounting (transient storage)
-     * @notice This updates the transient delta, not the persistent vault balance
-     */
-    function _debitDeltaAccounting(address user, address token, uint256 amount)
-        internal
-        virtual
-    {
-        if (amount == 0) return;
-
-        int256 oldDelta = _getTDelta(user, token);
-        int256 newDelta = oldDelta - int256(amount);
-
-        // If delta was non-negative and becomes negative, increment counter
-        if (oldDelta >= 0 && newDelta < 0) {
+        } else if (oldDelta >= 0 && newDelta < 0) {
+            // Was non-negative, now negative: increment counter
             _setNegativeDeltaCount(_getNegativeDeltaCount() + 1);
         }
 

@@ -201,10 +201,10 @@ contract EkuboExecutor is
         _pay(tokenIn, tokenInDebtAmount, transferType);
         core.withdraw(nextTokenIn, receiver, uint128(nextAmountIn));
 
-        // Credit vault if funds came to router
+        // Credit delta accounting with the output amount of the swap
         if (receiver == address(this)) {
-            _creditDeltaAccounting(
-                msg.sender, nextTokenIn, uint256(uint128(nextAmountIn))
+            _updateDeltaAccounting(
+                msg.sender, nextTokenIn, int256(uint256(uint128(nextAmountIn)))
             );
         }
 

@@ -51,18 +51,10 @@ contract RestrictTransferFrom {
     }
 
     /**
-     * @dev Virtual function to debit delta accounting - overridden by TychoRouter
+     * @dev Virtual function to update delta accounting - overridden by TychoRouter
+     * @param deltaChange Positive to credit, negative to debit
      */
-    function _debitDeltaAccounting(address user, address token, uint256 amount)
-        internal
-        virtual {
-        // Empty implementation - only TychoRouter uses this
-    }
-
-    /**
-     * @dev Virtual function to credit delta accounting - overridden by TychoRouter
-     */
-    function _creditDeltaAccounting(address user, address token, uint256 amount)
+    function _updateDeltaAccounting(address user, address token, int256 deltaChange)
         internal
         virtual {
         // Empty implementation - only TychoRouter uses this
@@ -162,8 +154,8 @@ contract RestrictTransferFrom {
             // Debit the actual vault balance (persistent storage)
             _debitPersistentVault(sender, tokenIn, amount);
 
-            // Credit the delta accounting (funds are now at the router)
-            _creditDeltaAccounting(sender, tokenIn, amount);
+            // Credit the delta accounting (funds are now at the router) - positive amount to credit
+            _updateDeltaAccounting(sender, tokenIn, int256(amount));
 
             // Transfer from router to receiver
             if (tokenIn == address(0)) {
@@ -179,8 +171,8 @@ contract RestrictTransferFrom {
             // Debit the actual vault balance (persistent storage)
             _debitPersistentVault(sender, tokenIn, amount);
 
-            // Credit the delta accounting (funds are now at the router)
-            _creditDeltaAccounting(sender, tokenIn, amount);
+            // Credit the delta accounting (funds are now at the router) - positive amount to credit
+            _updateDeltaAccounting(sender, tokenIn, int256(amount));
 
             // Protocol will pull funds from router via transferFrom
             // We don't transfer here, protocol does that

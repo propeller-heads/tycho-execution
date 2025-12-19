@@ -85,9 +85,9 @@ contract BebopExecutor is IExecutor, RestrictTransferFrom {
         uint256 balanceAfter = _balanceOf(tokenOut, receiver);
         calculatedAmount = balanceAfter - balanceBefore;
 
-        // Credit vault if funds came to router
+        // Credit delta accounting with the output amount of the swap
         if (receiver == address(this)) {
-            _creditDeltaAccounting(msg.sender, tokenOut, calculatedAmount);
+            _updateDeltaAccounting(msg.sender, tokenOut, int256(calculatedAmount));
         }
     }
 

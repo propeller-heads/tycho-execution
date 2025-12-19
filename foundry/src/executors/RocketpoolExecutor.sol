@@ -41,7 +41,7 @@ contract RocketpoolExecutor is IExecutor, RestrictTransferFrom {
                 RETH.safeTransfer(receiver, calculatedAmount);
             } else {
                 // Credit vault if funds stayed in router
-                _creditDeltaAccounting(msg.sender, address(RETH), calculatedAmount);
+                _updateDeltaAccounting(msg.sender, address(RETH), int256(calculatedAmount));
             }
         } else {
             // rETH -> ETH: Burn rETH to receive ETH
@@ -56,7 +56,7 @@ contract RocketpoolExecutor is IExecutor, RestrictTransferFrom {
                 Address.sendValue(payable(receiver), calculatedAmount);
             } else {
                 // Credit vault if funds stayed in router (ETH)
-                _creditDeltaAccounting(msg.sender, address(0), calculatedAmount);
+                _updateDeltaAccounting(msg.sender, address(0), int256(calculatedAmount));
             }
         }
     }

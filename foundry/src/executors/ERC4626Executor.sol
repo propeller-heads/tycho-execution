@@ -49,9 +49,9 @@ contract ERC4626Executor is IExecutor, RestrictTransferFrom {
             revert ERC4626Executor__InvalidTarget();
         }
 
-        // Credit vault if funds came to router
+        // Credit delta accounting with the output amount of the swap
         if (receiver == address(this)) {
-            _creditDeltaAccounting(msg.sender, tokenOut, calculatedAmount);
+            _updateDeltaAccounting(msg.sender, tokenOut, int256(calculatedAmount));
         }
     }
 

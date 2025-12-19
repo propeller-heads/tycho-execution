@@ -88,9 +88,9 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
         VAULT.settle(tokenIn, amountIn);
         VAULT.sendTo(tokenOut, receiver, amountOut);
 
-        // Credit vault if funds came to router
+        // Credit delta accounting with the output amount of the swap
         if (receiver == address(this)) {
-            _creditDeltaAccounting(msg.sender, address(tokenOut), amountOut);
+            _updateDeltaAccounting(msg.sender, address(tokenOut), int256(amountOut));
         }
 
         return abi.encode(amountCalculated);

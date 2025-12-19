@@ -80,9 +80,9 @@ contract UniswapV3Executor is IExecutor, ICallback, RestrictTransferFrom {
             amountOut = amount0 > 0 ? uint256(amount0) : uint256(-amount0);
         }
 
-        // Credit vault if funds came to router
+        // Credit delta accounting with the output amount of the swap
         if (receiver == address(this)) {
-            _creditDeltaAccounting(msg.sender, tokenOut, amountOut);
+            _updateDeltaAccounting(msg.sender, tokenOut, int256(amountOut));
         }
     }
 

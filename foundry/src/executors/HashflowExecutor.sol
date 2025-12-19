@@ -83,9 +83,9 @@ contract HashflowExecutor is IExecutor, RestrictTransferFrom {
         uint256 balanceAfter = _balanceOf(quote.trader, quote.quoteToken);
         calculatedAmount = balanceAfter - balanceBefore;
 
-        // Credit vault if funds came to router
+        // Credit delta accounting with the output amount of the swap
         if (quote.trader == address(this)) {
-            _creditDeltaAccounting(msg.sender, quote.quoteToken, calculatedAmount);
+            _updateDeltaAccounting(msg.sender, quote.quoteToken, int256(calculatedAmount));
         }
     }
 

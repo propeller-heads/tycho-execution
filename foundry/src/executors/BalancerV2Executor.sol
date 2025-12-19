@@ -64,9 +64,9 @@ contract BalancerV2Executor is IExecutor, RestrictTransferFrom {
         calculatedAmount =
             IVault(VAULT).swap(singleSwap, funds, limit, block.timestamp);
 
-        // Credit vault if funds came to router
+        // Credit delta accounting with the output amount of the swap
         if (receiver == address(this)) {
-            _creditDeltaAccounting(msg.sender, address(tokenOut), calculatedAmount);
+            _updateDeltaAccounting(msg.sender, address(tokenOut), int256(calculatedAmount));
         }
     }
 
