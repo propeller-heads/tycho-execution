@@ -58,7 +58,7 @@ contract MaverickV2Executor is IExecutor, RestrictTransferFrom {
         if (receiver == address(this)) {
             address tokenOut =
                 isTokenAIn ? address(pool.tokenB()) : address(pool.tokenA());
-            _creditVault(msg.sender, tokenOut, calculatedAmount);
+            _creditDeltaAccounting(msg.sender, tokenOut, calculatedAmount);
         }
     }
 

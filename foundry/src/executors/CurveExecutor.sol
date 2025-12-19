@@ -115,7 +115,7 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
             }
         } else {
             // Credit vault if funds stayed in router
-            _creditVault(msg.sender, tokenOut, amountOut);
+            _creditDeltaAccounting(msg.sender, tokenOut, amountOut);
         }
         return amountOut;
     }

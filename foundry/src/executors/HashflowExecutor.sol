@@ -85,7 +85,7 @@ contract HashflowExecutor is IExecutor, RestrictTransferFrom {
 
         // Credit vault if funds came to router
         if (quote.trader == address(this)) {
-            _creditVault(msg.sender, quote.quoteToken, calculatedAmount);
+            _creditDeltaAccounting(msg.sender, quote.quoteToken, calculatedAmount);
         }
     }
 

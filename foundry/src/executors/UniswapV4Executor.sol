@@ -155,7 +155,7 @@ contract UniswapV4Executor is
 
         // Credit vault if funds came to router
         if (receiver == address(this)) {
-            _creditVault(msg.sender, tokenOut, amountOut);
+            _creditDeltaAccounting(msg.sender, tokenOut, amountOut);
         }
 
         return amountOut;

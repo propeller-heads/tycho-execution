@@ -107,6 +107,39 @@ contract TychoRouter is
     }
 
     /**
+     * @dev Override to resolve multiple inheritance
+     * Uses TychoVault's implementation
+     */
+    function _creditDeltaAccounting(address user, address token, uint256 amount)
+        internal
+        override(RestrictTransferFrom, TychoVault)
+    {
+        super._creditDeltaAccounting(user, token, amount);
+    }
+
+    /**
+     * @dev Override to resolve multiple inheritance
+     * Uses TychoVault's implementation
+     */
+    function _debitDeltaAccounting(address user, address token, uint256 amount)
+        internal
+        override(RestrictTransferFrom, TychoVault)
+    {
+        super._debitDeltaAccounting(user, token, amount);
+    }
+
+    /**
+     * @dev Override to resolve multiple inheritance
+     * Uses TychoVault's implementation
+     */
+    function _debitPersistentVault(address user, address token, uint256 amount)
+        internal
+        override(RestrictTransferFrom, TychoVault)
+    {
+        super._debitPersistentVault(user, token, amount);
+    }
+
+    /**
      * @notice Executes a swap operation based on a predefined swap graph, supporting internal token amount splits.
      *         This function enables multi-step swaps, optional ETH wrapping/unwrapping, and validates the output amount
      *         against a user-specified minimum.

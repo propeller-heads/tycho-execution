@@ -72,7 +72,7 @@ contract UniswapV2Executor is IExecutor, RestrictTransferFrom {
         // Credit vault if funds came to router
         if (receiver == address(this)) {
             address tokenOut = zeroForOne ? pool.token1() : pool.token0();
-            _creditVault(msg.sender, tokenOut, calculatedAmount);
+            _creditDeltaAccounting(msg.sender, tokenOut, calculatedAmount);
         }
     }
 

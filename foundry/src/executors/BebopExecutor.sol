@@ -87,7 +87,7 @@ contract BebopExecutor is IExecutor, RestrictTransferFrom {
 
         // Credit vault if funds came to router
         if (receiver == address(this)) {
-            _creditVault(msg.sender, tokenOut, calculatedAmount);
+            _creditDeltaAccounting(msg.sender, tokenOut, calculatedAmount);
         }
     }
 

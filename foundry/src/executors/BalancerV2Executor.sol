@@ -66,7 +66,7 @@ contract BalancerV2Executor is IExecutor, RestrictTransferFrom {
 
         // Credit vault if funds came to router
         if (receiver == address(this)) {
-            _creditVault(msg.sender, address(tokenOut), calculatedAmount);
+            _creditDeltaAccounting(msg.sender, address(tokenOut), calculatedAmount);
         }
     }
 

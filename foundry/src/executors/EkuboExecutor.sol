@@ -203,7 +203,7 @@ contract EkuboExecutor is
 
         // Credit vault if funds came to router
         if (receiver == address(this)) {
-            _creditVault(
+            _creditDeltaAccounting(
                 msg.sender, nextTokenIn, uint256(uint128(nextAmountIn))
             );
         }

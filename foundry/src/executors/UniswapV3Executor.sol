@@ -82,7 +82,7 @@ contract UniswapV3Executor is IExecutor, ICallback, RestrictTransferFrom {
 
         // Credit vault if funds came to router
         if (receiver == address(this)) {
-            _creditVault(msg.sender, tokenOut, amountOut);
+            _creditDeltaAccounting(msg.sender, tokenOut, amountOut);
         }
     }
 

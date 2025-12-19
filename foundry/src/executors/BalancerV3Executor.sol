@@ -90,7 +90,7 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
 
         // Credit vault if funds came to router
         if (receiver == address(this)) {
-            _creditVault(msg.sender, address(tokenOut), amountOut);
+            _creditDeltaAccounting(msg.sender, address(tokenOut), amountOut);
         }
 
         return abi.encode(amountCalculated);

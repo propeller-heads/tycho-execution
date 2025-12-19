@@ -22,6 +22,36 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
     constructor(address _permit2) RestrictTransferFrom(_permit2) {}
 
     /**
+     * @dev Override to resolve multiple inheritance
+     */
+    function _creditDeltaAccounting(address user, address token, uint256 amount)
+        internal
+        override(RestrictTransferFrom, TychoVault)
+    {
+        super._creditDeltaAccounting(user, token, amount);
+    }
+
+    /**
+     * @dev Override to resolve multiple inheritance
+     */
+    function _debitDeltaAccounting(address user, address token, uint256 amount)
+        internal
+        override(RestrictTransferFrom, TychoVault)
+    {
+        super._debitDeltaAccounting(user, token, amount);
+    }
+
+    /**
+     * @dev Override to resolve multiple inheritance
+     */
+    function _debitPersistentVault(address user, address token, uint256 amount)
+        internal
+        override(RestrictTransferFrom, TychoVault)
+    {
+        super._debitPersistentVault(user, token, amount);
+    }
+
+    /**
      * @dev Deducts fees from the input amount and credits them to fee receivers' vaults
      * @dev Verifies msg.sender has sufficient balance in vault before deducting
      * @param amountIn The input amount (before fees)
@@ -60,16 +90,16 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
         if (solutionFeeBps > 0) {
             uint256 solutionFee = (amountOut * solutionFeeBps) / 10000;
             amountOut -= solutionFee;
-            _debitUserVault(msg.sender, token, solutionFee);
-            _creditUserVault(solutionFeeReceiver, token, solutionFee);
+            _debitDeltaAccounting(msg.sender, token, solutionFee);
+            _creditDeltaAccounting(solutionFeeReceiver, token, solutionFee);
         }
 
         // Deduct router fee if > 0
         if (routerFeeBps > 0) {
             uint256 routerFee = (amountOut * routerFeeBps) / 10000;
             amountOut -= routerFee;
-            _debitUserVault(msg.sender, token, routerFee);
-            _creditUserVault(routerFeeReceiver, token, routerFee);
+            _debitDeltaAccounting(msg.sender, token, routerFee);
+            _creditDeltaAccounting(routerFeeReceiver, token, routerFee);
         }
 
         return amountOut;
