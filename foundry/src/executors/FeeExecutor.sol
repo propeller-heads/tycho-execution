@@ -30,7 +30,7 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
      *        routerFeeBps (uint16) | routerFeeReceiver (address) | token (address)
      * @return amountOut The output amount (after fee deductions)
      */
-    function swap(uint256 amountIn, bytes calldata data)
+    function take_fee(uint256 amountIn, bytes calldata data)
         external
         returns (uint256 amountOut)
     {

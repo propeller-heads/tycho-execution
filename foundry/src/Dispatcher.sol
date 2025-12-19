@@ -112,7 +112,7 @@ contract Dispatcher {
 
         // slither-disable-next-line controlled-delegatecall,low-level-calls
         (bool success, bytes memory result) = feeExecutor.delegatecall(
-            abi.encodeWithSelector(IExecutor.swap.selector, amount, data)
+            abi.encodeWithSignature("take_fee(uint256,bytes)", amount, data)
         );
 
         if (!success) {

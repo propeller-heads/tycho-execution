@@ -82,7 +82,7 @@ contract FeeExecutorTest is Constants, TestUtils {
             token
         );
 
-        uint256 amountOut = feeExecutor.swap(amountIn, data);
+        uint256 amountOut = feeExecutor.take_fee(amountIn, data);
 
         // Should return 99% of input (1% fee)
         uint256 expectedAmountOut = 990 ether;
@@ -105,7 +105,7 @@ contract FeeExecutorTest is Constants, TestUtils {
             token
         );
 
-        uint256 amountOut = feeExecutor.swap(amountIn, data);
+        uint256 amountOut = feeExecutor.take_fee(amountIn, data);
 
         // Should return full amount
         assertEq(amountOut, amountIn);
@@ -128,7 +128,7 @@ contract FeeExecutorTest is Constants, TestUtils {
         );
 
         vm.expectRevert(FeeExecutor__FeeTooHigh.selector);
-        feeExecutor.swap(amountIn, data);
+        feeExecutor.take_fee(amountIn, data);
     }
 
     function testSwapMaxFee() public {
@@ -147,7 +147,7 @@ contract FeeExecutorTest is Constants, TestUtils {
             token
         );
 
-        uint256 amountOut = feeExecutor.swap(amountIn, data);
+        uint256 amountOut = feeExecutor.take_fee(amountIn, data);
 
         // Should return 50% of input
         uint256 expectedAmountOut = 500 ether;
