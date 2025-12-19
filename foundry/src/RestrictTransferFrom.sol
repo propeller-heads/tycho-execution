@@ -51,18 +51,27 @@ contract RestrictTransferFrom {
     }
 
     /**
-     * @dev Virtual function to debit vault - overridden by TychoRouter
+     * @dev Virtual function to debit delta accounting - overridden by TychoRouter
      */
-    function _debitVault(address user, address token, uint256 amount)
+    function _debitDeltaAccounting(address user, address token, uint256 amount)
         internal
         virtual {
         // Empty implementation - only TychoRouter uses this
     }
 
     /**
-     * @dev Virtual function to credit vault - overridden by TychoRouter
+     * @dev Virtual function to credit delta accounting - overridden by TychoRouter
      */
-    function _creditVault(address user, address token, uint256 amount)
+    function _creditDeltaAccounting(address user, address token, uint256 amount)
+        internal
+        virtual {
+        // Empty implementation - only TychoRouter uses this
+    }
+
+    /**
+     * @dev Virtual function to debit persistent vault balance - overridden by TychoRouter
+     */
+    function _debitPersistentVault(address user, address token, uint256 amount)
         internal
         virtual {
         // Empty implementation - only TychoRouter uses this
@@ -150,8 +159,11 @@ contract RestrictTransferFrom {
             assembly {
                 sender := tload(_SENDER_SLOT)
             }
-            // Call router's debitUserVault (only works if router is TychoRouter)
-            _debitVault(sender, tokenIn, amount);
+            // Debit the actual vault balance (persistent storage)
+            _debitPersistentVault(sender, tokenIn, amount);
+
+            // Credit the delta accounting (funds are now at the router)
+            _creditDeltaAccounting(sender, tokenIn, amount);
 
             // Transfer from router to receiver
             if (tokenIn == address(0)) {
@@ -164,9 +176,14 @@ contract RestrictTransferFrom {
             assembly {
                 sender := tload(_SENDER_SLOT)
             }
+            // Debit the actual vault balance (persistent storage)
+            _debitPersistentVault(sender, tokenIn, amount);
+
+            // Credit the delta accounting (funds are now at the router)
+            _creditDeltaAccounting(sender, tokenIn, amount);
+
             // Protocol will pull funds from router via transferFrom
-            // We need to debit the vault, but NOT transfer (protocol does that)
-            _debitVault(sender, tokenIn, amount);
+            // We don't transfer here, protocol does that
         } else if (transferType == TransferType.FundsAlreadyInProtocol) {
             // Funds were sent directly from the previous pool without passing through our router
             // Nothing to do here

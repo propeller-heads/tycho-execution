@@ -107,26 +107,6 @@ contract TychoRouter is
     }
 
     /**
-     * @dev Override _debitVault from RestrictTransferFrom to implement vault debiting
-     */
-    function _debitVault(address user, address token, uint256 amount)
-        internal
-        override
-    {
-        _debitUserVault(user, token, amount);
-    }
-
-    /**
-     * @dev Override _creditVault from RestrictTransferFrom to credit user vault
-     */
-    function _creditVault(address user, address token, uint256 amount)
-        internal
-        override
-    {
-        _creditUserVault(user, token, amount);
-    }
-
-    /**
      * @notice Executes a swap operation based on a predefined swap graph, supporting internal token amount splits.
      *         This function enables multi-step swaps, optional ETH wrapping/unwrapping, and validates the output amount
      *         against a user-specified minimum.
@@ -524,13 +504,13 @@ contract TychoRouter is
         address settlementToken = unwrapEth ? address(_weth) : tokenOut;
         uint256 routerOutputBalance = _balanceOf(settlementToken, address(this));
         if (routerOutputBalance > 0) {
-            _creditVault(msg.sender, settlementToken, routerOutputBalance);
+            _creditDeltaAccounting(msg.sender, settlementToken, routerOutputBalance);
         }
 
         // Credit any leftover tokenIn funds to sender's vault (transient)
         uint256 leftoverAmount = _balanceOf(tokenIn, address(this));
         if (leftoverAmount > 0) {
-            _creditVault(msg.sender, tokenIn, leftoverAmount);
+            _creditDeltaAccounting(msg.sender, tokenIn, leftoverAmount);
         }
 
         // Settle all transient deltas to persistent storage
@@ -606,13 +586,13 @@ contract TychoRouter is
         address settlementToken = unwrapEth ? address(_weth) : tokenOut;
         uint256 routerOutputBalance = _balanceOf(settlementToken, address(this));
         if (routerOutputBalance > 0) {
-            _creditVault(msg.sender, settlementToken, routerOutputBalance);
+            _creditDeltaAccounting(msg.sender, settlementToken, routerOutputBalance);
         }
 
         // Credit any leftover tokenIn funds to sender's vault (transient)
         uint256 leftoverAmount = _balanceOf(tokenIn, address(this));
         if (leftoverAmount > 0) {
-            _creditVault(msg.sender, tokenIn, leftoverAmount);
+            _creditDeltaAccounting(msg.sender, tokenIn, leftoverAmount);
         }
 
         // Settle all transient deltas to persistent storage
@@ -685,13 +665,13 @@ contract TychoRouter is
         address settlementToken = unwrapEth ? address(_weth) : tokenOut;
         uint256 routerOutputBalance = _balanceOf(settlementToken, address(this));
         if (routerOutputBalance > 0) {
-            _creditVault(msg.sender, settlementToken, routerOutputBalance);
+            _creditDeltaAccounting(msg.sender, settlementToken, routerOutputBalance);
         }
 
         // Credit any leftover tokenIn funds to sender's vault (transient)
         uint256 leftoverAmount = _balanceOf(tokenIn, address(this));
         if (leftoverAmount > 0) {
-            _creditVault(msg.sender, tokenIn, leftoverAmount);
+            _creditDeltaAccounting(msg.sender, tokenIn, leftoverAmount);
         }
 
         // Settle all transient deltas to persistent storage

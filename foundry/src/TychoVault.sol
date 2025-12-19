@@ -156,10 +156,10 @@ abstract contract TychoVault is IERC6909, ReentrancyGuard {
     }
 
     /**
-     * @dev Internal function to credit leftover funds to user's vault
-     * Now writes to transient storage instead of persistent storage
+     * @dev Internal function to credit delta accounting (transient storage)
+     * @notice This updates the transient delta, not the persistent vault balance
      */
-    function _creditUserVault(address user, address token, uint256 amount)
+    function _creditDeltaAccounting(address user, address token, uint256 amount)
         internal
         virtual
     {
@@ -177,10 +177,10 @@ abstract contract TychoVault is IERC6909, ReentrancyGuard {
     }
 
     /**
-     * @dev Internal helper to debit user's vault balance
-     * @notice Now writes to transient storage instead of persistent storage
+     * @dev Internal helper to debit delta accounting (transient storage)
+     * @notice This updates the transient delta, not the persistent vault balance
      */
-    function _debitUserVault(address user, address token, uint256 amount)
+    function _debitDeltaAccounting(address user, address token, uint256 amount)
         internal
     {
         if (amount == 0) return;
@@ -197,10 +197,29 @@ abstract contract TychoVault is IERC6909, ReentrancyGuard {
     }
 
     /**
+     * @dev Internal helper to debit user's actual vault balance (persistent storage)
+     * @notice This debits the persistent vault balance, not the transient delta
+     */
+    function _debitPersistentVault(address user, address token, uint256 amount)
+        internal
+        virtual
+    {
+        if (amount == 0) return;
+
+        uint256 balance = _vaultBalances[user][token];
+        if (balance < amount) {
+            revert TychoVault__InsufficientBalance(
+                user, token, amount, balance
+            );
+        }
+        _vaultBalances[user][token] = balance - amount;
+    }
+
+    /**
      * @dev Settle all transient deltas to persistent storage
      * @param user The user whose deltas should be settled
-     * @param inputToken The expected input token with negative delta
-     * @param inputAmount The expected input amount (as negative delta)
+     * @param inputToken The expected input token
+     * @param inputAmount The expected input amount
      * @param outputToken The output token (may have positive delta)
      * @param outputAmount The amount being sent to receiver (not surplus)
      */
@@ -213,44 +232,11 @@ abstract contract TychoVault is IERC6909, ReentrancyGuard {
     ) internal {
         uint256 negativeCount = _getNegativeDeltaCount();
 
-        // Get input token delta
-        int256 inputDelta = _getTDelta(user, inputToken);
-
-        // Check if we have at most one negative delta (for the input token)
-        if (negativeCount > 1) {
+        // Check that there are no negative deltas
+        if (negativeCount > 0) {
+            int256 inputDelta = _getTDelta(user, inputToken);
             revert TychoVault__UnexpectedNegativeDelta(inputToken, inputDelta);
         }
-
-        if (negativeCount == 1) {
-            // Verify the negative delta is for the input token
-            // and that abs(delta) <= inputAmount (accounting for leftovers)
-            if (inputDelta >= 0) {
-                // If there's a negative delta, it should be the input token
-                revert TychoVault__InvalidInputDelta(
-                    inputToken, -int256(inputAmount), inputDelta
-                );
-            }
-            // Check that we didn't debit more than inputAmount
-            if (uint256(-inputDelta) > inputAmount) {
-                revert TychoVault__InvalidInputDelta(
-                    inputToken, -int256(inputAmount), inputDelta
-                );
-            }
-        }
-        // If negativeCount == 0, no validation needed - could be wallet-funded swap
-
-        // Apply input token delta to persistent storage (only debit if negative)
-        if (inputDelta < 0) {
-            uint256 debitAmount = uint256(-inputDelta);
-            uint256 balance = _vaultBalances[user][inputToken];
-            if (balance < debitAmount) {
-                revert TychoVault__InsufficientBalance(
-                    user, inputToken, debitAmount, balance
-                );
-            }
-            _vaultBalances[user][inputToken] = balance - debitAmount;
-        }
-        // If inputDelta >= 0, ignore it (shouldn't happen normally)
 
         // Calculate surplus output (delta minus amount being sent to receiver)
         int256 outputDelta = _getTDelta(user, outputToken);
