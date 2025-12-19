@@ -162,6 +162,7 @@ contract TychoRouter is
         bool isTransferFromAllowed,
         uint16 solutionFeeBps,
         address solutionFeeReceiver,
+        bool feeOnInputToken,
         bytes calldata swaps
     ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
         uint256 initialBalanceTokenOut = _balanceOf(tokenOut, receiver);
@@ -179,6 +180,7 @@ contract TychoRouter is
             receiver,
             solutionFeeBps,
             solutionFeeReceiver,
+            feeOnInputToken,
             swaps
         );
     }
@@ -222,6 +224,7 @@ contract TychoRouter is
         bytes calldata signature,
         uint16 solutionFeeBps,
         address solutionFeeReceiver,
+        bool feeOnInputToken,
         bytes calldata swaps
     ) external payable whenNotPaused nonReentrant returns (uint256 amountOut) {
         uint256 initialBalanceTokenOut = _balanceOf(tokenOut, receiver);
@@ -243,6 +246,7 @@ contract TychoRouter is
             receiver,
             solutionFeeBps,
             solutionFeeReceiver,
+            feeOnInputToken,
             swaps
         );
     }
@@ -281,6 +285,7 @@ contract TychoRouter is
         bool isTransferFromAllowed,
         uint16 solutionFeeBps,
         address solutionFeeReceiver,
+        bool feeOnInputToken,
         bytes calldata swaps
     ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
         uint256 initialBalanceTokenOut = _balanceOf(tokenOut, receiver);
@@ -297,6 +302,7 @@ contract TychoRouter is
             receiver,
             solutionFeeBps,
             solutionFeeReceiver,
+            feeOnInputToken,
             swaps
         );
     }
@@ -337,6 +343,7 @@ contract TychoRouter is
         bytes calldata signature,
         uint16 solutionFeeBps,
         address solutionFeeReceiver,
+        bool feeOnInputToken,
         bytes calldata swaps
     ) external payable whenNotPaused nonReentrant returns (uint256 amountOut) {
         uint256 initialBalanceTokenOut = _balanceOf(tokenOut, receiver);
@@ -358,6 +365,7 @@ contract TychoRouter is
             receiver,
             solutionFeeBps,
             solutionFeeReceiver,
+            feeOnInputToken,
             swaps
         );
     }
@@ -394,6 +402,7 @@ contract TychoRouter is
         bool isTransferFromAllowed,
         uint16 solutionFeeBps,
         address solutionFeeReceiver,
+        bool feeOnInputToken,
         bytes calldata swapData
     ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
         uint256 initialBalanceTokenOut = _balanceOf(tokenOut, receiver);
@@ -410,6 +419,7 @@ contract TychoRouter is
             receiver,
             solutionFeeBps,
             solutionFeeReceiver,
+            feeOnInputToken,
             swapData
         );
     }
@@ -450,6 +460,7 @@ contract TychoRouter is
         bytes calldata signature,
         uint16 solutionFeeBps,
         address solutionFeeReceiver,
+        bool feeOnInputToken,
         bytes calldata swapData
     ) external payable whenNotPaused nonReentrant returns (uint256 amountOut) {
         uint256 initialBalanceTokenOut = _balanceOf(tokenOut, receiver);
@@ -470,6 +481,7 @@ contract TychoRouter is
             receiver,
             solutionFeeBps,
             solutionFeeReceiver,
+            feeOnInputToken,
             swapData
         );
     }
@@ -494,6 +506,7 @@ contract TychoRouter is
         address receiver,
         uint16 solutionFeeBps,
         address solutionFeeReceiver,
+        bool feeOnInputToken,
         bytes calldata swaps
     ) internal returns (uint256 amountOut) {
         if (receiver == address(0)) {
@@ -509,12 +522,22 @@ contract TychoRouter is
             tokenIn = address(_weth);
         }
 
-        amountOut = _splitSwap(amountIn, nTokens, swaps);
+        // Take fees from input if requested
+        uint256 effectiveAmountIn = amountIn;
+        if (feeOnInputToken) {
+            effectiveAmountIn = _takeFees(
+                amountIn, tokenIn, false, solutionFeeBps, solutionFeeReceiver
+            );
+        }
 
-        // Deduct fees (both solution and router fees)
-        amountOut = _takeFees(
-            amountOut, tokenOut, unwrapEth, solutionFeeBps, solutionFeeReceiver
-        );
+        amountOut = _splitSwap(effectiveAmountIn, nTokens, swaps);
+
+        // Deduct fees from output if not taken from input
+        if (!feeOnInputToken) {
+            amountOut = _takeFees(
+                amountOut, tokenOut, unwrapEth, solutionFeeBps, solutionFeeReceiver
+            );
+        }
 
         if (amountOut < minAmountOut) {
             revert TychoRouter__NegativeSlippage(amountOut, minAmountOut);
@@ -537,11 +560,14 @@ contract TychoRouter is
         _settle(msg.sender, tokenIn, amountIn, settlementToken, amountOut);
 
         // Transfer tokens to receiver from router balance
-        if (unwrapEth) {
-            _unwrapETH(amountOut);
-            Address.sendValue(payable(receiver), amountOut);
-        } else {
-            SafeERC20.safeTransfer(IERC20(tokenOut), receiver, amountOut);
+        // If feeOnInputToken and tokens went directly to receiver, routerOutputBalance will be 0
+        if (routerOutputBalance > 0) {
+            if (unwrapEth) {
+                _unwrapETH(amountOut);
+                Address.sendValue(payable(receiver), amountOut);
+            } else {
+                SafeERC20.safeTransfer(IERC20(tokenOut), receiver, amountOut);
+            }
         }
 
         _verifyAmountOutWasReceived(
@@ -573,6 +599,7 @@ contract TychoRouter is
         address receiver,
         uint16 solutionFeeBps,
         address solutionFeeReceiver,
+        bool feeOnInputToken,
         bytes calldata swap_
     ) internal returns (uint256 amountOut) {
         if (receiver == address(0)) {
@@ -591,12 +618,22 @@ contract TychoRouter is
         (address executor, bytes calldata protocolData) =
             swap_.decodeSingleSwap();
 
-        amountOut = _callSwapOnExecutor(executor, amountIn, protocolData);
+        // Take fees from input if requested
+        uint256 effectiveAmountIn = amountIn;
+        if (feeOnInputToken) {
+            effectiveAmountIn = _takeFees(
+                amountIn, tokenIn, false, solutionFeeBps, solutionFeeReceiver
+            );
+        }
 
-        // Deduct fees (both solution and router fees)
-        amountOut = _takeFees(
-            amountOut, tokenOut, unwrapEth, solutionFeeBps, solutionFeeReceiver
-        );
+        amountOut = _callSwapOnExecutor(executor, effectiveAmountIn, protocolData);
+
+        // Deduct fees from output if not taken from input
+        if (!feeOnInputToken) {
+            amountOut = _takeFees(
+                amountOut, tokenOut, unwrapEth, solutionFeeBps, solutionFeeReceiver
+            );
+        }
 
         if (amountOut < minAmountOut) {
             revert TychoRouter__NegativeSlippage(amountOut, minAmountOut);
@@ -619,11 +656,14 @@ contract TychoRouter is
         _settle(msg.sender, tokenIn, amountIn, settlementToken, amountOut);
 
         // Transfer tokens to receiver from router balance
-        if (unwrapEth) {
-            _unwrapETH(amountOut);
-            Address.sendValue(payable(receiver), amountOut);
-        } else {
-            SafeERC20.safeTransfer(IERC20(tokenOut), receiver, amountOut);
+        // If feeOnInputToken and tokens went directly to receiver, routerOutputBalance will be 0
+        if (routerOutputBalance > 0) {
+            if (unwrapEth) {
+                _unwrapETH(amountOut);
+                Address.sendValue(payable(receiver), amountOut);
+            } else {
+                SafeERC20.safeTransfer(IERC20(tokenOut), receiver, amountOut);
+            }
         }
 
         _verifyAmountOutWasReceived(
@@ -655,6 +695,7 @@ contract TychoRouter is
         address receiver,
         uint16 solutionFeeBps,
         address solutionFeeReceiver,
+        bool feeOnInputToken,
         bytes calldata swaps
     ) internal returns (uint256 amountOut) {
         if (receiver == address(0)) {
@@ -670,12 +711,22 @@ contract TychoRouter is
             tokenIn = address(_weth);
         }
 
-        amountOut = _sequentialSwap(amountIn, swaps);
+        // Take fees from input if requested
+        uint256 effectiveAmountIn = amountIn;
+        if (feeOnInputToken) {
+            effectiveAmountIn = _takeFees(
+                amountIn, tokenIn, false, solutionFeeBps, solutionFeeReceiver
+            );
+        }
 
-        // Deduct fees (both solution and router fees)
-        amountOut = _takeFees(
-            amountOut, tokenOut, unwrapEth, solutionFeeBps, solutionFeeReceiver
-        );
+        amountOut = _sequentialSwap(effectiveAmountIn, swaps);
+
+        // Deduct fees from output if not taken from input
+        if (!feeOnInputToken) {
+            amountOut = _takeFees(
+                amountOut, tokenOut, unwrapEth, solutionFeeBps, solutionFeeReceiver
+            );
+        }
 
         if (amountOut < minAmountOut) {
             revert TychoRouter__NegativeSlippage(amountOut, minAmountOut);
@@ -698,11 +749,14 @@ contract TychoRouter is
         _settle(msg.sender, tokenIn, amountIn, settlementToken, amountOut);
 
         // Transfer tokens to receiver from router balance
-        if (unwrapEth) {
-            _unwrapETH(amountOut);
-            Address.sendValue(payable(receiver), amountOut);
-        } else {
-            SafeERC20.safeTransfer(IERC20(tokenOut), receiver, amountOut);
+        // If feeOnInputToken and tokens went directly to receiver, routerOutputBalance will be 0
+        if (routerOutputBalance > 0) {
+            if (unwrapEth) {
+                _unwrapETH(amountOut);
+                Address.sendValue(payable(receiver), amountOut);
+            } else {
+                SafeERC20.safeTransfer(IERC20(tokenOut), receiver, amountOut);
+            }
         }
 
         _verifyAmountOutWasReceived(

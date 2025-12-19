@@ -79,6 +79,7 @@ pub fn encode_tycho_router_call(
     user_transfer_type: &UserTransferType,
     native_address: &Bytes,
     signer: Option<PrivateKeySigner>,
+    fee_on_input_token: bool,
 ) -> Result<Transaction, EncodingError> {
     let (mut unwrap, mut wrap) = (false, false);
     if let Some(action) = solution.native_action.clone() {
@@ -127,6 +128,7 @@ pub fn encode_tycho_router_call(
             signature,
             solution_fee_bps,
             solution_fee_receiver,
+            fee_on_input_token,
             encoded_solution.swaps,
         )
             .abi_encode()
@@ -145,6 +147,7 @@ pub fn encode_tycho_router_call(
             user_transfer_type == &UserTransferType::TransferFrom,
             solution_fee_bps,
             solution_fee_receiver,
+            fee_on_input_token,
             encoded_solution.swaps,
         )
             .abi_encode()
@@ -166,6 +169,7 @@ pub fn encode_tycho_router_call(
             signature,
             solution_fee_bps,
             solution_fee_receiver,
+            fee_on_input_token,
             encoded_solution.swaps,
         )
             .abi_encode()
@@ -184,6 +188,7 @@ pub fn encode_tycho_router_call(
             user_transfer_type == &UserTransferType::TransferFrom,
             solution_fee_bps,
             solution_fee_receiver,
+            fee_on_input_token,
             encoded_solution.swaps,
         )
             .abi_encode()
@@ -206,6 +211,7 @@ pub fn encode_tycho_router_call(
             signature,
             solution_fee_bps,
             solution_fee_receiver,
+            fee_on_input_token,
             encoded_solution.swaps,
         )
             .abi_encode()
@@ -225,6 +231,7 @@ pub fn encode_tycho_router_call(
             user_transfer_type == &UserTransferType::TransferFrom,
             solution_fee_bps,
             solution_fee_receiver,
+            fee_on_input_token,
             encoded_solution.swaps,
         )
             .abi_encode()

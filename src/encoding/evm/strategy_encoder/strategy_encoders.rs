@@ -77,7 +77,11 @@ impl SingleSwapStrategyEncoder {
 }
 
 impl StrategyEncoder for SingleSwapStrategyEncoder {
-    fn encode_strategy(&self, solution: &Solution) -> Result<EncodedSolution, EncodingError> {
+    fn encode_strategy(
+        &self,
+        solution: &Solution,
+        fee_on_input_token: bool,
+    ) -> Result<EncodedSolution, EncodingError> {
         let grouped_swaps = group_swaps(&solution.swaps);
         let number_of_groups = grouped_swaps.len();
         if number_of_groups != 1 {
@@ -111,8 +115,12 @@ impl StrategyEncoder for SingleSwapStrategyEncoder {
                 ))
             })?;
 
-        // Final swap always goes to router since fees are handled inline
-        let swap_receiver = self.router_address.clone();
+        // If fees are on input, send output directly to receiver; otherwise to router
+        let swap_receiver = if fee_on_input_token {
+            solution.receiver.clone()
+        } else {
+            self.router_address.clone()
+        };
 
         let transfer = self
             .transfer_optimization
@@ -239,7 +247,11 @@ impl SequentialSwapStrategyEncoder {
 }
 
 impl StrategyEncoder for SequentialSwapStrategyEncoder {
-    fn encode_strategy(&self, solution: &Solution) -> Result<EncodedSolution, EncodingError> {
+    fn encode_strategy(
+        &self,
+        solution: &Solution,
+        fee_on_input_token: bool,
+    ) -> Result<EncodedSolution, EncodingError> {
         self.sequential_swap_validator
             .validate_swap_path(
                 &solution.swaps,
@@ -262,6 +274,7 @@ impl StrategyEncoder for SequentialSwapStrategyEncoder {
 
         let mut swaps = vec![];
         let mut next_in_between_swap_optimization_allowed = true;
+        let is_last_swap_index = grouped_swaps.len() - 1;
         for (i, grouped_swap) in grouped_swaps.iter().enumerate() {
             let protocol = &grouped_swap.protocol_system;
             let swap_encoder = self
@@ -274,9 +287,10 @@ impl StrategyEncoder for SequentialSwapStrategyEncoder {
 
             let in_between_swap_optimization_allowed = next_in_between_swap_optimization_allowed;
             let next_swap = grouped_swaps.get(i + 1);
+            let is_last_swap = i == is_last_swap_index;
             let (swap_receiver, next_swap_optimization) = self
                 .transfer_optimization
-                .get_receiver(&solution.receiver, next_swap, unwrap)?;
+                .get_receiver(&solution.receiver, next_swap, unwrap, is_last_swap, fee_on_input_token)?;
             next_in_between_swap_optimization_allowed = next_swap_optimization;
 
             let transfer = self
@@ -421,7 +435,11 @@ impl SplitSwapStrategyEncoder {
 }
 
 impl StrategyEncoder for SplitSwapStrategyEncoder {
-    fn encode_strategy(&self, solution: &Solution) -> Result<EncodedSolution, EncodingError> {
+    fn encode_strategy(
+        &self,
+        solution: &Solution,
+        fee_on_input_token: bool,
+    ) -> Result<EncodedSolution, EncodingError> {
         self.split_swap_validator
             .validate_split_percentages(&solution.swaps)?;
         self.split_swap_validator
@@ -476,6 +494,13 @@ impl StrategyEncoder for SplitSwapStrategyEncoder {
             tokens.push(&solution.checked_token);
         }
 
+        // Determine the final output token for split swaps
+        let final_output_token = if unwrap {
+            &self.wrapped_address
+        } else {
+            &solution.checked_token
+        };
+
         let mut swaps = vec![];
         for grouped_swap in grouped_swaps.iter() {
             let protocol = &grouped_swap.protocol_system;
@@ -487,8 +512,13 @@ impl StrategyEncoder for SplitSwapStrategyEncoder {
                     ))
                 })?;
 
-            // Final swap always goes to router since fees are handled inline
-            let swap_receiver = self.router_address.clone();
+            // If fees are on input and this swap outputs the final token, send directly to receiver
+            let is_final_swap = &grouped_swap.token_out == final_output_token;
+            let swap_receiver = if fee_on_input_token && is_final_swap {
+                solution.receiver.clone()
+            } else {
+                self.router_address.clone()
+            };
             let transfer = self
                 .transfer_optimization
                 .get_transfers(grouped_swap, &solution.given_token, wrap, false);

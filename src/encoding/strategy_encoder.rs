@@ -13,10 +13,16 @@ pub trait StrategyEncoder {
     /// # Arguments
     /// * `solution` - The `Solution` to encode, containing swap details, amounts, and execution
     ///   path
+    /// * `fee_on_input_token` - If true, fees are taken on the input token, allowing the final
+    ///   swap to send output directly to the receiver as an optimization
     ///
     /// # Returns
     /// * `Result<EncodedSwaps, EncodingError>`
-    fn encode_strategy(&self, solution: &Solution) -> Result<EncodedSolution, EncodingError>;
+    fn encode_strategy(
+        &self,
+        solution: &Solution,
+        fee_on_input_token: bool,
+    ) -> Result<EncodedSolution, EncodingError>;
 
     /// Retrieves the swap encoder for a specific protocol system.
     ///

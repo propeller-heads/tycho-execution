@@ -91,8 +91,23 @@ impl TychoRouterEncoder {
         })
     }
 
-    fn encode_solution(&self, solution: &Solution) -> Result<EncodedSolution, EncodingError> {
+    fn encode_solution(&self, solution: &Solution) -> Result<(EncodedSolution, bool), EncodingError> {
         self.validate_solution(solution)?;
+
+        // Determine if fee should be taken on input token
+        // Fee is taken on input if the first swap is NOT optimized (doesn't require in-transfer)
+        // This means funds are expected to be in the router, so we take fees before swapping
+        //
+        // TODO: When fees are on input, we could potentially optimize by setting the receiver
+        // of the final swap to be the actual receiver instead of the router. This would require
+        // bypassing vault accounting for that final transfer, which needs careful consideration.
+        let fee_on_input_token = if let Some(first_swap) = solution.swaps.first() {
+            let first_protocol = &first_swap.component.protocol_system;
+            !IN_TRANSFER_REQUIRED_PROTOCOLS.contains(first_protocol.as_str())
+        } else {
+            false
+        };
+
         let protocols: HashSet<String> = solution
             .swaps
             .iter()
@@ -110,17 +125,17 @@ impl TychoRouterEncoder {
                     .all(|swap| swap.split == 0.0))
         {
             self.single_swap_strategy
-                .encode_strategy(solution)?
+                .encode_strategy(solution, fee_on_input_token)?
         } else if solution
             .swaps
             .iter()
             .all(|swap| swap.split == 0.0)
         {
             self.sequential_swap_strategy
-                .encode_strategy(solution)?
+                .encode_strategy(solution, fee_on_input_token)?
         } else {
             self.split_swap_strategy
-                .encode_strategy(solution)?
+                .encode_strategy(solution, fee_on_input_token)?
         };
 
         if let Some(permit2) = &self.permit2 {
@@ -132,7 +147,7 @@ impl TychoRouterEncoder {
             )?;
             encoded_solution.permit = Some(permit);
         }
-        Ok(encoded_solution)
+        Ok((encoded_solution, fee_on_input_token))
     }
 }
 
@@ -143,7 +158,7 @@ impl TychoEncoder for TychoRouterEncoder {
     ) -> Result<Vec<EncodedSolution>, EncodingError> {
         let mut result: Vec<EncodedSolution> = Vec::new();
         for solution in solutions.iter() {
-            let encoded_solution = self.encode_solution(solution)?;
+            let (encoded_solution, _fee_on_input) = self.encode_solution(solution)?;
             result.push(encoded_solution);
         }
         Ok(result)
@@ -155,7 +170,7 @@ impl TychoEncoder for TychoRouterEncoder {
     ) -> Result<Vec<Transaction>, EncodingError> {
         let mut transactions: Vec<Transaction> = Vec::new();
         for solution in solutions.iter() {
-            let encoded_solution = self.encode_solution(solution)?;
+            let (encoded_solution, fee_on_input_token) = self.encode_solution(solution)?;
 
             let transaction = encode_tycho_router_call(
                 self.chain.id(),
@@ -164,6 +179,7 @@ impl TychoEncoder for TychoRouterEncoder {
                 &self.user_transfer_type,
                 &self.chain.native_token().address,
                 self.signer.clone(),
+                fee_on_input_token,
             )?;
 
             transactions.push(transaction);
