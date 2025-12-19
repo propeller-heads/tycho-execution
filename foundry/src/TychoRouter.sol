@@ -127,6 +127,20 @@ contract TychoRouter is
     }
 
     /**
+     * @dev Override supportsInterface to resolve conflict between AccessControl and ERC6909
+     */
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(AccessControl, TychoVault)
+        returns (bool)
+    {
+        return AccessControl.supportsInterface(interfaceId)
+            || TychoVault.supportsInterface(interfaceId);
+    }
+
+    /**
      * @notice Executes a swap operation based on a predefined swap graph, supporting internal token amount splits.
      *         This function enables multi-step swaps, optional ETH wrapping/unwrapping, and validates the output amount
      *         against a user-specified minimum.
