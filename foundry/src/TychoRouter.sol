@@ -113,7 +113,7 @@ contract TychoRouter is
         internal
         override
     {
-        _debitUserVaultBalance(user, token, amount);
+        _debitUserVault(user, token, amount);
     }
 
     /**

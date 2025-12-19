@@ -180,7 +180,7 @@ abstract contract TychoVault is IERC6909, ReentrancyGuard {
      * @dev Internal helper to debit user's vault balance
      * @notice Now writes to transient storage instead of persistent storage
      */
-    function _debitUserVaultBalance(address user, address token, uint256 amount)
+    function _debitUserVault(address user, address token, uint256 amount)
         internal
     {
         if (amount == 0) return;

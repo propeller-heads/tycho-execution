@@ -60,7 +60,7 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
         if (solutionFeeBps > 0) {
             uint256 solutionFee = (amountOut * solutionFeeBps) / 10000;
             amountOut -= solutionFee;
-            _debitUserVaultBalance(msg.sender, token, solutionFee);
+            _debitUserVault(msg.sender, token, solutionFee);
             _creditUserVault(solutionFeeReceiver, token, solutionFee);
         }
 
@@ -68,7 +68,7 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
         if (routerFeeBps > 0) {
             uint256 routerFee = (amountOut * routerFeeBps) / 10000;
             amountOut -= routerFee;
-            _debitUserVaultBalance(msg.sender, token, routerFee);
+            _debitUserVault(msg.sender, token, routerFee);
             _creditUserVault(routerFeeReceiver, token, routerFee);
         }
 
