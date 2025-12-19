@@ -73,7 +73,8 @@ contract RestrictTransferFrom {
         TransferFromSender,
         TransferFromVault,
         FundsAlreadyInProtocol,
-        ProtocolWillDebit
+        ProtocolWillDebit,
+        ProtocolWillDebitFromVault
     }
 
     /**
@@ -119,6 +120,9 @@ contract RestrictTransferFrom {
             bool isPermit2;
             address sender;
             uint256 amountAllowed;
+            // TODO double check if we still need this logic.
+            //  If yes - add to the cases below where needed.
+            //  If not - remove it.
             assembly {
                 tokenInStorage := tload(_TOKEN_IN_SLOT)
                 amountAllowed := tload(_AMOUNT_ALLOWED_SLOT)
@@ -138,6 +142,9 @@ contract RestrictTransferFrom {
             amountAllowed -= amount;
             assembly {
                 tstore(_AMOUNT_ALLOWED_SLOT, amountAllowed)
+            }
+            if (receiver == address(this)) {
+              _updateDeltaAccounting(sender, tokenIn, int256(amount));
             }
             if (isPermit2) {
                 // Permit2.permit is already called from the TychoRouter
@@ -164,16 +171,17 @@ contract RestrictTransferFrom {
                 IERC20(tokenIn).safeTransfer(receiver, amount);
             }
         } else if (transferType == TransferType.ProtocolWillDebit) {
-            address sender;
-            assembly {
-                sender := tload(_SENDER_SLOT)
-            }
-            // Debit the actual vault balance (persistent storage)
-            _debitPersistentVault(sender, tokenIn, amount);
-
             // Credit the delta accounting (funds are now at the router) - positive amount to credit
-            _updateDeltaAccounting(sender, tokenIn, int256(amount));
-
+            _updateDeltaAccounting(sender, tokenIn, -int256(amount));
+            // Protocol will pull funds from router via transferFrom
+            // We don't transfer here, protocol does that
+        } else if (transferType == TransferType.ProtocolWillDebitFromVault) {
+            // TODO update the encoding to encode this type if Curve or Balancer is the
+            //  first swap in the swap sequence.
+            // Debit the actual vault balance (persistent storage)
+            _debitPersistentVault(sender, tokenIn, int256(amount));
+            // We don't credit the delta accounting since the funds land directly in
+            // the protocol and don't pass through out router.
             // Protocol will pull funds from router via transferFrom
             // We don't transfer here, protocol does that
         } else if (transferType == TransferType.FundsAlreadyInProtocol) {
