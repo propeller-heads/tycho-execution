@@ -120,9 +120,9 @@ contract RestrictTransferFrom {
             bool isPermit2;
             address sender;
             uint256 amountAllowed;
-            // TODO double check if we still need this logic.
-            //  If yes - add to the cases below where needed.
-            //  If not - remove it.
+            // TODO double check this logic and add to the cases below where needed.
+            //  This is still relevant to prevent badly encoded split swaps from taking
+            //  more than the input amount out of the user's vault.
             assembly {
                 tokenInStorage := tload(_TOKEN_IN_SLOT)
                 amountAllowed := tload(_AMOUNT_ALLOWED_SLOT)
