@@ -100,6 +100,6 @@ mod tests {
         let result = manager
             .approval_needed(token, owner, spender)
             .unwrap();
-        assert_eq!(result, !expected);
+        assert_eq!(result, expected);
     }
 }
