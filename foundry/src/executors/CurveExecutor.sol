@@ -125,17 +125,17 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
 
         uint256 amountOut = balanceAfter - balanceBefore;
 
+        uint256 castRemainderWei = 0;
+
         if (receiver != address(this)) {
             if (tokenOut == nativeToken) {
                 Address.sendValue(payable(receiver), amountOut);
             } else {
                 IERC20(tokenOut).safeTransfer(receiver, amountOut);
             }
-        }
-
-        uint256 castRemainderWei = 0;
         if (tokenOut == STETH_ADDR) {
             castRemainderWei = IERC20(STETH_ADDR).balanceOf(address(this));
+            }
         }
 
         uint256 amountOutFinal = amountOut - castRemainderWei;
