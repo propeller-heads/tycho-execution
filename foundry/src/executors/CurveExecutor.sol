@@ -9,6 +9,9 @@ import {RestrictTransferFrom} from "../RestrictTransferFrom.sol";
 error CurveExecutor__AddressZero();
 error CurveExecutor__InvalidDataLength();
 
+address constant STETH_ADDR =
+    address(0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84);
+
 interface CryptoPool {
     // slither-disable-next-line naming-convention
     function exchange(uint256 i, uint256 j, uint256 dx, uint256 min_dy)
@@ -49,6 +52,19 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
         nativeToken = _nativeToken;
     }
 
+    function _getBalanceWithStEthHandling(address tokenOut)
+        internal
+        returns (uint256)
+    {
+        uint256 balance;
+        if (tokenOut == STETH_ADDR) {
+            balance = IERC20(STETH_ADDR).balanceOf(address(this));
+        } else {
+            balance = _balanceOf(tokenOut);
+        }
+        return balance;
+    }
+
     // slither-disable-next-line locked-ether
     function swap(uint256 amountIn, bytes calldata data)
         external
@@ -78,7 +94,8 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
         _transfer(address(this), transferType, tokenIn, amountIn);
 
         /// Inspired by Curve's router contract: https://github.com/curvefi/curve-router-ng/blob/9ab006ca848fc7f1995b6fbbecfecc1e0eb29e2a/contracts/Router.vy#L44
-        uint256 balanceBefore = _balanceOf(tokenOut);
+
+        uint256 balanceBefore = _getBalanceWithStEthHandling(tokenOut);
 
         uint256 ethAmount = 0;
         if (tokenIn == nativeToken) {
@@ -104,8 +121,11 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
             }
         }
 
-        uint256 balanceAfter = _balanceOf(tokenOut);
+        uint256 balanceAfter = _getBalanceWithStEthHandling(tokenOut);
+
         uint256 amountOut = balanceAfter - balanceBefore;
+
+        uint256 castRemainderWei = 0;
 
         if (receiver != address(this)) {
             if (tokenOut == nativeToken) {
@@ -113,8 +133,14 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
             } else {
                 IERC20(tokenOut).safeTransfer(receiver, amountOut);
             }
+            if (tokenOut == STETH_ADDR) {
+                castRemainderWei = IERC20(STETH_ADDR).balanceOf(address(this));
+            }
         }
-        return amountOut;
+
+        uint256 amountOutFinal = amountOut - castRemainderWei;
+
+        return amountOutFinal;
     }
 
     function _decodeData(bytes calldata data)
