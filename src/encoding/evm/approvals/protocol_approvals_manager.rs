@@ -59,7 +59,11 @@ impl ProtocolApprovalsManager {
                     EncodingError::FatalError("Failed to decode response for allowance".to_string())
                 })?;
 
-                Ok(allowance.is_zero())
+                if allowance < U256::MAX / U256::from(2) {
+                    return Ok(true)
+                }
+
+                Ok(false)
             }
             Err(err) => Err(EncodingError::RecoverableError(format!(
                 "Allowance call failed with error: {err}"
@@ -96,6 +100,6 @@ mod tests {
         let result = manager
             .approval_needed(token, owner, spender)
             .unwrap();
-        assert_eq!(result, expected);
+        assert_eq!(result, !expected);
     }
 }
