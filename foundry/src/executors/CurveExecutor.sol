@@ -52,6 +52,19 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
         nativeToken = _nativeToken;
     }
 
+    function _getBalanceWithStEthHandling(address tokenOut)
+        internal
+        returns (uint256)
+    {
+        uint256 balance;
+        if (tokenOut == STETH_ADDR) {
+            balance = IERC20(STETH_ADDR).balanceOf(address(this));
+        } else {
+            balance = _balanceOf(tokenOut);
+        }
+        return balance;
+    }
+
     // slither-disable-next-line locked-ether
     function swap(uint256 amountIn, bytes calldata data)
         external
@@ -82,18 +95,7 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
 
         /// Inspired by Curve's router contract: https://github.com/curvefi/curve-router-ng/blob/9ab006ca848fc7f1995b6fbbecfecc1e0eb29e2a/contracts/Router.vy#L44
 
-        bool token_out_is_stETH = false;
-        if (tokenOut == STETH_ADDR) {
-            token_out_is_stETH = true;
-        }
-
-        uint256 balanceBefore;
-
-        if (token_out_is_stETH) {
-            balanceBefore = IERC20(STETH_ADDR).balanceOf(address(this));
-        } else {
-            balanceBefore = _balanceOf(tokenOut);
-        }
+        uint256 balanceBefore = _getBalanceWithStEthHandling(tokenOut);
 
         uint256 ethAmount = 0;
         if (tokenIn == nativeToken) {
@@ -119,13 +121,7 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
             }
         }
 
-        uint256 balanceAfter;
-
-        if (token_out_is_stETH) {
-            balanceAfter = IERC20(STETH_ADDR).balanceOf(address(this));
-        } else {
-            balanceAfter = _balanceOf(tokenOut);
-        }
+        uint256 balanceAfter = _getBalanceWithStEthHandling(tokenOut);
 
         uint256 amountOut = balanceAfter - balanceBefore;
 
@@ -138,7 +134,7 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
         }
 
         uint256 castRemainderWei = 0;
-        if (token_out_is_stETH) {
+        if (tokenOut == STETH_ADDR) {
             castRemainderWei = IERC20(STETH_ADDR).balanceOf(address(this));
         }
 
