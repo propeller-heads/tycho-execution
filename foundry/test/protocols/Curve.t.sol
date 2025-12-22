@@ -134,11 +134,8 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
 
         uint256 amountOut = curveExecutorExposed.swap(amountIn, data);
 
-        assertEq(amountOut, 1001072414418410897);
-        assertEq(
-            IERC20(STETH_ADDR).balanceOf(ALICE),
-            amountOut - 1 // there is something weird in this pool, but won't investigate for now because we don't currently support it in the simulation
-        );
+        assertEq(amountOut, 1001072414418410896);
+        assertEq(IERC20(STETH_ADDR).balanceOf(ALICE), amountOut);
     }
 
     function testTricrypto2Pool() public {
