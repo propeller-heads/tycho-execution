@@ -5,10 +5,12 @@ import "@interfaces/IExecutor.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import {RestrictTransferFrom} from "../RestrictTransferFrom.sol";
-import {Constants} from "../../test/Constants.sol";
 
 error CurveExecutor__AddressZero();
 error CurveExecutor__InvalidDataLength();
+
+address constant STETH_ADDR =
+    address(0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84);
 
 interface CryptoPool {
     // slither-disable-next-line naming-convention
@@ -36,7 +38,7 @@ interface CryptoPoolETH {
     // slither-disable-end naming-convention
 }
 
-contract CurveExecutor is IExecutor, RestrictTransferFrom, Constants {
+contract CurveExecutor is IExecutor, RestrictTransferFrom {
     using SafeERC20 for IERC20;
 
     address public immutable nativeToken;
