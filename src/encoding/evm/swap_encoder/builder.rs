@@ -125,6 +125,11 @@ impl SwapEncoderBuilder {
             "lido" => {
                 Ok(Box::new(LidoSwapEncoder::new(self.executor_address, self.chain, self.config)?))
             }
+            "velodrome_slipstreams" => Ok(Box::new(SlipstreamsSwapEncoder::new(
+                self.executor_address,
+                self.chain,
+                self.config,
+            )?)),
             _ => Err(EncodingError::FatalError(format!(
                 "Unknown protocol system: {}",
                 self.protocol_system
