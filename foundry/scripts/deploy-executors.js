@@ -194,6 +194,21 @@ const executors_to_deploy = {
                 "0x000000000022D473030F116dDEE9F6B43aC78BA3"
             ]
         },
+        // Args: ETH address in curve pools, Permit2
+        {
+            exchange: "CurveExecutor", args: [
+                "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+                "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+            ]
+        },
+        // Aerodrome Slipstreams - Args: Old Factory, New Factory, Permit2
+        {
+            exchange: "SlipstreamsExecutor", args: [
+                "0x04625b046c69577efc40e6c0bb83cdbafab5a55f",
+                "0x04625b046c69577efc40e6c0bb83cdbafab5a55f", // There is no new factory yet
+                "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+            ]
+        },
     ],
 }
 
