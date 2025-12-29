@@ -1,3 +1,10 @@
+## [0.146.0](https://github.com/propeller-heads/tycho-execution/compare/0.145.0...0.146.0) (2025-12-29)
+
+
+### Features
+
+* deploy executors for Velodrome Slipstreams and Curve on Unichain ([1b3b071](https://github.com/propeller-heads/tycho-execution/commit/1b3b07108055467f1430c4aedd2d3ba5623dc12f))
+
 ## [0.145.0](https://github.com/propeller-heads/tycho-execution/compare/0.144.1...0.145.0) (2025-12-15)
 
 
