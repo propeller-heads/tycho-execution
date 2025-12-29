@@ -1,3 +1,10 @@
+## [0.147.0](https://github.com/propeller-heads/tycho-execution/compare/0.146.0...0.147.0) (2025-12-29)
+
+
+### Features
+
+* add native token address for Curve on Unichain ([b63cd49](https://github.com/propeller-heads/tycho-execution/commit/b63cd49e46be193b5b7b8f3336f09116941c09cf))
+
 ## [0.146.0](https://github.com/propeller-heads/tycho-execution/compare/0.145.0...0.146.0) (2025-12-29)
 
 
