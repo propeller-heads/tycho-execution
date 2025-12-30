@@ -1,3 +1,10 @@
+## [0.148.0](https://github.com/propeller-heads/tycho-execution/compare/0.147.0...0.148.0) (2025-12-30)
+
+
+### Features
+
+* Add Unichain curve factory addresses to CurveSwapEncoder ([08ac8b0](https://github.com/propeller-heads/tycho-execution/commit/08ac8b01ad7b18df970777c16f79907f0a807a8f))
+
 ## [0.147.0](https://github.com/propeller-heads/tycho-execution/compare/0.146.0...0.147.0) (2025-12-29)
 
 
