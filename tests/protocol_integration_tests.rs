@@ -76,6 +76,72 @@ fn test_single_encoding_strategy_ekubo() {
 }
 
 #[test]
+fn test_single_encoding_strategy_ekubo_v3() {
+    //   ETH ──(EKUBO)──> USDC
+
+    let token_in = eth();
+    let token_out = usdc(); // USDC
+
+    let static_attributes = HashMap::from([
+        ("fee".to_string(), Bytes::from(0_u64)),
+        ("pool_type_config".to_string(), Bytes::from(0_u32)),
+        // TODO
+        ("extension".to_string(), Bytes::from("0x0000000000000000000000000000000000000000")), /* Oracle */
+    ]);
+
+    let component = ProtocolComponent {
+        // All Ekubo swaps go through the core contract - not necessary to specify pool
+        // id for test
+        protocol_system: "ekubo_v3".to_string(),
+        static_attributes,
+        ..Default::default()
+    };
+
+    let swap = Swap {
+        component,
+        token_in: token_in.clone(),
+        token_out: token_out.clone(),
+        split: 0f64,
+        user_data: None,
+        protocol_state: None,
+        estimated_amount_in: None,
+    };
+
+    let encoder = get_tycho_router_encoder(UserTransferType::TransferFrom);
+
+    let solution = Solution {
+        exact_out: false,
+        given_token: token_in,
+        given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
+        checked_token: token_out,
+        checked_amount: BigUint::from_str("1000").unwrap(),
+        // Alice
+        sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
+        receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
+        swaps: vec![swap],
+        ..Default::default()
+    };
+
+    let encoded_solution = encoder
+        .encode_solutions(vec![solution.clone()])
+        .unwrap()[0]
+        .clone();
+
+    let calldata = encode_tycho_router_call(
+        eth_chain().id(),
+        encoded_solution,
+        &solution,
+        &UserTransferType::TransferFrom,
+        &eth(),
+        None,
+    )
+    .unwrap()
+    .data;
+    let hex_calldata = encode(&calldata);
+    write_calldata_to_file("test_single_encoding_strategy_ekubo_v3", hex_calldata.as_str());
+}
+
+#[test]
 fn test_single_encoding_strategy_maverick() {
     // GHO -> (maverick) -> USDC
     let maverick_pool = ProtocolComponent {

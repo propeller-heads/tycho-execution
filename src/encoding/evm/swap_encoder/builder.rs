@@ -6,9 +6,9 @@ use crate::encoding::{
     errors::EncodingError,
     evm::swap_encoder::swap_encoders::{
         BalancerV2SwapEncoder, BalancerV3SwapEncoder, BebopSwapEncoder, CurveSwapEncoder,
-        ERC4626SwapEncoder, EkuboSwapEncoder, FluidV1SwapEncoder, HashflowSwapEncoder,
-        LidoSwapEncoder, MaverickV2SwapEncoder, RocketpoolSwapEncoder, SlipstreamsSwapEncoder,
-        UniswapV2SwapEncoder, UniswapV3SwapEncoder, UniswapV4SwapEncoder,
+        ERC4626SwapEncoder, EkuboSwapEncoder, EkuboV3SwapEncoder, FluidV1SwapEncoder,
+        HashflowSwapEncoder, LidoSwapEncoder, MaverickV2SwapEncoder, RocketpoolSwapEncoder,
+        SlipstreamsSwapEncoder, UniswapV2SwapEncoder, UniswapV3SwapEncoder, UniswapV4SwapEncoder,
     },
     swap_encoder::SwapEncoder,
 };
@@ -81,6 +81,11 @@ impl SwapEncoderBuilder {
             "ekubo_v2" => {
                 Ok(Box::new(EkuboSwapEncoder::new(self.executor_address, self.chain, self.config)?))
             }
+            "ekubo_v3" => Ok(Box::new(EkuboV3SwapEncoder::new(
+                self.executor_address,
+                self.chain,
+                self.config,
+            )?)),
             "vm:curve" => {
                 Ok(Box::new(CurveSwapEncoder::new(self.executor_address, self.chain, self.config)?))
             }

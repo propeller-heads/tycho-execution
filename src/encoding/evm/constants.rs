@@ -23,6 +23,7 @@ pub static GROUPABLE_PROTOCOLS: LazyLock<HashSet<&'static str>> = LazyLock::new(
     set.insert("uniswap_v4_hooks");
     set.insert("vm:balancer_v3");
     set.insert("ekubo_v2");
+    set.insert("ekubo_v3");
     set
 });
 
@@ -39,6 +40,7 @@ pub static IN_TRANSFER_REQUIRED_PROTOCOLS: LazyLock<HashSet<&'static str>> = Laz
     set.insert("uniswap_v4");
     set.insert("uniswap_v4_hooks");
     set.insert("ekubo_v2");
+    set.insert("ekubo_v3");
     set.insert("vm:maverick_v2");
     set.insert("vm:balancer_v3");
     set.insert("fluid_v1");
@@ -59,6 +61,7 @@ pub static CALLBACK_CONSTRAINED_PROTOCOLS: LazyLock<HashSet<&'static str>> = Laz
     set.insert("uniswap_v4");
     set.insert("uniswap_v4_hooks");
     set.insert("ekubo_v2");
+    set.insert("ekubo_v3");
     set.insert("vm:balancer_v3");
     set.insert("fluid_v1");
     set.insert("aerodrome_slipstreams");
