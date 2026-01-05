@@ -1,3 +1,10 @@
+## [0.148.1](https://github.com/propeller-heads/tycho-execution/compare/0.148.0...0.148.1) (2026-01-05)
+
+
+### Bug Fixes
+
+* set approval flag when allowance is below half of max ([bff9ac9](https://github.com/propeller-heads/tycho-execution/commit/bff9ac9cfcb920f5febfe39fdcb4d4dc1930e4f8))
+
 ## [0.148.0](https://github.com/propeller-heads/tycho-execution/compare/0.147.0...0.148.0) (2025-12-30)
 
 
