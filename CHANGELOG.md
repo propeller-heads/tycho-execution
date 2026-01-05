@@ -1,3 +1,24 @@
+## [0.148.0](https://github.com/propeller-heads/tycho-execution/compare/0.147.0...0.148.0) (2025-12-30)
+
+
+### Features
+
+* Add Unichain curve factory addresses to CurveSwapEncoder ([08ac8b0](https://github.com/propeller-heads/tycho-execution/commit/08ac8b01ad7b18df970777c16f79907f0a807a8f))
+
+## [0.147.0](https://github.com/propeller-heads/tycho-execution/compare/0.146.0...0.147.0) (2025-12-29)
+
+
+### Features
+
+* add native token address for Curve on Unichain ([b63cd49](https://github.com/propeller-heads/tycho-execution/commit/b63cd49e46be193b5b7b8f3336f09116941c09cf))
+
+## [0.146.0](https://github.com/propeller-heads/tycho-execution/compare/0.145.0...0.146.0) (2025-12-29)
+
+
+### Features
+
+* deploy executors for Velodrome Slipstreams and Curve on Unichain ([1b3b071](https://github.com/propeller-heads/tycho-execution/commit/1b3b07108055467f1430c4aedd2d3ba5623dc12f))
+
 ## [0.145.0](https://github.com/propeller-heads/tycho-execution/compare/0.144.1...0.145.0) (2025-12-15)
 
 
