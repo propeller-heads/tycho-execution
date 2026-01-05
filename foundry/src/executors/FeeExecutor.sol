@@ -6,9 +6,6 @@ import {TychoVault} from "../TychoVault.sol";
 
 error FeeExecutor__InvalidDataLength();
 error FeeExecutor__FeeTooHigh();
-error FeeExecutor__InsufficientVaultBalance(
-    address user, address token, uint256 required, uint256 available
-);
 
 /**
  * @title FeeExecutor
@@ -64,14 +61,6 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
 
         if (solutionFeeBps > MAX_FEE_BPS || routerFeeBps > MAX_FEE_BPS) {
             revert FeeExecutor__FeeTooHigh();
-        }
-
-        // Verify msg.sender has sufficient balance in vault
-        uint256 userVaultBalance = this.balanceOf(msg.sender, uint256(uint160(token)));
-        if (userVaultBalance < amountIn) {
-            revert FeeExecutor__InsufficientVaultBalance(
-                msg.sender, token, amountIn, userVaultBalance
-            );
         }
 
         amountOut = amountIn;
