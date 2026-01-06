@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "./interfaces/IERC6909.sol";
+import "@openzeppelin/contracts/token/ERC6909/ERC6909.sol";
 
 error TychoVault__InsufficientBalance(
     address user, address token, uint256 requested, uint256 available
@@ -22,11 +22,8 @@ error TychoVault__InvalidInputDelta(
  * Users can deposit tokens, use them for swaps, and withdraw them.
  * Leftover funds from swaps are automatically credited to user balances.
  */
-abstract contract TychoVault is IERC6909, ReentrancyGuard {
+abstract contract TychoVault is ERC6909, ReentrancyGuard {
     using SafeERC20 for IERC20;
-
-    // ERC6909 Vault storage: user => token => balance
-    mapping(address => mapping(address => uint256)) private _vaultBalances;
 
     // Transient storage slots for tracking deltas during swap sequences
     // keccak256("TychoVault#NEGATIVE_DELTA_COUNT")
@@ -58,13 +55,15 @@ abstract contract TychoVault is IERC6909, ReentrancyGuard {
             revert TychoVault__AmountZero();
         }
 
+        uint256 id = uint256(uint160(token));
+
         if (token == address(0)) {
             // Native ETH deposit
             require(msg.value == amount, "Value mismatch");
-            _vaultBalances[msg.sender][token] += amount;
+            _mint(msg.sender, id, amount);
         } else {
             // ERC20 deposit - transfer to this contract (router)
-            _vaultBalances[msg.sender][token] += amount;
+            _mint(msg.sender, id, amount);
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         }
     }
@@ -82,14 +81,15 @@ abstract contract TychoVault is IERC6909, ReentrancyGuard {
             revert TychoVault__AmountZero();
         }
 
-        uint256 balance = _vaultBalances[msg.sender][token];
+        uint256 id = uint256(uint160(token));
+        uint256 balance = balanceOf(msg.sender, id);
         if (balance < amount) {
             revert TychoVault__InsufficientBalance(
                 msg.sender, token, amount, balance
             );
         }
 
-        _vaultBalances[msg.sender][token] = balance - amount;
+        _burn(msg.sender, id, amount);
 
         // Transfer tokens from contract to user
         if (token == address(0)) {
@@ -193,13 +193,14 @@ abstract contract TychoVault is IERC6909, ReentrancyGuard {
     {
         if (amount == 0) return;
 
-        uint256 balance = _vaultBalances[user][token];
+        uint256 id = uint256(uint160(token));
+        uint256 balance = balanceOf(user, id);
         if (balance < amount) {
             revert TychoVault__InsufficientBalance(
                 user, token, amount, balance
             );
         }
-        _vaultBalances[user][token] = balance - amount;
+        _burn(user, id, amount);
     }
 
     /**
@@ -232,75 +233,19 @@ abstract contract TychoVault is IERC6909, ReentrancyGuard {
             int256 surplus = outputDelta - int256(outputAmount);
             // Only credit surplus if above dust threshold
             if (surplus > 0 && uint256(surplus) > DUST_THRESHOLD) {
-                _vaultBalances[user][outputToken] += uint256(surplus);
+                uint256 id = uint256(uint160(outputToken));
+                _mint(user, id, uint256(surplus));
             }
         }
-    }
 
-    // ============ IERC6909 Implementation ============
-    // Note: We use address cast to uint256 as the token ID
-
-    function balanceOf(address owner, uint256 id)
-        external
-        view
-        override
-        returns (uint256)
-    {
-        return _vaultBalances[owner][address(uint160(id))];
-    }
-
-    function allowance(address, address, uint256)
-        external
-        pure
-        override
-        returns (uint256)
-    {
-        // Not implemented - use standard ERC20 approvals
-        return 0;
-    }
-
-    function isOperator(address, address)
-        external
-        pure
-        override
-        returns (bool)
-    {
-        // Not implemented
-        return false;
-    }
-
-    function approve(address, uint256, uint256)
-        external
-        pure
-        override
-        returns (bool)
-    {
-        // Not implemented - use standard ERC20 approvals
-        revert("Use ERC20 approve");
-    }
-
-    function setOperator(address, bool) external pure override returns (bool) {
-        // Not implemented
-        revert("Not implemented");
-    }
-
-    function transfer(address, uint256, uint256)
-        external
-        pure
-        override
-        returns (bool)
-    {
-        // Not implemented - vault balances are not transferable between users
-        revert("Vault transfers not supported");
-    }
-
-    function transferFrom(
-        address sender,
-        address receiver,
-        uint256 id,
-        uint256 amount
-    ) external pure override returns (bool) {
-        // Not implemented - use standard ERC20 transferFrom
-        revert("Use ERC20 transferFrom");
+        // Also settle router's delta (from fees) to persistent vault
+        // Router's delta should be fully credited since it's not being sent to receiver
+        if (user != address(this)) {
+            int256 routerDelta = _getTDelta(address(this), outputToken);
+            if (routerDelta > 0 && uint256(routerDelta) > DUST_THRESHOLD) {
+                uint256 id = uint256(uint160(outputToken));
+                _mint(address(this), id, uint256(routerDelta));
+            }
+        }
     }
 }

@@ -33,6 +33,19 @@ import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 contract TychoRouterExposed is TychoRouter {
     constructor(address _permit2, address weth) TychoRouter(_permit2, weth) {}
 
+    /**
+     * @dev Override to resolve multiple inheritance
+     * Combines AccessControl and ERC6909 interface support
+     */
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(TychoRouter)
+        returns (bool)
+    {
+        return TychoRouter.supportsInterface(interfaceId);
+    }
+
     function wrapETH(uint256 amount) external payable {
         return _wrapETH(amount);
     }

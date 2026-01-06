@@ -7,6 +7,7 @@ import "../lib/bytes/LibPrefixLengthEncodedByteArray.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC6909/ERC6909.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -126,6 +127,20 @@ contract TychoRouter is
         override(RestrictTransferFrom, TychoVault)
     {
         super._debitPersistentVault(user, token, amount);
+    }
+
+    /**
+     * @dev Override to resolve multiple inheritance
+     * Combines AccessControl and ERC6909 (via TychoVault) interface support
+     */
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(AccessControl, ERC6909)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
     }
 
     /**
