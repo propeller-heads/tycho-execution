@@ -25,6 +25,9 @@ error TychoVault__InvalidInputDelta(
 abstract contract TychoVault is ERC6909, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
+    // Vault balances - using our own mapping to avoid expensive Transfer events from ERC6909
+    mapping(address => mapping(uint256 => uint256)) private _vaultBalances;
+
     // Transient storage slots for tracking deltas during swap sequences
     // keccak256("TychoVault#NEGATIVE_DELTA_COUNT")
     uint256 private constant _NEGATIVE_DELTA_COUNT_SLOT =
@@ -38,6 +41,38 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
     event VaultWithdrawal(
         address indexed user, address indexed token, uint256 amount
     );
+
+    /**
+     * @dev Override balanceOf to use our own mapping instead of ERC6909's
+     * This avoids expensive Transfer events on _mint and _burn
+     */
+    function balanceOf(address owner, uint256 id)
+        public
+        view
+        virtual
+        override
+        returns (uint256)
+    {
+        return _vaultBalances[owner][id];
+    }
+
+    /**
+     * @dev Override _update to use our own mapping and avoid emitting Transfer events
+     * This is called by all balance-changing operations (transfer, approve, etc.)
+     */
+    function _update(address from, address to, uint256 id, uint256 amount)
+        internal
+        virtual
+        override
+    {
+        if (from != address(0)) {
+            _vaultBalances[from][id] -= amount;
+        }
+        if (to != address(0)) {
+            _vaultBalances[to][id] += amount;
+        }
+        // Note: We intentionally do NOT emit Transfer events to save gas
+    }
 
     // ============ ERC6909 Vault Functions ============
 
