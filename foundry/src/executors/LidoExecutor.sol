@@ -56,9 +56,8 @@ contract LidoExecutor is IExecutor, RestrictTransferFrom {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
-        address receiver;
         TransferType transferType;
         LidoPoolType pool;
         LidoPoolDirection direction;
@@ -81,6 +80,7 @@ contract LidoExecutor is IExecutor, RestrictTransferFrom {
 
             uint256 balanceAfter = stETH.balanceOf(address(this));
             calculatedAmount = balanceAfter - balanceBefore;
+            tokenOut = stETHAddress;
 
             // submit() sends stETH to this contract, transfer to receiver if needed
             if (receiver != address(this)) {
@@ -103,6 +103,7 @@ contract LidoExecutor is IExecutor, RestrictTransferFrom {
                 stETH.forceApprove(wstETH, type(uint256).max - 1);
             }
             calculatedAmount = LidoWrappedPool(wstETH).wrap(givenAmount);
+            tokenOut = wstETH;
 
             if (receiver != address(this)) {
                 IERC20(wstETH).safeTransfer(receiver, calculatedAmount);
@@ -113,6 +114,7 @@ contract LidoExecutor is IExecutor, RestrictTransferFrom {
             // wstETH unwrapping: wstETH -> stETH
             _transfer(address(this), transferType, wstETH, givenAmount);
             calculatedAmount = LidoWrappedPool(wstETH).unwrap(givenAmount);
+            tokenOut = stETHAddress;
             if (receiver != address(this)) {
                 uint256 receiverBalanceBefore = stETH.balanceOf(receiver);
                 stETH.safeTransfer(receiver, calculatedAmount);

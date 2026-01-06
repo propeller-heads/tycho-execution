@@ -61,7 +61,7 @@ contract EkuboExecutorTest is Constants, TestUtils {
         );
 
         uint256 gasBefore = gasleft();
-        uint256 amountOut = executor.swap(amountIn, data);
+        (uint256 amountOut, address tokenOut, address receiver) = executor.swap(amountIn, data);
         console.log(gasBefore - gasleft());
 
         console.log(amountOut);
@@ -98,7 +98,7 @@ contract EkuboExecutorTest is Constants, TestUtils {
         );
 
         uint256 gasBefore = gasleft();
-        uint256 amountOut = executor.swap(amountIn, data);
+        (uint256 amountOut, address tokenOut, address receiver) = executor.swap(amountIn, data);
         console.log(gasBefore - gasleft());
 
         console.log(amountOut);
@@ -135,7 +135,7 @@ contract EkuboExecutorTest is Constants, TestUtils {
         );
 
         uint256 gasBefore = gasleft();
-        uint256 amountOut = executor.swap(amountIn, data);
+        (uint256 amountOut, address tokenOut, address receiver) = executor.swap(amountIn, data);
         console.log(gasBefore - gasleft());
 
         console.log(amountOut);
@@ -165,7 +165,7 @@ contract EkuboExecutorTest is Constants, TestUtils {
         uint256 usdtBalanceBeforeExecutor = USDT.balanceOf(address(executor));
 
         uint256 gasBefore = gasleft();
-        uint256 amountOut = executor.swap(amountIn, data);
+        (uint256 amountOut, address tokenOut, address receiver) = executor.swap(amountIn, data);
         console.log(gasBefore - gasleft());
 
         console.log(amountOut);

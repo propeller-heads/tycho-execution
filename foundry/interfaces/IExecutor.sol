@@ -9,7 +9,8 @@ interface IExecutor {
     /**
      * @notice Performs a swap on a liquidity pool.
      * @dev This method takes the amount of the input token and returns the amount of
-     * the output token which has been swapped.
+     * the output token which has been swapped, along with the output token address
+     * and the receiver address where tokens were sent.
      *
      * Note Part of the informal interface is that the executor supports sending the received
      *  tokens to a receiver address. If the underlying smart contract does not provide this
@@ -19,11 +20,13 @@ interface IExecutor {
      * @param data Data that holds information necessary to perform the swap.
      * @return calculatedAmount The amount of the output token swapped, depending on
      * the givenAmount inputted.
+     * @return tokenOut The address of the output token.
+     * @return receiver The address where the output tokens were sent.
      */
     function swap(
         uint256 givenAmount,
         bytes calldata data
-    ) external payable returns (uint256 calculatedAmount);
+    ) external payable returns (uint256 calculatedAmount, address tokenOut, address receiver);
 }
 
 interface IExecutorErrors {

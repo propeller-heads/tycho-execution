@@ -25,16 +25,22 @@ contract BalancerV2Executor is IExecutor, RestrictTransferFrom {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
+        IERC20 tokenIn;
+        IERC20 tokenOutIERC20;
+        bytes32 poolId;
+        bool approvalNeeded;
+        TransferType transferType;
         (
-            IERC20 tokenIn,
-            IERC20 tokenOut,
-            bytes32 poolId,
-            address receiver,
-            bool approvalNeeded,
-            TransferType transferType
+            tokenIn,
+            tokenOutIERC20,
+            poolId,
+            receiver,
+            approvalNeeded,
+            transferType
         ) = _decodeData(data);
+        tokenOut = address(tokenOutIERC20);
 
         _transfer(address(this), transferType, address(tokenIn), givenAmount);
 
@@ -47,7 +53,7 @@ contract BalancerV2Executor is IExecutor, RestrictTransferFrom {
             poolId: poolId,
             kind: IVault.SwapKind.GIVEN_IN,
             assetIn: IAsset(address(tokenIn)),
-            assetOut: IAsset(address(tokenOut)),
+            assetOut: IAsset(tokenOut),
             amount: givenAmount,
             userData: ""
         });
@@ -63,11 +69,6 @@ contract BalancerV2Executor is IExecutor, RestrictTransferFrom {
 
         calculatedAmount =
             IVault(VAULT).swap(singleSwap, funds, limit, block.timestamp);
-
-        // Credit delta accounting with the output amount of the swap
-        if (receiver == address(this)) {
-            _updateDeltaAccounting(msg.sender, address(tokenOut), int256(calculatedAmount));
-        }
     }
 
     function _decodeData(bytes calldata data)

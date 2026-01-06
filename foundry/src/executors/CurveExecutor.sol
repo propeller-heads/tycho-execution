@@ -53,22 +53,29 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
     function swap(uint256 amountIn, bytes calldata data)
         external
         payable
-        returns (uint256)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
         if (data.length != 85) {
             revert CurveExecutor__InvalidDataLength();
         }
 
+        address tokenIn;
+        address pool;
+        uint8 poolType;
+        int128 i;
+        int128 j;
+        bool approvalNeeded;
+        TransferType transferType;
         (
-            address tokenIn,
-            address tokenOut,
-            address pool,
-            uint8 poolType,
-            int128 i,
-            int128 j,
-            bool approvalNeeded,
-            TransferType transferType,
-            address receiver
+            tokenIn,
+            tokenOut,
+            pool,
+            poolType,
+            i,
+            j,
+            approvalNeeded,
+            transferType,
+            receiver
         ) = _decodeData(data);
 
         if (approvalNeeded && tokenIn != nativeToken) {
@@ -105,19 +112,15 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
         }
 
         uint256 balanceAfter = _balanceOf(tokenOut);
-        uint256 amountOut = balanceAfter - balanceBefore;
+        calculatedAmount = balanceAfter - balanceBefore;
 
         if (receiver != address(this)) {
             if (tokenOut == nativeToken) {
-                Address.sendValue(payable(receiver), amountOut);
+                Address.sendValue(payable(receiver), calculatedAmount);
             } else {
-                IERC20(tokenOut).safeTransfer(receiver, amountOut);
+                IERC20(tokenOut).safeTransfer(receiver, calculatedAmount);
             }
-        } else {
-            // Credit vault if funds stayed in router
-            _updateDeltaAccounting(msg.sender, tokenOut, int256(amountOut));
         }
-        return amountOut;
     }
 
     function _decodeData(bytes calldata data)

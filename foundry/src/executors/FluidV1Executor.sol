@@ -47,14 +47,12 @@ contract FluidV1Executor is IExecutor, ICallback, RestrictTransferFrom {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
         IFluidV1Dex dex;
         bool zero2one;
-        address receiver;
         TransferType transferType;
         bool isNativeSell;
-        address tokenOut;
 
         (dex, zero2one, receiver, transferType, isNativeSell, tokenOut) =
             _decodeData(data);
@@ -69,11 +67,6 @@ contract FluidV1Executor is IExecutor, ICallback, RestrictTransferFrom {
             calculatedAmount = dex.swapIn{value: givenAmount}(
                 zero2one, givenAmount, 0, receiver
             );
-        }
-
-        // Credit delta accounting with the output amount of the swap
-        if (receiver == address(this)) {
-            _updateDeltaAccounting(msg.sender, tokenOut, int256(calculatedAmount));
         }
     }
 

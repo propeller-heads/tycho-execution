@@ -42,16 +42,21 @@ contract UniswapV3Executor is IExecutor, ICallback, RestrictTransferFrom {
     function swap(uint256 amountIn, bytes calldata data)
         external
         payable
-        returns (uint256 amountOut)
+        returns (uint256 amountOut, address tokenOut, address receiver)
     {
+        address tokenIn;
+        uint24 fee;
+        address target;
+        bool zeroForOne;
+        TransferType transferType;
         (
-            address tokenIn,
-            address tokenOut,
-            uint24 fee,
-            address receiver,
-            address target,
-            bool zeroForOne,
-            TransferType transferType
+            tokenIn,
+            tokenOut,
+            fee,
+            receiver,
+            target,
+            zeroForOne,
+            transferType
         ) = _decodeData(data);
 
         _verifyPairAddress(tokenIn, tokenOut, fee, target);
@@ -78,11 +83,6 @@ contract UniswapV3Executor is IExecutor, ICallback, RestrictTransferFrom {
             amountOut = amount1 > 0 ? uint256(amount1) : uint256(-amount1);
         } else {
             amountOut = amount0 > 0 ? uint256(amount0) : uint256(-amount0);
-        }
-
-        // Credit delta accounting with the output amount of the swap
-        if (receiver == address(this)) {
-            _updateDeltaAccounting(msg.sender, tokenOut, int256(amountOut));
         }
     }
 

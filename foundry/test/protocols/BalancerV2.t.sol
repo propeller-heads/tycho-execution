@@ -91,7 +91,7 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
         deal(WETH_ADDR, address(balancerV2Exposed), amountIn);
         uint256 balanceBefore = BAL.balanceOf(BOB);
 
-        uint256 amountOut = balancerV2Exposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) = balancerV2Exposed.swap(amountIn, protocolData);
 
         uint256 balanceAfter = BAL.balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);
@@ -130,7 +130,7 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
         deal(WETH_ADDR, address(balancerV2Exposed), amountIn);
         uint256 balanceBefore = BAL.balanceOf(BOB);
 
-        uint256 amountOut = balancerV2Exposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) = balancerV2Exposed.swap(amountIn, protocolData);
 
         uint256 balanceAfter = BAL.balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);

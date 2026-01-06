@@ -57,13 +57,12 @@ contract EkuboExecutor is
     function swap(uint256 amountIn, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
         if (data.length < 92) revert EkuboExecutor__InvalidDataLength();
 
         // amountIn must be at most type(int128).MAX
-        calculatedAmount =
-            uint256(_lock(bytes.concat(bytes16(uint128(amountIn)), data)));
+        (calculatedAmount, tokenOut, receiver) = _lockAndSwap(bytes.concat(bytes16(uint128(amountIn)), data));
     }
 
     function handleCallback(bytes calldata raw)
@@ -113,9 +112,10 @@ contract EkuboExecutor is
         _payCallback(msg.data[36:]);
     }
 
-    function _lock(bytes memory data) internal returns (uint128 swappedAmount) {
+    function _lockAndSwap(bytes memory data) internal returns (uint256 swappedAmount, address tokenOut, address receiver) {
         address target = address(core);
 
+        uint128 swappedAmount128;
         // slither-disable-next-line assembly
         assembly ("memory-safe") {
             let args := mload(0x40)
@@ -134,7 +134,37 @@ contract EkuboExecutor is
             }
 
             returndatacopy(0, 0, 16)
-            swappedAmount := shr(128, mload(0))
+            swappedAmount128 := shr(128, mload(0))
+        }
+        swappedAmount = uint256(swappedAmount128);
+
+        // Extract receiver and tokenOut from data (same as in _locked)
+        // Use assembly since data is bytes memory
+        // slither-disable-next-line assembly
+        assembly {
+            let dataPtr := add(data, 0x20)
+            // receiver at offset 17 + 16 = 33
+            receiver := shr(96, mload(add(dataPtr, 33)))
+        }
+
+        // Calculate tokenOut from the swap path - last hop's token
+        uint256 hopsLength = (data.length - (POOL_DATA_OFFSET + 16)) / HOP_BYTE_LEN;
+        if (hopsLength == 0) {
+            // tokenIn from data at offset 37 + 16 = 53
+            // slither-disable-next-line assembly
+            assembly {
+                let dataPtr := add(data, 0x20)
+                tokenOut := shr(96, mload(add(dataPtr, 53)))
+            }
+        } else {
+            // Use assembly to load from bytes memory
+            uint256 lastHopOffset = (POOL_DATA_OFFSET + 16) + (hopsLength - 1) * HOP_BYTE_LEN;
+            // slither-disable-next-line assembly
+            assembly {
+                let dataPtr := add(data, 0x20)
+                let tokenPtr := add(dataPtr, lastHopOffset)
+                tokenOut := shr(96, mload(tokenPtr))
+            }
         }
     }
 
@@ -200,13 +230,6 @@ contract EkuboExecutor is
 
         _pay(tokenIn, tokenInDebtAmount, transferType);
         core.withdraw(nextTokenIn, receiver, uint128(nextAmountIn));
-
-        // Credit delta accounting with the output amount of the swap
-        if (receiver == address(this)) {
-            _updateDeltaAccounting(
-                msg.sender, nextTokenIn, int256(uint256(uint128(nextAmountIn)))
-            );
-        }
 
         return nextAmountIn;
     }

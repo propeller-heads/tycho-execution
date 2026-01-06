@@ -28,10 +28,9 @@ contract MaverickV2Executor is IExecutor, RestrictTransferFrom {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
         address target;
-        address receiver;
         IERC20 tokenIn;
         TransferType transferType;
 
@@ -54,12 +53,7 @@ contract MaverickV2Executor is IExecutor, RestrictTransferFrom {
         // slither-disable-next-line unused-return
         (, calculatedAmount) = pool.swap(receiver, swapParams, "");
 
-        // Credit delta accounting with the output amount of the swap
-        if (receiver == address(this)) {
-            address tokenOut =
-                isTokenAIn ? address(pool.tokenB()) : address(pool.tokenA());
-            _updateDeltaAccounting(msg.sender, tokenOut, int256(calculatedAmount));
-        }
+        tokenOut = isTokenAIn ? address(pool.tokenB()) : address(pool.tokenA());
     }
 
     function _decodeData(bytes calldata data)

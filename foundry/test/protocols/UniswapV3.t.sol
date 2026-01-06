@@ -117,7 +117,7 @@ contract UniswapV3ExecutorTest is
             RestrictTransferFrom.TransferType.TransferFromVault
         );
 
-        uint256 amountOut = uniswapV3Exposed.swap(amountIn, data);
+        (uint256 amountOut, address tokenOut, address receiver) = uniswapV3Exposed.swap(amountIn, data);
 
         assertGe(amountOut, expAmountOut);
         assertEq(IERC20(WETH_ADDR).balanceOf(address(uniswapV3Exposed)), 0);

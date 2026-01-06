@@ -50,13 +50,18 @@ contract HashflowExecutor is IExecutor, RestrictTransferFrom {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
+        IHashflowRouter.RFQTQuote memory quote;
+        bool approvalNeeded;
+        TransferType transferType;
         (
-            IHashflowRouter.RFQTQuote memory quote,
-            bool approvalNeeded,
-            TransferType transferType
+            quote,
+            approvalNeeded,
+            transferType
         ) = _decodeData(data);
+        receiver = quote.trader;
+        tokenOut = quote.quoteToken;
 
         // Slippage checks
         if (givenAmount > quote.baseTokenAmount) {
@@ -82,11 +87,6 @@ contract HashflowExecutor is IExecutor, RestrictTransferFrom {
         IHashflowRouter(hashflowRouter).tradeRFQT{value: ethValue}(quote);
         uint256 balanceAfter = _balanceOf(quote.trader, quote.quoteToken);
         calculatedAmount = balanceAfter - balanceBefore;
-
-        // Credit delta accounting with the output amount of the swap
-        if (quote.trader == address(this)) {
-            _updateDeltaAccounting(msg.sender, quote.quoteToken, int256(calculatedAmount));
-        }
     }
 
     function _decodeData(bytes calldata data)

@@ -93,7 +93,7 @@ contract LidoExecutorTest is Constants, Permit2TestHelper, TestUtils {
 
         deal(BOB, amountIn);
         vm.prank(BOB);
-        uint256 calculatedAmount =
+        (uint256 calculatedAmount, address tokenOut, address receiver) =
             LidoExposed.swap{value: amountIn}(amountIn, protocolData);
 
         uint256 finalBalance = IERC20(STETH_ADDR).balanceOf(BOB);
@@ -121,7 +121,7 @@ contract LidoExecutorTest is Constants, Permit2TestHelper, TestUtils {
             true
         );
 
-        uint256 amountOut = LidoExposed.swap(stETHAmount, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) = LidoExposed.swap(stETHAmount, protocolData);
 
         uint256 finalBalance = IERC20(WSTETH_ADDR).balanceOf(BOB);
         assertEq(amountOut, expectedAmountOut);
@@ -145,7 +145,7 @@ contract LidoExecutorTest is Constants, Permit2TestHelper, TestUtils {
             false
         );
         vm.startPrank(address(LidoExposed));
-        uint256 amountOut = LidoExposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) = LidoExposed.swap(amountIn, protocolData);
 
         uint256 finalBalance = IERC20(STETH_ADDR).balanceOf(BOB);
         assertEq(amountOut, expectedAmountOut);

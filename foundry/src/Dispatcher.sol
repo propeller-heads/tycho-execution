@@ -60,7 +60,7 @@ contract Dispatcher {
         address executor,
         uint256 amount,
         bytes calldata data
-    ) internal returns (uint256 calculatedAmount) {
+    ) internal returns (uint256 calculatedAmount, address tokenOut, address receiver) {
         if (!executors[executor]) {
             revert Dispatcher__UnapprovedExecutor(executor);
         }
@@ -89,7 +89,7 @@ contract Dispatcher {
             );
         }
 
-        calculatedAmount = abi.decode(result, (uint256));
+        (calculatedAmount, tokenOut, receiver) = abi.decode(result, (uint256, address, address));
     }
 
     /**

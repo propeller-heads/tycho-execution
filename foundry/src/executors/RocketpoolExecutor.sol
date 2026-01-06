@@ -25,10 +25,11 @@ contract RocketpoolExecutor is IExecutor, RestrictTransferFrom {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
-        (bool isDeposit, TransferType transferType, address receiver) =
-            _decodeData(data);
+        bool isDeposit;
+        TransferType transferType;
+        (isDeposit, transferType, receiver) = _decodeData(data);
 
         if (isDeposit) {
             // ETH -> rETH: Deposit ETH to Rocketpool to receive rETH
@@ -36,12 +37,10 @@ contract RocketpoolExecutor is IExecutor, RestrictTransferFrom {
             uint256 rethBefore = RETH.balanceOf(address(this));
             ROCKET_DEPOSIT_POOL.deposit{value: givenAmount}();
             calculatedAmount = RETH.balanceOf(address(this)) - rethBefore;
+            tokenOut = address(RETH);
 
             if (receiver != address(this)) {
                 RETH.safeTransfer(receiver, calculatedAmount);
-            } else {
-                // Credit vault if funds stayed in router
-                _updateDeltaAccounting(msg.sender, address(RETH), int256(calculatedAmount));
             }
         } else {
             // rETH -> ETH: Burn rETH to receive ETH
@@ -51,12 +50,10 @@ contract RocketpoolExecutor is IExecutor, RestrictTransferFrom {
             uint256 ethBefore = address(this).balance;
             RETH.burn(givenAmount);
             calculatedAmount = address(this).balance - ethBefore;
+            tokenOut = address(0);
 
             if (receiver != address(this)) {
                 Address.sendValue(payable(receiver), calculatedAmount);
-            } else {
-                // Credit vault if funds stayed in router (ETH)
-                _updateDeltaAccounting(msg.sender, address(0), int256(calculatedAmount));
             }
         }
     }

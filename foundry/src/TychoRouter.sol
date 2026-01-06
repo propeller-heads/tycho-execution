@@ -610,7 +610,14 @@ contract TychoRouter is
         (address executor, bytes calldata protocolData) =
             swap_.decodeSingleSwap();
 
-        amountOut = _callSwapOnExecutor(executor, amountIn, protocolData);
+        address swapTokenOut;
+        address swapReceiver;
+        (amountOut, swapTokenOut, swapReceiver) = _callSwapOnExecutor(executor, amountIn, protocolData);
+
+        // Credit transient storage if tokens stayed in router
+        if (swapReceiver == address(this)) {
+            _updateDeltaAccounting(msg.sender, swapTokenOut, int256(amountOut));
+        }
 
         // Deduct fees (both solution and router fees)
         amountOut = _takeFees(
@@ -792,8 +799,15 @@ contract TychoRouter is
                 ? (amounts[tokenInIndex] * split) / 0xffffff
                 : remainingAmounts[tokenInIndex];
 
-            currentAmountOut =
+            address swapTokenOut;
+            address swapReceiver;
+            (currentAmountOut, swapTokenOut, swapReceiver) =
                 _callSwapOnExecutor(executor, currentAmountIn, protocolData);
+
+            // Credit transient storage if tokens stayed in router
+            if (swapReceiver == address(this)) {
+                _updateDeltaAccounting(msg.sender, swapTokenOut, int256(currentAmountOut));
+            }
             // Checks if the output token is the same as the input token
             if (tokenOutIndex == 0) {
                 cyclicSwapAmountOut += currentAmountOut;
@@ -826,8 +840,15 @@ contract TychoRouter is
             (address executor, bytes calldata protocolData) =
                 swap.decodeSingleSwap();
 
-            calculatedAmount =
+            address swapTokenOut;
+            address swapReceiver;
+            (calculatedAmount, swapTokenOut, swapReceiver) =
                 _callSwapOnExecutor(executor, calculatedAmount, protocolData);
+
+            // Credit transient storage if tokens stayed in router
+            if (swapReceiver == address(this)) {
+                _updateDeltaAccounting(msg.sender, swapTokenOut, int256(calculatedAmount));
+            }
         }
     }
 

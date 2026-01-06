@@ -109,7 +109,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         vm.deal(address(rocketpoolExecutor), amountIn);
 
         uint256 rethBalanceBefore = RETH.balanceOf(BOB);
-        uint256 amountOut = rocketpoolExecutor.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) = rocketpoolExecutor.swap(amountIn, protocolData);
         uint256 rethBalanceAfter = RETH.balanceOf(BOB);
 
         // Check balances
@@ -133,7 +133,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         deal(RETH_ADDR, address(rocketpoolExecutor), amountIn);
 
         uint256 ethBalanceBefore = BOB.balance;
-        uint256 amountOut = rocketpoolExecutor.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) = rocketpoolExecutor.swap(amountIn, protocolData);
         uint256 ethBalanceAfter = BOB.balance;
 
         // Check balances
@@ -194,7 +194,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         vm.deal(address(rocketpoolExecutor), amountIn);
 
         uint256 rethBalanceBefore = RETH.balanceOf(BOB);
-        uint256 amountOut = rocketpoolExecutor.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) = rocketpoolExecutor.swap(amountIn, protocolData);
         uint256 rethBalanceAfter = RETH.balanceOf(BOB);
 
         // Check balances
@@ -216,7 +216,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         deal(RETH_ADDR, address(rocketpoolExecutor), amountIn);
 
         uint256 ethBalanceBefore = BOB.balance;
-        uint256 amountOut = rocketpoolExecutor.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) = rocketpoolExecutor.swap(amountIn, protocolData);
         uint256 ethBalanceAfter = BOB.balance;
 
         // Check balances

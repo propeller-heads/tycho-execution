@@ -97,15 +97,19 @@ contract UniswapV4Executor is
         external
         payable
         virtual
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
+        address tokenIn;
+        bool zeroForOne;
+        TransferType transferType;
+        UniswapV4Executor.UniswapV4Pool[] memory pools;
         (
-            address tokenIn,
-            address tokenOut,
-            bool zeroForOne,
-            TransferType transferType,
-            address receiver,
-            UniswapV4Executor.UniswapV4Pool[] memory pools
+            tokenIn,
+            tokenOut,
+            zeroForOne,
+            transferType,
+            receiver,
+            pools
         ) = _decodeData(data);
         bytes memory swapData;
         if (pools.length == 1) {
@@ -153,12 +157,7 @@ contract UniswapV4Executor is
         bytes memory result = poolManager.unlock(swapData);
         uint128 amountOut = abi.decode(result, (uint128));
 
-        // Credit delta accounting with the output amount of the swap
-        if (receiver == address(this)) {
-            _updateDeltaAccounting(msg.sender, tokenOut, int256(uint256(amountOut)));
-        }
-
-        return amountOut;
+        calculatedAmount = uint256(amountOut);
     }
 
     // slither-disable-next-line dead-code

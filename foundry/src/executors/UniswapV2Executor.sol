@@ -45,11 +45,10 @@ contract UniswapV2Executor is IExecutor, RestrictTransferFrom {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
         IERC20 tokenIn;
         address target;
-        address receiver;
         bool zeroForOne;
         TransferType transferType;
 
@@ -69,11 +68,7 @@ contract UniswapV2Executor is IExecutor, RestrictTransferFrom {
             pool.swap(calculatedAmount, 0, receiver, "");
         }
 
-        if (receiver == address(this)) {
-            address tokenOut = zeroForOne ? pool.token1() : pool.token0();
-            // Credit delta accounting with the output amount of the swap
-            _updateDeltaAccounting(msg.sender, tokenOut, int256(calculatedAmount));
-        }
+        tokenOut = zeroForOne ? pool.token1() : pool.token0();
     }
 
     function _decodeData(bytes calldata data)
