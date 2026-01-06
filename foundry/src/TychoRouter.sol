@@ -66,13 +66,7 @@ error TychoRouter__MessageValueMismatch(uint256 value, uint256 amount);
 error TychoRouter__InvalidDataLength();
 error TychoRouter__UndefinedMinAmountOut();
 
-contract TychoRouter is
-    AccessControl,
-    Dispatcher,
-    Pausable,
-    ReentrancyGuard,
-    RestrictTransferFrom
-{
+contract TychoRouter is AccessControl, Dispatcher, Pausable, ReentrancyGuard {
     IWETH private immutable _weth;
 
     using SafeERC20 for IERC20;
@@ -93,7 +87,7 @@ contract TychoRouter is
         address indexed token, uint256 amount, address indexed receiver
     );
 
-    constructor(address _permit2, address weth) RestrictTransferFrom(_permit2) {
+    constructor(address _permit2, address weth) Dispatcher(_permit2) {
         if (_permit2 == address(0) || weth == address(0)) {
             revert TychoRouter__AddressZero();
         }

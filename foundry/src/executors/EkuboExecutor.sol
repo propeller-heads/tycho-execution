@@ -66,6 +66,46 @@ contract EkuboExecutor is
             uint256(_lock(bytes.concat(bytes16(uint128(amountIn)), data)));
     }
 
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            bool approvalNeeded,
+            address tokenOut
+        )
+    {
+        return (
+            RestrictTransferFrom.TransferType.None,
+            address(0),
+            address(0),
+            false,
+            address(0)
+        );
+    }
+
+    function getCallbackTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            bool approvalNeeded,
+            uint256 amount
+        )
+    {
+        return (
+            RestrictTransferFrom.TransferType.None,
+            address(0),
+            address(0),
+            false,
+            0
+        );
+    }
+
     function handleCallback(bytes calldata raw)
         external
         returns (bytes memory)

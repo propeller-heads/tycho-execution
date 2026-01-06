@@ -65,6 +65,26 @@ contract BalancerV2Executor is IExecutor, RestrictTransferFrom {
             IVault(VAULT).swap(singleSwap, funds, limit, block.timestamp);
     }
 
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            bool approvalNeeded,
+            address tokenOut
+        )
+    {
+        return (
+            RestrictTransferFrom.TransferType.None,
+            address(0),
+            address(0),
+            false,
+            address(0)
+        );
+    }
+
     function _decodeData(bytes calldata data)
         internal
         pure

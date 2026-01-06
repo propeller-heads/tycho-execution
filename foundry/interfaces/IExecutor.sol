@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.26;
 
+import "../src/RestrictTransferFrom.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 pragma abicoder v2;
@@ -20,10 +21,21 @@ interface IExecutor {
      * @return calculatedAmount The amount of the output token swapped, depending on
      * the givenAmount inputted.
      */
-    function swap(
-        uint256 givenAmount,
-        bytes calldata data
-    ) external payable returns (uint256 calculatedAmount);
+    function swap(uint256 givenAmount, bytes calldata data)
+        external
+        payable
+        returns (uint256 calculatedAmount);
+
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            bool approvalNeeded,
+            address tokenOut
+        );
 }
 
 interface IExecutorErrors {
