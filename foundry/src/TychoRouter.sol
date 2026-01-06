@@ -76,6 +76,10 @@ contract TychoRouter is
     uint16 private _routerFeeBps; // Router platform fee in basis points (e.g., 1 = 0.01%)
     address private _feeExecutor; // Address of the fee executor contract
 
+    // Per-user custom router fees
+    mapping(address => uint16) private _userRouterFees;
+    mapping(address => bool) private _hasCustomRouterFee;
+
     using SafeERC20 for IERC20;
     using LibPrefixLengthEncodedByteArray for bytes;
     using LibSwap for bytes;
@@ -96,6 +100,10 @@ contract TychoRouter is
         address indexed token, uint256 amount, address indexed receiver
     );
     event RouterFeeUpdated(uint16 oldFeeBps, uint16 newFeeBps);
+    event UserRouterFeeUpdated(
+        address indexed user, uint16 oldFeeBps, uint16 newFeeBps
+    );
+    event UserRouterFeeRemoved(address indexed user);
     event FeeExecutorUpdated(address oldExecutor, address newExecutor);
 
     constructor(address _permit2, address weth) RestrictTransferFrom(_permit2) {
@@ -929,6 +937,48 @@ contract TychoRouter is
     }
 
     /**
+     * @dev Sets a custom router fee for a specific user
+     * @param user The user address to set the custom fee for
+     * @param feeBps The fee in basis points (e.g., 1 = 0.01%, 100 = 1%)
+     */
+    function setRouterFeeForUser(address user, uint16 feeBps)
+        external
+        onlyRole(ROUTER_FEE_SETTER_ROLE)
+    {
+        uint16 oldFeeBps =
+            _hasCustomRouterFee[user] ? _userRouterFees[user] : _routerFeeBps;
+        _userRouterFees[user] = feeBps;
+        _hasCustomRouterFee[user] = true;
+        emit UserRouterFeeUpdated(user, oldFeeBps, feeBps);
+    }
+
+    /**
+     * @dev Removes the custom router fee for a specific user, reverting to default
+     * @param user The user address to remove the custom fee from
+     */
+    function removeRouterFeeForUser(address user)
+        external
+        onlyRole(ROUTER_FEE_SETTER_ROLE)
+    {
+        _hasCustomRouterFee[user] = false;
+        delete _userRouterFees[user];
+        emit UserRouterFeeRemoved(user);
+    }
+
+    /**
+     * @dev Returns the effective router fee for a specific user
+     * @param user The user address to check
+     * @return The fee in basis points (custom if set, otherwise default)
+     */
+    function getRouterFeeForUser(address user)
+        external
+        view
+        returns (uint16)
+    {
+        return _hasCustomRouterFee[user] ? _userRouterFees[user] : _routerFeeBps;
+    }
+
+    /**
      * @notice Sets the fee executor contract address
      * @param feeExecutor The address of the fee executor contract (set to address(0) to disable)
      */
@@ -1040,9 +1090,14 @@ contract TychoRouter is
         uint16 solutionFeeBps,
         address solutionFeeReceiver
     ) private returns (uint256) {
+        // Get the effective router fee for this user (custom or default)
+        uint16 effectiveRouterFeeBps = _hasCustomRouterFee[msg.sender]
+            ? _userRouterFees[msg.sender]
+            : _routerFeeBps;
+
         if (
             _feeExecutor != address(0)
-                && (solutionFeeBps > 0 || _routerFeeBps > 0)
+                && (solutionFeeBps > 0 || effectiveRouterFeeBps > 0)
         ) {
             address feeToken = unwrapEth ? address(_weth) : tokenOut;
 
@@ -1050,7 +1105,7 @@ contract TychoRouter is
             bytes memory feeData = abi.encodePacked(
                 solutionFeeBps, // solutionFeeBps
                 solutionFeeReceiver, // solutionFeeReceiver
-                _routerFeeBps, // routerFeeBps
+                effectiveRouterFeeBps, // routerFeeBps (custom or default)
                 address(this), // routerFeeReceiver = router
                 feeToken // token
             );
