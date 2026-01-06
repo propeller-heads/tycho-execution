@@ -11,7 +11,7 @@ error TychoVault__InsufficientBalance(
     address user, address token, uint256 requested, uint256 available
 );
 error TychoVault__AmountZero();
-error TychoVault__UnexpectedNegativeDelta(address token, int256 delta);
+error TychoVault__UnexpectedNegativeDelta(uint256 negativeCount);
 error TychoVault__InvalidInputDelta(
     address token, int256 expected, int256 actual
 );

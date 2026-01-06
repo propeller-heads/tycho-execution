@@ -72,6 +72,7 @@ contract RestrictTransferFrom {
     enum TransferType {
         TransferFromSender,
         TransferFromVault,
+        TransferFromRouter,
         FundsAlreadyInProtocol,
         ProtocolWillDebit,
         ProtocolWillDebitFromVault
@@ -121,7 +122,7 @@ contract RestrictTransferFrom {
         }
         if (transferType == TransferType.TransferFromSender) {
             // Perform transferFrom the user's wallet
-            _restrictTransferFrom(sender, amount);
+            _restrictTransferFrom(sender, amount, tokenIn);
             bool isPermit2;
             assembly {
                 isPermit2 := tload(_IS_PERMIT2_SLOT)
@@ -138,7 +139,7 @@ contract RestrictTransferFrom {
             // should be necessary in any case.
         } else if (transferType == TransferType.TransferFromVault) {
             // Use vault funds instead of funds from the user's wallet.
-            _restrictTransferFrom(amount);
+            _restrictTransferFrom(sender, amount, tokenIn);
             // Debit the persistent storage vault balance
             // Funds go straight to the receiver, no need to credit transient storage.
             _debitPersistentVault(sender, tokenIn, amount);
@@ -149,7 +150,8 @@ contract RestrictTransferFrom {
             }
         } else if (transferType == TransferType.TransferFromRouter) {
             // We expect funds in transient storage accounting from previous swap.
-            _updateDeltaAccounting(sender, tokenIn, int256(amount));
+            // Debit the delta accounting (negative amount) since funds are leaving the router
+            _updateDeltaAccounting(sender, tokenIn, -int256(amount));
             if (tokenIn == address(0)) {
                 Address.sendValue(payable(receiver), amount);
             } else {
@@ -164,14 +166,13 @@ contract RestrictTransferFrom {
             // accounting (negative amount)
             _updateDeltaAccounting(sender, tokenIn, -int256(amount));
         } else if (transferType == TransferType.ProtocolWillDebitFromVault) {
-            // TODO update the encoding to encode this type if Curve or Balancer is the
-            //  first swap in the swap sequence and the user wants to use vault
-            //  balances.
+            // Used when Curve or Balancer is the first swap and user wants to use vault balances.
+            // Protocol will pull funds from router via transferFrom.
+            _restrictTransferFrom(sender, amount, tokenIn);
             // Debit the actual vault balance (persistent storage)
-            _debitPersistentVault(sender, tokenIn, int256(amount));
+            _debitPersistentVault(sender, tokenIn, amount);
             // We don't credit the delta accounting since the funds land directly in
             // the protocol and don't pass through our router.
-            // Protocol will pull funds from router via transferFrom.
         } else if (transferType == TransferType.FundsAlreadyInProtocol) {
             // Funds were sent directly from the previous pool without passing through our router
             // Nothing to do here
@@ -181,8 +182,9 @@ contract RestrictTransferFrom {
         }
     }
 
-    function _restrictTransferFrom(address sender, uint256 amount) internal returns
-        {
+    function _restrictTransferFrom(address sender, uint256 amount, address tokenIn)
+        internal
+    {
         //  This is important to prevent badly encoded split swaps from taking
         //  more than the input amount out of the user's wallet or vault balance.
         address tokenInStorage;

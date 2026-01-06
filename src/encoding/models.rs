@@ -296,16 +296,20 @@ pub struct EncodingContext {
 /// # Fields
 ///
 /// * `TransferFromSender`: Transfer the token from the sender to the protocol/router.
-/// * `TransferFromVault`: Transfer from router to protocol (debiting user's vault balance).
+/// * `TransferFromVault`: Transfer from vault to protocol (debiting user's persistent vault balance).
+/// * `TransferFromRouter`: Transfer from router to protocol (debiting delta accounting from previous swap).
 /// * `FundsAlreadyInProtocol`: Funds were sent directly to the next pool (transfer optimization).
-/// * `ProtocolWillDebit`: Protocol will pull funds from router via transferFrom (debit vault).
+/// * `ProtocolWillDebit`: Protocol will pull funds from router via transferFrom (debit delta accounting).
+/// * `ProtocolWillDebitFromVault`: Protocol will pull funds from vault via transferFrom (debit persistent vault).
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum TransferType {
     TransferFromSender = 0,
     TransferFromVault = 1,
-    FundsAlreadyInProtocol = 2,
-    ProtocolWillDebit = 3,
+    TransferFromRouter = 2,
+    FundsAlreadyInProtocol = 3,
+    ProtocolWillDebit = 4,
+    ProtocolWillDebitFromVault = 5,
 }
 
 mod tests {
