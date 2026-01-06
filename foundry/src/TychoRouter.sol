@@ -545,10 +545,9 @@ contract TychoRouter is
             _updateDeltaAccounting(msg.sender, settlementToken, int256(routerOutputBalance));
         }
 
-        // Credit any leftover tokenIn funds to sender's vault (transient)
-        uint256 leftoverAmount = _balanceOf(tokenIn, address(this));
-        if (leftoverAmount > 0) {
-            _updateDeltaAccounting(msg.sender, tokenIn, int256(leftoverAmount));
+        // Debit output tokens being sent to receiver from transient storage
+        if (receiver != address(this)) {
+            _updateDeltaAccounting(msg.sender, settlementToken, -int256(amountOut));
         }
 
         // Settle all transient deltas to persistent storage
@@ -635,10 +634,9 @@ contract TychoRouter is
             _updateDeltaAccounting(msg.sender, settlementToken, int256(routerOutputBalance));
         }
 
-        // Credit any leftover tokenIn funds to sender's vault (transient)
-        uint256 leftoverAmount = _balanceOf(tokenIn, address(this));
-        if (leftoverAmount > 0) {
-            _updateDeltaAccounting(msg.sender, tokenIn, int256(leftoverAmount));
+        // Debit output tokens being sent to receiver from transient storage
+        if (receiver != address(this)) {
+            _updateDeltaAccounting(msg.sender, settlementToken, -int256(amountOut));
         }
 
         // Settle all transient deltas to persistent storage
@@ -715,10 +713,10 @@ contract TychoRouter is
             _updateDeltaAccounting(msg.sender, settlementToken, int256(routerOutputBalance));
         }
 
-        // Credit any leftover tokenIn funds to sender's vault (transient)
-        uint256 leftoverAmount = _balanceOf(tokenIn, address(this));
-        if (leftoverAmount > 0) {
-            _updateDeltaAccounting(msg.sender, tokenIn, int256(leftoverAmount));
+
+        // Debit output tokens being sent to receiver from transient storage
+        if (receiver != address(this)) {
+            _updateDeltaAccounting(msg.sender, settlementToken, -int256(amountOut));
         }
 
         // Settle all transient deltas to persistent storage

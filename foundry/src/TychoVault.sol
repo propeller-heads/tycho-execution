@@ -262,14 +262,13 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
             revert TychoVault__UnexpectedNegativeDelta(negativeCount);
         }
 
-        // Calculate surplus output (delta minus amount being sent to receiver)
+        // Settle user's output token delta to persistent vault
         int256 outputDelta = _getTDelta(user, outputToken);
         if (outputDelta > 0) {
-            int256 surplus = outputDelta - int256(outputAmount);
-            // Only credit surplus if above dust threshold
-            if (surplus > 0 && uint256(surplus) > DUST_THRESHOLD) {
+            // Only credit if above dust threshold
+            if (uint256(outputDelta) > DUST_THRESHOLD) {
                 uint256 id = uint256(uint160(outputToken));
-                _mint(user, id, uint256(surplus));
+                _mint(user, id, uint256(outputDelta));
             }
         }
 
