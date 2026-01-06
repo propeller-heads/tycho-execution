@@ -115,36 +115,16 @@ contract RestrictTransferFrom {
         address tokenIn,
         uint256 amount
     ) internal {
+        address sender;
+        assembly {
+            sender := tload(_SENDER_SLOT)
+        }
         if (transferType == TransferType.TransferFromSender) {
-            address tokenInStorage;
+            // Perform transferFrom the user's wallet
+            _restrictTransferFrom(sender, amount);
             bool isPermit2;
-            address sender;
-            uint256 amountAllowed;
-            // TODO double check this logic and add to the cases below where needed.
-            //  This is still relevant to prevent badly encoded split swaps from taking
-            //  more than the input amount out of the user's vault.
             assembly {
-                tokenInStorage := tload(_TOKEN_IN_SLOT)
-                amountAllowed := tload(_AMOUNT_ALLOWED_SLOT)
                 isPermit2 := tload(_IS_PERMIT2_SLOT)
-                sender := tload(_SENDER_SLOT)
-            }
-            if (amount > amountAllowed) {
-                revert RestrictTransferFrom__ExceededTransferFromAllowance(
-                    amountAllowed, amount
-                );
-            }
-            if (tokenIn != tokenInStorage) {
-                revert RestrictTransferFrom__DifferentTokenIn(
-                    tokenIn, tokenInStorage
-                );
-            }
-            amountAllowed -= amount;
-            assembly {
-                tstore(_AMOUNT_ALLOWED_SLOT, amountAllowed)
-            }
-            if (receiver == address(this)) {
-              _updateDeltaAccounting(sender, tokenIn, int256(amount));
             }
             if (isPermit2) {
                 // Permit2.permit is already called from the TychoRouter
@@ -153,43 +133,78 @@ contract RestrictTransferFrom {
                 // slither-disable-next-line arbitrary-send-erc20
                 IERC20(tokenIn).safeTransferFrom(sender, receiver, amount);
             }
+            // If the receiver is address(this), that means the protocol will debit
+            // after performing the transferFrom, so no crediting the transient storage
+            // should be necessary in any case.
         } else if (transferType == TransferType.TransferFromVault) {
-            address sender;
-            assembly {
-                sender := tload(_SENDER_SLOT)
-            }
-            // Debit the actual vault balance (persistent storage)
+            // Use vault funds instead of funds from the user's wallet.
+            _restrictTransferFrom(amount);
+            // Debit the persistent storage vault balance
+            // Funds go straight to the receiver, no need to credit transient storage.
             _debitPersistentVault(sender, tokenIn, amount);
-
-            // Credit the delta accounting (funds are now at the router) - positive amount to credit
+            if (tokenIn == address(0)) {
+                Address.sendValue(payable(receiver), amount);
+            } else {
+                IERC20(tokenIn).safeTransfer(receiver, amount);
+            }
+        } else if (transferType == TransferType.TransferFromRouter) {
+            // We expect funds in transient storage accounting from previous swap.
             _updateDeltaAccounting(sender, tokenIn, int256(amount));
-
-            // Transfer from router to receiver
             if (tokenIn == address(0)) {
                 Address.sendValue(payable(receiver), amount);
             } else {
                 IERC20(tokenIn).safeTransfer(receiver, amount);
             }
         } else if (transferType == TransferType.ProtocolWillDebit) {
-            // Credit the delta accounting (funds are now at the router) - positive amount to credit
+            // Happens for protocols like Curve or Balancer (they perform a
+            // transferFrom on their side) when not the first swap. We assume
+            // That funds have been credited to the delta accounting form the
+            // previous swap.
+            // Since we are not taking the funds from the vault, we debit the delta
+            // accounting (negative amount)
             _updateDeltaAccounting(sender, tokenIn, -int256(amount));
-            // Protocol will pull funds from router via transferFrom
-            // We don't transfer here, protocol does that
         } else if (transferType == TransferType.ProtocolWillDebitFromVault) {
             // TODO update the encoding to encode this type if Curve or Balancer is the
-            //  first swap in the swap sequence.
+            //  first swap in the swap sequence and the user wants to use vault
+            //  balances.
             // Debit the actual vault balance (persistent storage)
             _debitPersistentVault(sender, tokenIn, int256(amount));
             // We don't credit the delta accounting since the funds land directly in
-            // the protocol and don't pass through out router.
-            // Protocol will pull funds from router via transferFrom
-            // We don't transfer here, protocol does that
+            // the protocol and don't pass through our router.
+            // Protocol will pull funds from router via transferFrom.
         } else if (transferType == TransferType.FundsAlreadyInProtocol) {
             // Funds were sent directly from the previous pool without passing through our router
             // Nothing to do here
             return;
         } else {
             revert RestrictTransferFrom__UnknownTransferType();
+        }
+    }
+
+    function _restrictTransferFrom(address sender, uint256 amount) internal returns
+        {
+        //  This is important to prevent badly encoded split swaps from taking
+        //  more than the input amount out of the user's wallet or vault balance.
+        address tokenInStorage;
+        uint256 amountAllowed;
+
+        assembly {
+            tokenInStorage := tload(_TOKEN_IN_SLOT)
+            amountAllowed := tload(_AMOUNT_ALLOWED_SLOT)
+        }
+        if (amount > amountAllowed) {
+            revert RestrictTransferFrom__ExceededTransferFromAllowance(
+                amountAllowed, amount
+            );
+        }
+        if (tokenIn != tokenInStorage) {
+            revert RestrictTransferFrom__DifferentTokenIn(
+                tokenIn, tokenInStorage
+            );
+        }
+        amountAllowed -= amount;
+        assembly {
+            tstore(_AMOUNT_ALLOWED_SLOT, amountAllowed)
         }
     }
 }

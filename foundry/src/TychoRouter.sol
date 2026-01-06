@@ -509,6 +509,7 @@ contract TychoRouter is
         if (wrapEth) {
             _wrapETH(amountIn);
             tokenIn = address(_weth);
+            // TODO credit the transient storage accounting
         }
 
         amountOut = _splitSwap(amountIn, nTokens, swaps);
@@ -588,6 +589,7 @@ contract TychoRouter is
         if (wrapEth) {
             _wrapETH(amountIn);
             tokenIn = address(_weth);
+            // TODO credit the transient storage accounting
         }
 
         (address executor, bytes calldata protocolData) =
@@ -670,6 +672,7 @@ contract TychoRouter is
         if (wrapEth) {
             _wrapETH(amountIn);
             tokenIn = address(_weth);
+            // TODO credit the transient storage accounting
         }
 
         amountOut = _sequentialSwap(amountIn, swaps);

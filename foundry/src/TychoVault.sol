@@ -221,8 +221,9 @@ abstract contract TychoVault is IERC6909, ReentrancyGuard {
 
         // Check that there are no negative deltas
         if (negativeCount > 0) {
-            int256 inputDelta = _getTDelta(user, inputToken);
-            revert TychoVault__UnexpectedNegativeDelta(inputToken, inputDelta);
+            // We aren't sure exactly which token(s) caused the negative count, since
+            // we don't track this information for gas purposes.
+            revert TychoVault__UnexpectedNegativeDelta(negativeCount);
         }
 
         // Calculate surplus output (delta minus amount being sent to receiver)
@@ -234,11 +235,6 @@ abstract contract TychoVault is IERC6909, ReentrancyGuard {
                 _vaultBalances[user][outputToken] += uint256(surplus);
             }
         }
-
-        // Clear transient storage for next swap
-        _setTDelta(user, inputToken, 0);
-        _setTDelta(user, outputToken, 0);
-        _setNegativeDeltaCount(0);
     }
 
     // ============ IERC6909 Implementation ============
