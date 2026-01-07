@@ -97,13 +97,24 @@ contract EkuboExecutor is
             uint256 amount
         )
     {
-        return (
-            RestrictTransferFrom.TransferType.None,
-            address(0),
-            address(0),
-            false,
-            0
-        );
+        bytes4 selector = bytes4(data[:4]);
+
+        approvalNeeded = false;
+        if (selector == PAY_CALLBACK_SELECTOR) {
+            bytes calldata payData = data[36:];
+
+            tokenIn = address(bytes20(payData[12:32])); // This arg is abi-encoded
+            amount = uint256(uint128(bytes16(payData[32:48])));
+            transferType = TransferType(uint8(payData[48]));
+            receiver = address(core);
+        } else {
+            transferType = RestrictTransferFrom.TransferType.None;
+            receiver=address(0);
+            tokenIn = address(0);
+            amount = 0;
+        }
+
+
     }
 
     function handleCallback(bytes calldata raw)
@@ -312,7 +323,7 @@ contract EkuboExecutor is
         address token = address(bytes20(payData[12:32])); // This arg is abi-encoded
         uint128 amount = uint128(bytes16(payData[32:48]));
         TransferType transferType = TransferType(uint8(payData[48]));
-        _transfer(address(core), transferType, token, amount);
+//        _transfer(address(core), transferType, token, amount);
     }
 
     // To receive withdrawals from Core
