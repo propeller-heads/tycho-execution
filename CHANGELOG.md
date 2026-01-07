@@ -1,3 +1,10 @@
+## [0.149.0](https://github.com/propeller-heads/tycho-execution/compare/0.148.1...0.149.0) (2026-01-07)
+
+
+### Features
+
+* Inverse IN_TRANSFER_REQUIRED_PROTOCOLS to FUNDS_IN_ROUTER_PROTOCOLS ([9d9f501](https://github.com/propeller-heads/tycho-execution/commit/9d9f5014735d06df5240af5185740c0039c74cfa))
+
 ## [0.148.1](https://github.com/propeller-heads/tycho-execution/compare/0.148.0...0.148.1) (2026-01-05)
 
 
