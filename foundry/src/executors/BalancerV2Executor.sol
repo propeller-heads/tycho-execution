@@ -40,9 +40,10 @@ contract BalancerV2Executor is IExecutor, RestrictTransferFrom {
             approvalNeeded,
             transferType
         ) = _decodeData(data);
+
         tokenOut = address(tokenOutIERC20);
 
-        _transfer(address(this), transferType, address(tokenIn), givenAmount);
+        //        _transfer(address(this), transferType, address(tokenIn), givenAmount);
 
         if (approvalNeeded) {
             // slither-disable-next-line unused-return
@@ -53,7 +54,7 @@ contract BalancerV2Executor is IExecutor, RestrictTransferFrom {
             poolId: poolId,
             kind: IVault.SwapKind.GIVEN_IN,
             assetIn: IAsset(address(tokenIn)),
-            assetOut: IAsset(tokenOut),
+            assetOut: IAsset(address(tokenOutIERC20)),
             amount: givenAmount,
             userData: ""
         });
@@ -69,6 +70,24 @@ contract BalancerV2Executor is IExecutor, RestrictTransferFrom {
 
         calculatedAmount =
             IVault(VAULT).swap(singleSwap, funds, limit, block.timestamp);
+    }
+
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            bool approvalNeeded,
+            address tokenOut
+        )
+    {
+        tokenIn = address(bytes20(data[0:20]));
+        tokenOut = address(bytes20(data[20:40]));
+        receiver = address(bytes20(data[72:92]));
+        approvalNeeded = data[92] != 0;
+        transferType = TransferType(uint8(data[93]));
     }
 
     function _decodeData(bytes calldata data)

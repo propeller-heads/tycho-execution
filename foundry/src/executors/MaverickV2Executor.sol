@@ -40,6 +40,7 @@ contract MaverickV2Executor is IExecutor, RestrictTransferFrom {
         IMaverickV2Pool pool = IMaverickV2Pool(target);
 
         bool isTokenAIn = pool.tokenA() == tokenIn;
+        tokenOut = isTokenAIn ? address(pool.tokenB()) : address(pool.tokenA());
         int32 tickLimit = isTokenAIn ? type(int32).max : type(int32).min;
         IMaverickV2Pool.SwapParams memory swapParams = IMaverickV2Pool.SwapParams({
             amount: givenAmount,
@@ -48,11 +49,32 @@ contract MaverickV2Executor is IExecutor, RestrictTransferFrom {
             tickLimit: tickLimit
         });
 
-        _transfer(target, transferType, address(tokenIn), givenAmount);
+        //        _transfer(target, transferType, address(tokenIn), givenAmount);
 
         // slither-disable-next-line unused-return
         (, calculatedAmount) = pool.swap(receiver, swapParams, "");
+    }
 
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            bool approvalNeeded,
+            address tokenOut
+        )
+    {
+        tokenIn = address(bytes20(data[0:20]));
+        address target = address(bytes20(data[20:40]));
+        receiver = address(bytes20(data[40:60]));
+        transferType = TransferType(uint8(data[60]));
+        approvalNeeded = false;
+
+        // Determine tokenOut based on target pool
+        IMaverickV2Pool pool = IMaverickV2Pool(target);
+        bool isTokenAIn = address(pool.tokenA()) == tokenIn;
         tokenOut = isTokenAIn ? address(pool.tokenB()) : address(pool.tokenA());
     }
 

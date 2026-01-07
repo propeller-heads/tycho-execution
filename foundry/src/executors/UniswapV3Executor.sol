@@ -44,20 +44,18 @@ contract UniswapV3Executor is IExecutor, ICallback, RestrictTransferFrom {
         payable
         returns (uint256 amountOut, address tokenOut, address receiver)
     {
-        address tokenIn;
-        uint24 fee;
-        address target;
-        bool zeroForOne;
-        TransferType transferType;
         (
-            tokenIn,
-            tokenOut,
-            fee,
-            receiver,
-            target,
-            zeroForOne,
-            transferType
+            address tokenIn,
+            address tokenOutLocal,
+            uint24 fee,
+            address receiverLocal,
+            address target,
+            bool zeroForOne,
+            TransferType transferType
         ) = _decodeData(data);
+
+        tokenOut = tokenOutLocal;
+        receiver = receiverLocal;
 
         _verifyPairAddress(tokenIn, tokenOut, fee, target);
 
@@ -109,7 +107,7 @@ contract UniswapV3Executor is IExecutor, ICallback, RestrictTransferFrom {
         uint256 amountOwed =
             amount0Delta > 0 ? uint256(amount0Delta) : uint256(amount1Delta);
 
-        _transfer(msg.sender, transferType, tokenIn, amountOwed);
+        //        _transfer(msg.sender, transferType, tokenIn, amountOwed);
 
         return abi.encode(amountOwed, tokenIn);
     }
@@ -140,6 +138,47 @@ contract UniswapV3Executor is IExecutor, ICallback, RestrictTransferFrom {
         external
     {
         handleCallback(msg.data);
+    }
+
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            bool approvalNeeded,
+            address tokenOut
+        )
+    {
+        return (
+            RestrictTransferFrom.TransferType.ProtocolWillDebit,
+            address(0),
+            address(0),
+            false,
+            address(0)
+        );
+    }
+
+    function getCallbackTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            bool approvalNeeded,
+            uint256 amount
+        )
+    {
+        (int256 amount0Delta, int256 amount1Delta) =
+            abi.decode(data[4:68], (int256, int256));
+        amount =
+            amount0Delta > 0 ? uint256(amount0Delta) : uint256(amount1Delta);
+        tokenIn = address(bytes20(data[132:152]));
+        transferType = TransferType(uint8(data[175]));
+        receiver = msg.sender;
+        approvalNeeded = false;
     }
 
     function _decodeData(bytes calldata data)

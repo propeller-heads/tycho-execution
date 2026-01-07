@@ -34,10 +34,10 @@ contract RocketpoolExecutor is IExecutor, RestrictTransferFrom {
         if (isDeposit) {
             // ETH -> rETH: Deposit ETH to Rocketpool to receive rETH
             // We don't need to _transfer ETH into this contract since it must be sent along with the call
+            tokenOut = address(RETH);
             uint256 rethBefore = RETH.balanceOf(address(this));
             ROCKET_DEPOSIT_POOL.deposit{value: givenAmount}();
             calculatedAmount = RETH.balanceOf(address(this)) - rethBefore;
-            tokenOut = address(RETH);
 
             if (receiver != address(this)) {
                 RETH.safeTransfer(receiver, calculatedAmount);
@@ -45,16 +45,43 @@ contract RocketpoolExecutor is IExecutor, RestrictTransferFrom {
         } else {
             // rETH -> ETH: Burn rETH to receive ETH
             // Use _transfer to get rETH into this contract based on transferType
-            _transfer(address(this), transferType, address(RETH), givenAmount);
+            //            _transfer(address(this), transferType, address(RETH), givenAmount);
+            tokenOut = address(0);
 
             uint256 ethBefore = address(this).balance;
             RETH.burn(givenAmount);
             calculatedAmount = address(this).balance - ethBefore;
-            tokenOut = address(0);
 
             if (receiver != address(this)) {
                 Address.sendValue(payable(receiver), calculatedAmount);
             }
+        }
+    }
+
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            bool approvalNeeded,
+            address tokenOut
+        )
+    {
+        bool isDeposit = uint8(data[0]) == 1;
+        transferType = TransferType(uint8(data[1]));
+        receiver = address(bytes20(data[2:22]));
+        approvalNeeded = false;
+
+        if (isDeposit) {
+            // ETH -> rETH
+            tokenIn = address(0);
+            tokenOut = address(RETH);
+        } else {
+            // rETH -> ETH
+            tokenIn = address(RETH);
+            tokenOut = address(0);
         }
     }
 

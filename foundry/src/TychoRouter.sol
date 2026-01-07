@@ -69,7 +69,6 @@ contract TychoRouter is
     AccessControl,
     Dispatcher,
     Pausable,
-    RestrictTransferFrom,
     TychoVault
 {
     IWETH private immutable _weth;
@@ -106,7 +105,7 @@ contract TychoRouter is
     event UserRouterFeeRemoved(address indexed user);
     event FeeExecutorUpdated(address oldExecutor, address newExecutor);
 
-    constructor(address _permit2, address weth) RestrictTransferFrom(_permit2) {
+    constructor(address _permit2, address weth) Dispatcher(_permit2) {
         if (_permit2 == address(0) || weth == address(0)) {
             revert TychoRouter__AddressZero();
         }
@@ -617,14 +616,7 @@ contract TychoRouter is
         (address executor, bytes calldata protocolData) =
             swap_.decodeSingleSwap();
 
-        address swapTokenOut;
-        address swapReceiver;
-        (amountOut, swapTokenOut, swapReceiver) = _callSwapOnExecutor(executor, amountIn, protocolData);
-
-        // Credit transient storage if tokens stayed in router
-        if (swapReceiver == address(this)) {
-            _updateDeltaAccounting(msg.sender, swapTokenOut, int256(amountOut));
-        }
+        (amountOut,,) = _callSwapOnExecutor(executor, amountIn, protocolData);
 
         // Deduct fees (both solution and router fees)
         amountOut = _takeFees(
@@ -805,15 +797,8 @@ contract TychoRouter is
                 ? (amounts[tokenInIndex] * split) / 0xffffff
                 : remainingAmounts[tokenInIndex];
 
-            address swapTokenOut;
-            address swapReceiver;
-            (currentAmountOut, swapTokenOut, swapReceiver) =
+            (currentAmountOut,,) =
                 _callSwapOnExecutor(executor, currentAmountIn, protocolData);
-
-            // Credit transient storage if tokens stayed in router
-            if (swapReceiver == address(this)) {
-                _updateDeltaAccounting(msg.sender, swapTokenOut, int256(currentAmountOut));
-            }
             // Checks if the output token is the same as the input token
             if (tokenOutIndex == 0) {
                 cyclicSwapAmountOut += currentAmountOut;
@@ -846,15 +831,8 @@ contract TychoRouter is
             (address executor, bytes calldata protocolData) =
                 swap.decodeSingleSwap();
 
-            address swapTokenOut;
-            address swapReceiver;
-            (calculatedAmount, swapTokenOut, swapReceiver) =
+            (calculatedAmount,,) =
                 _callSwapOnExecutor(executor, calculatedAmount, protocolData);
-
-            // Credit transient storage if tokens stayed in router
-            if (swapReceiver == address(this)) {
-                _updateDeltaAccounting(msg.sender, swapTokenOut, int256(calculatedAmount));
-            }
         }
     }
 

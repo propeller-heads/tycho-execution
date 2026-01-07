@@ -32,7 +32,7 @@ contract ERC4626Executor is IExecutor, RestrictTransferFrom {
             // slither-disable-next-line unused-return
             tokenIn.forceApprove(target, type(uint256).max);
         }
-        _transfer(address(this), transferType, address(tokenIn), givenAmount);
+        //        _transfer(address(this), transferType, address(tokenIn), givenAmount);
 
         if (address(tokenIn) == target) {
             // shares --> asset
@@ -45,6 +45,33 @@ contract ERC4626Executor is IExecutor, RestrictTransferFrom {
             calculatedAmount = IERC4626(target).deposit(givenAmount, receiver);
         } else {
             revert ERC4626Executor__InvalidTarget();
+        }
+    }
+
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            bool approvalNeeded,
+            address tokenOut
+        )
+    {
+        tokenIn = address(bytes20(data[0:20]));
+        address target = address(bytes20(data[20:40]));
+        receiver = address(bytes20(data[40:60]));
+        transferType = TransferType(uint8(data[60]));
+        approvalNeeded = data[61] != 0;
+
+        // Determine tokenOut based on target
+        if (tokenIn == target) {
+            // shares --> asset
+            tokenOut = IERC4626(target).asset();
+        } else {
+            // asset --> shares
+            tokenOut = target;
         }
     }
 

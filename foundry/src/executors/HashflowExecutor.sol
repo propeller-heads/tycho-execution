@@ -60,8 +60,6 @@ contract HashflowExecutor is IExecutor, RestrictTransferFrom {
             approvalNeeded,
             transferType
         ) = _decodeData(data);
-        receiver = quote.trader;
-        tokenOut = quote.quoteToken;
 
         // Slippage checks
         if (givenAmount > quote.baseTokenAmount) {
@@ -80,13 +78,33 @@ contract HashflowExecutor is IExecutor, RestrictTransferFrom {
         if (quote.baseToken == NATIVE_TOKEN) {
             ethValue = quote.effectiveBaseTokenAmount;
         }
-        _transfer(
-            address(this), transferType, address(quote.baseToken), givenAmount
-        );
-        uint256 balanceBefore = _balanceOf(quote.trader, quote.quoteToken);
+        //        _transfer(
+        //            address(this), transferType, address(quote.baseToken), givenAmount
+        //        );
+        tokenOut = quote.quoteToken;
+        receiver = quote.trader;
+        uint256 balanceBefore = _balanceOf(receiver, tokenOut);
         IHashflowRouter(hashflowRouter).tradeRFQT{value: ethValue}(quote);
-        uint256 balanceAfter = _balanceOf(quote.trader, quote.quoteToken);
+        uint256 balanceAfter = _balanceOf(receiver, tokenOut);
         calculatedAmount = balanceAfter - balanceBefore;
+    }
+
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            bool approvalNeeded,
+            address tokenOut
+        )
+    {
+        transferType = TransferType(uint8(data[0]));
+        approvalNeeded = data[1] != 0;
+        receiver = address(bytes20(data[42:62])); // quote.trader
+        tokenIn = address(bytes20(data[62:82])); // quote.baseToken
+        tokenOut = address(bytes20(data[82:102])); // quote.quoteToken
     }
 
     function _decodeData(bytes calldata data)

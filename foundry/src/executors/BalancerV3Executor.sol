@@ -89,12 +89,61 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
             })
         );
 
-        _transfer(address(VAULT), transferType, address(tokenIn), amountIn);
+        //        _transfer(address(VAULT), transferType, address(tokenIn), amountIn);
         // slither-disable-next-line unused-return
         VAULT.settle(tokenIn, amountIn);
         VAULT.sendTo(tokenOut, receiver, amountOut);
 
         return abi.encode(amountCalculated, address(tokenOut), receiver);
+    }
+
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            bool approvalNeeded,
+            address tokenOut
+        )
+    {
+        return (
+            RestrictTransferFrom.TransferType.ProtocolWillDebit,
+            address(0),
+            address(0),
+            false,
+            address(0)
+        );
+    }
+
+    function getCallbackTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            bool approvalNeeded,
+            uint256 amount
+        )
+    {
+        verifyCallback(data);
+        // Remove the first 68 bytes 4 selector + 32 dataOffset + 32 dataLength and extra padding at the end
+        bytes calldata callbackData = data[68:181];
+        uint256 amountGiven;
+        IERC20 tokenInIERC20;
+        (
+            amountGiven,
+            tokenInIERC20,
+            ,
+            ,
+            transferType,
+        ) = _decodeData(callbackData);
+        tokenIn = address(tokenInIERC20);
+        receiver = address(VAULT);
+        approvalNeeded = false;
+        amount = amountGiven;
     }
 
     function handleCallback(bytes calldata data)

@@ -62,7 +62,74 @@ contract EkuboExecutor is
         if (data.length < 92) revert EkuboExecutor__InvalidDataLength();
 
         // amountIn must be at most type(int128).MAX
-        (calculatedAmount, tokenOut, receiver) = _lockAndSwap(bytes.concat(bytes16(uint128(amountIn)), data));
+        calculatedAmount =
+            uint256(_lock(bytes.concat(bytes16(uint128(amountIn)), data)));
+
+        // Decode tokenOut and receiver from data
+        receiver = address(bytes20(data[17:37]));
+
+        // Find tokenOut - it's the last token in the path
+        // Calculate the number of hops
+        uint256 hopsLength = (data.length - POOL_DATA_OFFSET) / HOP_BYTE_LEN;
+        if (hopsLength > 0) {
+            // TokenOut is at the start of the last hop
+            uint256 lastHopOffset = POOL_DATA_OFFSET + ((hopsLength - 1) * HOP_BYTE_LEN);
+            tokenOut = address(bytes20(data[lastHopOffset:lastHopOffset + 20]));
+        } else {
+            // No hops, tokenOut is tokenIn (shouldn't happen in practice)
+            tokenOut = address(bytes20(data[37:57]));
+        }
+    }
+
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            bool approvalNeeded,
+            address tokenOut
+        )
+    {
+        return (
+            RestrictTransferFrom.TransferType.ProtocolWillDebit,
+            address(0),
+            address(0),
+            false,
+            address(0)
+        );
+    }
+
+    function getCallbackTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            bool approvalNeeded,
+            uint256 amount
+        )
+    {
+        bytes4 selector = bytes4(data[:4]);
+
+        approvalNeeded = false;
+        if (selector == PAY_CALLBACK_SELECTOR) {
+            bytes calldata payData = data[36:];
+
+            tokenIn = address(bytes20(payData[12:32])); // This arg is abi-encoded
+            amount = uint256(uint128(bytes16(payData[32:48])));
+            transferType = TransferType(uint8(payData[48]));
+            receiver = address(core);
+        } else {
+            transferType = RestrictTransferFrom.TransferType.ProtocolWillDebit;
+            receiver=address(0);
+            tokenIn = address(0);
+            amount = 0;
+        }
+
+
     }
 
     function handleCallback(bytes calldata raw)
@@ -112,10 +179,9 @@ contract EkuboExecutor is
         _payCallback(msg.data[36:]);
     }
 
-    function _lockAndSwap(bytes memory data) internal returns (uint256 swappedAmount, address tokenOut, address receiver) {
+    function _lock(bytes memory data) internal returns (uint128 swappedAmount) {
         address target = address(core);
 
-        uint128 swappedAmount128;
         // slither-disable-next-line assembly
         assembly ("memory-safe") {
             let args := mload(0x40)
@@ -134,37 +200,7 @@ contract EkuboExecutor is
             }
 
             returndatacopy(0, 0, 16)
-            swappedAmount128 := shr(128, mload(0))
-        }
-        swappedAmount = uint256(swappedAmount128);
-
-        // Extract receiver and tokenOut from data (same as in _locked)
-        // Use assembly since data is bytes memory
-        // slither-disable-next-line assembly
-        assembly {
-            let dataPtr := add(data, 0x20)
-            // receiver at offset 17 + 16 = 33
-            receiver := shr(96, mload(add(dataPtr, 33)))
-        }
-
-        // Calculate tokenOut from the swap path - last hop's token
-        uint256 hopsLength = (data.length - (POOL_DATA_OFFSET + 16)) / HOP_BYTE_LEN;
-        if (hopsLength == 0) {
-            // tokenIn from data at offset 37 + 16 = 53
-            // slither-disable-next-line assembly
-            assembly {
-                let dataPtr := add(data, 0x20)
-                tokenOut := shr(96, mload(add(dataPtr, 53)))
-            }
-        } else {
-            // Use assembly to load from bytes memory
-            uint256 lastHopOffset = (POOL_DATA_OFFSET + 16) + (hopsLength - 1) * HOP_BYTE_LEN;
-            // slither-disable-next-line assembly
-            assembly {
-                let dataPtr := add(data, 0x20)
-                let tokenPtr := add(dataPtr, lastHopOffset)
-                tokenOut := shr(96, mload(tokenPtr))
-            }
+            swappedAmount := shr(128, mload(0))
         }
     }
 
@@ -230,7 +266,6 @@ contract EkuboExecutor is
 
         _pay(tokenIn, tokenInDebtAmount, transferType);
         core.withdraw(nextTokenIn, receiver, uint128(nextAmountIn));
-
         return nextAmountIn;
     }
 
@@ -303,7 +338,7 @@ contract EkuboExecutor is
         address token = address(bytes20(payData[12:32])); // This arg is abi-encoded
         uint128 amount = uint128(bytes16(payData[32:48]));
         TransferType transferType = TransferType(uint8(payData[48]));
-        _transfer(address(core), transferType, token, amount);
+//        _transfer(address(core), transferType, token, amount);
     }
 
     // To receive withdrawals from Core

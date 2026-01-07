@@ -2,6 +2,7 @@
 pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../src/RestrictTransferFrom.sol";
 
 pragma abicoder v2;
 
@@ -23,10 +24,21 @@ interface IExecutor {
      * @return tokenOut The address of the output token.
      * @return receiver The address where the output tokens were sent.
      */
-    function swap(
-        uint256 givenAmount,
-        bytes calldata data
-    ) external payable returns (uint256 calculatedAmount, address tokenOut, address receiver);
+    function swap(uint256 givenAmount, bytes calldata data)
+        external
+        payable
+        returns (uint256 calculatedAmount, address tokenOut, address receiver);
+
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            bool approvalNeeded,
+            address tokenOut
+        );
 }
 
 interface IExecutorErrors {

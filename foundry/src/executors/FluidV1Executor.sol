@@ -70,6 +70,44 @@ contract FluidV1Executor is IExecutor, ICallback, RestrictTransferFrom {
         }
     }
 
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            bool approvalNeeded,
+            address tokenOut
+        )
+    {
+        return (
+            RestrictTransferFrom.TransferType.ProtocolWillDebit,
+            address(0),
+            address(0),
+            false,
+            address(0)
+        );
+    }
+
+    function getCallbackTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            bool approvalNeeded,
+            uint256 amount
+        )
+    {
+        verifyCallback(data);
+        (tokenIn, amount) = abi.decode(data[4:68], (address, uint256));
+        transferType = _getTransferType();
+        receiver = liquidity;
+        approvalNeeded = false;
+    }
+
     // Stores swap parameter packed into transient storage
     function _setSwapParams(IFluidV1Dex dex, TransferType transferType)
         internal
@@ -141,7 +179,7 @@ contract FluidV1Executor is IExecutor, ICallback, RestrictTransferFrom {
         uint256 amount;
         (token, amount) = abi.decode(data[4:68], (address, uint256));
         TransferType transferType = _getTransferType();
-        _transfer(liquidity, transferType, token, amount);
+        //        _transfer(liquidity, transferType, token, amount);
         result = "";
     }
 
