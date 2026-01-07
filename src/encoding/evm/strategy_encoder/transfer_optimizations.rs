@@ -93,7 +93,7 @@ impl TransferOptimization {
                     Ok((self.router_address.clone(), false))
                 } else {
                     Ok((
-                        Bytes::from_str(&next.swaps[0].component.id.clone()).map_err(|_| {
+                        Bytes::from_str(&next.swaps[0].component().id.clone()).map_err(|_| {
                             EncodingError::FatalError("Invalid component id".to_string())
                         })?,
                         true,
@@ -121,7 +121,7 @@ mod tests {
     use tycho_common::models::protocol::ProtocolComponent;
 
     use super::*;
-    use crate::encoding::models::SwapBuilder;
+    use crate::encoding::models::Swap;
 
     fn weth() -> Bytes {
         Bytes::from(hex!("c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2").to_vec())
@@ -174,7 +174,7 @@ mod tests {
         #[case] expected_transfer: TransferType,
     ) {
         // The swap token is the same as the given token, which is not the native token
-        let swaps = vec![SwapBuilder::new(
+        let swaps = vec![Swap::new(
             ProtocolComponent {
                 protocol_system: "uniswap_v2".to_string(),
                 id: "0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11".to_string(),
@@ -182,8 +182,7 @@ mod tests {
             },
             swap_token_in.clone(),
             dai(),
-        )
-        .build()];
+        )];
         let swap = SwapGroup {
             protocol_system: protocol,
             token_in: swap_token_in,
@@ -238,7 +237,7 @@ mod tests {
                 token_in: usdc(),
                 token_out: dai(),
                 split: 0f64,
-                swaps: vec![SwapBuilder::new(
+                swaps: vec![Swap::new(
                     ProtocolComponent {
                         protocol_system: protocol.unwrap().to_string(),
                         id: component_id().to_string(),
@@ -246,8 +245,7 @@ mod tests {
                     },
                     usdc(),
                     dai(),
-                )
-                .build()],
+                )],
             })
         };
 

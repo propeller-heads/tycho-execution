@@ -58,11 +58,11 @@ impl SwapEncoder for UniswapV2SwapEncoder {
         swap: &Swap,
         encoding_context: &EncodingContext,
     ) -> Result<Vec<u8>, EncodingError> {
-        let token_in_address = bytes_to_address(&swap.token_in)?;
-        let token_out_address = bytes_to_address(&swap.token_out)?;
+        let token_in_address = bytes_to_address(swap.token_in())?;
+        let token_out_address = bytes_to_address(swap.token_out())?;
 
         let zero_to_one = Self::get_zero_to_one(token_in_address, token_out_address);
-        let component_id = Address::from_str(&swap.component.id)
+        let component_id = Address::from_str(&swap.component().id)
             .map_err(|_| EncodingError::FatalError("Invalid USV2 component id".to_string()))?;
 
         let args = (
@@ -114,11 +114,11 @@ impl SwapEncoder for UniswapV3SwapEncoder {
         swap: &Swap,
         encoding_context: &EncodingContext,
     ) -> Result<Vec<u8>, EncodingError> {
-        let token_in_address = bytes_to_address(&swap.token_in)?;
-        let token_out_address = bytes_to_address(&swap.token_out)?;
+        let token_in_address = bytes_to_address(swap.token_in())?;
+        let token_out_address = bytes_to_address(swap.token_out())?;
 
         let zero_to_one = Self::get_zero_to_one(token_in_address, token_out_address);
-        let component_id = Address::from_str(&swap.component.id)
+        let component_id = Address::from_str(&swap.component().id)
             .map_err(|_| EncodingError::FatalError("Invalid USV3 component id".to_string()))?;
         let pool_fee_bytes = get_static_attribute(swap, "fee")?;
 
@@ -295,7 +295,7 @@ impl SwapEncoder for UniswapV4SwapEncoder {
             Self::encode_angstrom_attestations(&attestations)?
         } else {
             // Regular hook - use user_data as normal
-            swap.user_data
+            swap.get_user_data()
                 .clone()
                 .unwrap_or_default()
                 .to_vec()
@@ -304,9 +304,9 @@ impl SwapEncoder for UniswapV4SwapEncoder {
         let hook_data_length = (hook_data.len() as u16).to_be_bytes();
 
         // Early check if this is not the first swap
-        if encoding_context.group_token_in != swap.token_in {
+        if encoding_context.group_token_in != *swap.token_in() {
             return Ok((
-                bytes_to_address(&swap.token_out)?,
+                bytes_to_address(swap.token_out())?,
                 pool_fee_u24,
                 pool_tick_spacing_u24,
                 hook_address,
@@ -317,8 +317,8 @@ impl SwapEncoder for UniswapV4SwapEncoder {
         }
 
         // This is the first swap, compute all necessary values
-        let token_in_address = bytes_to_address(&swap.token_in)?;
-        let token_out_address = bytes_to_address(&swap.token_out)?;
+        let token_in_address = bytes_to_address(swap.token_in())?;
+        let token_out_address = bytes_to_address(swap.token_out())?;
         let group_token_in_address = bytes_to_address(&encoding_context.group_token_in)?;
         let group_token_out_address = bytes_to_address(&encoding_context.group_token_out)?;
 
@@ -411,7 +411,7 @@ impl SwapEncoder for BalancerV2SwapEncoder {
         encoding_context: &EncodingContext,
     ) -> Result<Vec<u8>, EncodingError> {
         let token_approvals_manager = ProtocolApprovalsManager::new()?;
-        let token = bytes_to_address(&swap.token_in)?;
+        let token = bytes_to_address(swap.token_in())?;
         let mut approval_needed: bool = true;
 
         if let Some(router_address) = &encoding_context.router_address {
@@ -425,12 +425,12 @@ impl SwapEncoder for BalancerV2SwapEncoder {
             }
         };
 
-        let component_id = AlloyBytes::from_str(&swap.component.id)
+        let component_id = AlloyBytes::from_str(&swap.component().id)
             .map_err(|_| EncodingError::FatalError("Invalid component ID".to_string()))?;
 
         let args = (
-            bytes_to_address(&swap.token_in)?,
-            bytes_to_address(&swap.token_out)?,
+            bytes_to_address(swap.token_in())?,
+            bytes_to_address(swap.token_out())?,
             component_id,
             bytes_to_address(&encoding_context.receiver)?,
             approval_needed,
@@ -495,13 +495,13 @@ impl SwapEncoder for EkuboSwapEncoder {
 
         let mut encoded = vec![];
 
-        if encoding_context.group_token_in == swap.token_in {
+        if encoding_context.group_token_in == *swap.token_in() {
             encoded.extend((encoding_context.transfer_type as u8).to_be_bytes());
             encoded.extend(bytes_to_address(&encoding_context.receiver)?);
-            encoded.extend(bytes_to_address(&swap.token_in)?);
+            encoded.extend(bytes_to_address(swap.token_in())?);
         }
 
-        encoded.extend(bytes_to_address(&swap.token_out)?);
+        encoded.extend(bytes_to_address(swap.token_out())?);
         encoded.extend((extension, fee, tick_spacing).abi_encode_packed());
 
         Ok(encoded)
@@ -648,19 +648,19 @@ impl SwapEncoder for CurveSwapEncoder {
     ) -> Result<Vec<u8>, EncodingError> {
         let token_approvals_manager = ProtocolApprovalsManager::new()?;
         let native_token_curve_address = Address::from_slice(&self.native_token_curve_address);
-        let token_in = if swap.token_in == self.native_token_address {
+        let token_in = if *swap.token_in() == self.native_token_address {
             native_token_curve_address
         } else {
-            bytes_to_address(&swap.token_in)?
+            bytes_to_address(swap.token_in())?
         };
-        let token_out = if swap.token_out == self.native_token_address {
+        let token_out = if *swap.token_out() == self.native_token_address {
             native_token_curve_address
         } else {
-            bytes_to_address(&swap.token_out)?
+            bytes_to_address(swap.token_out())?
         };
         let approval_needed: bool;
 
-        let component_address = Address::from_str(&swap.component.id)
+        let component_address = Address::from_str(&swap.component().id)
             .map_err(|_| EncodingError::FatalError("Invalid curve pool address".to_string()))?;
         if let Some(router_address) = &encoding_context.router_address {
             if token_in != native_token_curve_address {
@@ -687,7 +687,7 @@ impl SwapEncoder for CurveSwapEncoder {
             })?)
             .map_err(|_| EncodingError::FatalError("Invalid curve factory address".to_string()))?;
 
-        let pool_address = Address::from_str(&swap.component.id)
+        let pool_address = Address::from_str(&swap.component().id)
             .map_err(|_| EncodingError::FatalError("Invalid curve pool address".to_string()))?;
         let pool_type =
             self.get_pool_type(&pool_address.to_string(), &factory_address.to_string())?;
@@ -740,11 +740,11 @@ impl SwapEncoder for MaverickV2SwapEncoder {
         swap: &Swap,
         encoding_context: &EncodingContext,
     ) -> Result<Vec<u8>, EncodingError> {
-        let component_id = AlloyBytes::from_str(&swap.component.id)
+        let component_id = AlloyBytes::from_str(&swap.component().id)
             .map_err(|_| EncodingError::FatalError("Invalid component ID".to_string()))?;
 
         let args = (
-            bytes_to_address(&swap.token_in)?,
+            bytes_to_address(swap.token_in())?,
             component_id,
             bytes_to_address(&encoding_context.receiver)?,
             (encoding_context.transfer_type as u8).to_be_bytes(),
@@ -783,13 +783,13 @@ impl SwapEncoder for BalancerV3SwapEncoder {
         swap: &Swap,
         encoding_context: &EncodingContext,
     ) -> Result<Vec<u8>, EncodingError> {
-        let pool = Address::from_str(&swap.component.id).map_err(|_| {
+        let pool = Address::from_str(&swap.component().id).map_err(|_| {
             EncodingError::FatalError("Invalid pool address for Balancer v3".to_string())
         })?;
 
         let args = (
-            bytes_to_address(&swap.token_in)?,
-            bytes_to_address(&swap.token_out)?,
+            bytes_to_address(swap.token_in())?,
+            bytes_to_address(swap.token_out())?,
             pool,
             (encoding_context.transfer_type as u8).to_be_bytes(),
             bytes_to_address(&encoding_context.receiver)?,
@@ -872,15 +872,15 @@ impl SwapEncoder for BebopSwapEncoder {
         swap: &Swap,
         encoding_context: &EncodingContext,
     ) -> Result<Vec<u8>, EncodingError> {
-        let token_in = bytes_to_address(&swap.token_in)?;
-        let token_out = bytes_to_address(&swap.token_out)?;
+        let token_in = bytes_to_address(swap.token_in())?;
+        let token_out = bytes_to_address(swap.token_out())?;
         let sender = encoding_context
             .router_address
             .clone()
             .ok_or(EncodingError::FatalError(
                 "The router address is needed to perform a Hashflow swap".to_string(),
             ))?;
-        let approval_needed = if swap.token_in == self.native_token_address {
+        let approval_needed = if *swap.token_in() == self.native_token_address {
             false
         } else {
             let tycho_router_address = bytes_to_address(&sender)?;
@@ -896,7 +896,7 @@ impl SwapEncoder for BebopSwapEncoder {
         };
 
         let protocol_state = swap
-            .protocol_state
+            .get_protocol_state()
             .as_ref()
             .ok_or_else(|| {
                 EncodingError::FatalError("protocol_state is required for Bebop".to_string())
@@ -907,19 +907,19 @@ impl SwapEncoder for BebopSwapEncoder {
                 .map_err(|e| {
                     EncodingError::FatalError(format!("State is not indicatively priced {e}"))
                 })?;
-            let estimated_amount_in =
-                swap.estimated_amount_in
-                    .clone()
-                    .ok_or(EncodingError::FatalError(
-                        "Estimated amount in is mandatory for a Bebop swap".to_string(),
-                    ))?;
+            let estimated_amount_in = swap
+                .get_estimated_amount_in()
+                .clone()
+                .ok_or(EncodingError::FatalError(
+                    "Estimated amount in is mandatory for a Bebop swap".to_string(),
+                ))?;
             // Bebop uses another address for the native token than the zero address
-            let mut token_in = swap.token_in.clone();
-            if swap.token_in == self.native_token_address {
+            let mut token_in = swap.token_in().clone();
+            if *swap.token_in() == self.native_token_address {
                 token_in = self.native_token_bebop_address.clone()
             }
-            let mut token_out = swap.token_out.clone();
-            if swap.token_out == self.native_token_address {
+            let mut token_out = swap.token_out().clone();
+            if *swap.token_out() == self.native_token_address {
                 token_out = self.native_token_bebop_address.clone()
             }
 
@@ -1046,13 +1046,13 @@ impl SwapEncoder for HashflowSwapEncoder {
             ))?;
 
         // Native ETH doesn't need approval, only ERC20 tokens do
-        let approval_needed = if swap.token_in == self.native_token_address {
+        let approval_needed = if *swap.token_in() == self.native_token_address {
             false
         } else {
             let tycho_router_address = bytes_to_address(&sender)?;
             let hashflow_router_address = Address::from_slice(&self.hashflow_router_address);
             ProtocolApprovalsManager::new()?.approval_needed(
-                bytes_to_address(&swap.token_in)?,
+                bytes_to_address(swap.token_in())?,
                 tycho_router_address,
                 hashflow_router_address,
             )?
@@ -1060,13 +1060,13 @@ impl SwapEncoder for HashflowSwapEncoder {
 
         // Get quote
         let protocol_state = swap
-            .protocol_state
+            .get_protocol_state()
             .as_ref()
             .ok_or_else(|| {
                 EncodingError::FatalError("protocol_state is required for Hashflow".to_string())
             })?;
         let amount_in = swap
-            .estimated_amount_in
+            .get_estimated_amount_in()
             .as_ref()
             .ok_or(EncodingError::FatalError(
                 "Estimated amount in is mandatory for a Hashflow swap".to_string(),
@@ -1084,8 +1084,8 @@ impl SwapEncoder for HashflowSwapEncoder {
                     .as_indicatively_priced()?
                     .request_signed_quote(GetAmountOutParams {
                         amount_in,
-                        token_in: swap.token_in.clone(),
-                        token_out: swap.token_out.clone(),
+                        token_in: swap.token_in().clone(),
+                        token_out: swap.token_out().clone(),
                         sender,
                         receiver: encoding_context.receiver.clone(),
                     })
@@ -1160,20 +1160,20 @@ impl SwapEncoder for FluidV1SwapEncoder {
         swap: &Swap,
         encoding_context: &EncodingContext,
     ) -> Result<Vec<u8>, EncodingError> {
-        let dex_address = Address::from_str(&swap.component.id).map_err(|_| {
+        let dex_address = Address::from_str(&swap.component().id).map_err(|_| {
             EncodingError::FatalError(format!(
                 "Failed parsing FluidV1 component id as ethereum address: {}",
-                &swap.component.id
+                &swap.component().id
             ))
         })?;
 
         let args = (
             dex_address,
-            self.coerce_native_address(&swap.token_in) <
-                self.coerce_native_address(&swap.token_out),
+            self.coerce_native_address(swap.token_in()) <
+                self.coerce_native_address(swap.token_out()),
             bytes_to_address(&encoding_context.receiver)?,
             (encoding_context.transfer_type as u8).to_be_bytes(),
-            swap.token_in == self.chain.native_token().address,
+            *swap.token_in() == self.chain.native_token().address,
         );
         Ok(args.abi_encode_packed())
     }
@@ -1226,11 +1226,11 @@ impl SwapEncoder for SlipstreamsSwapEncoder {
         swap: &Swap,
         encoding_context: &EncodingContext,
     ) -> Result<Vec<u8>, EncodingError> {
-        let token_in_address = bytes_to_address(&swap.token_in)?;
-        let token_out_address = bytes_to_address(&swap.token_out)?;
+        let token_in_address = bytes_to_address(swap.token_in())?;
+        let token_out_address = bytes_to_address(swap.token_out())?;
 
         let zero_to_one = Self::get_zero_to_one(token_in_address, token_out_address);
-        let component_id = Address::from_str(&swap.component.id).map_err(|_| {
+        let component_id = Address::from_str(&swap.component().id).map_err(|_| {
             EncodingError::FatalError("Invalid Slipstreams component id".to_string())
         })?;
         let tick_spacing_bytes = get_static_attribute(swap, "tick_spacing")?;
@@ -1293,7 +1293,7 @@ impl SwapEncoder for RocketpoolSwapEncoder {
         swap: &Swap,
         encoding_context: &EncodingContext,
     ) -> Result<Vec<u8>, EncodingError> {
-        let is_deposit = swap.token_in == self.native_token_address;
+        let is_deposit = *swap.token_in() == self.native_token_address;
 
         let args = (
             is_deposit,
@@ -1332,11 +1332,11 @@ impl SwapEncoder for ERC4626SwapEncoder {
         swap: &Swap,
         encoding_context: &EncodingContext,
     ) -> Result<Vec<u8>, EncodingError> {
-        let component_id = AlloyBytes::from_str(&swap.component.id)
+        let component_id = AlloyBytes::from_str(&swap.component().id)
             .map_err(|_| EncodingError::FatalError("Invalid component ID".to_string()))?;
         let token_approvals_manager = ProtocolApprovalsManager::new()?;
-        let token = bytes_to_address(&swap.token_in)?;
-        let token_out = bytes_to_address(&swap.token_out)?;
+        let token = bytes_to_address(swap.token_in())?;
+        let token_out = bytes_to_address(swap.token_out())?;
         let pool_address = Address::from_slice(&component_id);
         let mut approval_needed: bool = false;
 
@@ -1352,7 +1352,7 @@ impl SwapEncoder for ERC4626SwapEncoder {
             }
         };
         let args = (
-            bytes_to_address(&swap.token_in)?,
+            bytes_to_address(swap.token_in())?,
             component_id,
             bytes_to_address(&encoding_context.receiver)?,
             (encoding_context.transfer_type as u8).to_be_bytes(),
@@ -1430,32 +1430,35 @@ impl SwapEncoder for LidoSwapEncoder {
         swap: &Swap,
         encoding_context: &EncodingContext,
     ) -> Result<Vec<u8>, EncodingError> {
-        let (pool, direction, approval_needed) = if swap.token_in == self.eth_address &&
-            swap.token_out == self.st_eth_address
-        {
-            (LidoPool::StETH, LidoPoolDirection::Stake, false)
-        } else if swap.token_in == self.st_eth_address && swap.token_out == self.wst_eth_address {
-            let token_approvals_manager = ProtocolApprovalsManager::new()?;
-            let token = bytes_to_address(&self.st_eth_address)?;
-            let mut approval_needed: bool = true;
+        let (pool, direction, approval_needed) =
+            if *swap.token_in() == self.eth_address && *swap.token_out() == self.st_eth_address {
+                (LidoPool::StETH, LidoPoolDirection::Stake, false)
+            } else if *swap.token_in() == self.st_eth_address &&
+                *swap.token_out() == self.wst_eth_address
+            {
+                let token_approvals_manager = ProtocolApprovalsManager::new()?;
+                let token = bytes_to_address(&self.st_eth_address)?;
+                let mut approval_needed: bool = true;
 
-            if let Some(router_address) = &encoding_context.router_address {
-                if !encoding_context.historical_trade {
-                    let tycho_router_address = bytes_to_address(router_address)?;
-                    approval_needed = token_approvals_manager.approval_needed(
-                        token,
-                        tycho_router_address,
-                        bytes_to_address(&self.wst_eth_address)?,
-                    )?;
+                if let Some(router_address) = &encoding_context.router_address {
+                    if !encoding_context.historical_trade {
+                        let tycho_router_address = bytes_to_address(router_address)?;
+                        approval_needed = token_approvals_manager.approval_needed(
+                            token,
+                            tycho_router_address,
+                            bytes_to_address(&self.wst_eth_address)?,
+                        )?;
+                    }
                 }
-            }
 
-            (LidoPool::WStETH, LidoPoolDirection::Wrap, approval_needed)
-        } else if swap.token_in == self.wst_eth_address && swap.token_out == self.st_eth_address {
-            (LidoPool::WStETH, LidoPoolDirection::Unwrap, false)
-        } else {
-            return Err(EncodingError::InvalidInput("Combination not allowed".to_owned()))
-        };
+                (LidoPool::WStETH, LidoPoolDirection::Wrap, approval_needed)
+            } else if *swap.token_in() == self.wst_eth_address &&
+                *swap.token_out() == self.st_eth_address
+            {
+                (LidoPool::WStETH, LidoPoolDirection::Unwrap, false)
+            } else {
+                return Err(EncodingError::InvalidInput("Combination not allowed".to_owned()))
+            };
 
         let args = (
             bytes_to_address(&encoding_context.receiver)?,
@@ -1491,12 +1494,12 @@ mod tests {
     use super::*;
     use crate::encoding::{
         evm::utils::write_calldata_to_file,
-        models::{SwapBuilder, TransferType},
+        models::{Swap, TransferType},
     };
 
     mod uniswap_v2 {
         use super::*;
-        use crate::encoding::models::SwapBuilder;
+        use crate::encoding::models::Swap;
         #[test]
         fn test_encode_uniswap_v2() {
             let usv2_pool = ProtocolComponent {
@@ -1506,7 +1509,7 @@ mod tests {
 
             let token_in = Bytes::from("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
             let token_out = Bytes::from("0x6b175474e89094c44da98b954eedeac495271d0f");
-            let swap = SwapBuilder::new(usv2_pool, token_in.clone(), token_out.clone()).build();
+            let swap = Swap::new(usv2_pool, token_in.clone(), token_out.clone());
             let encoding_context = EncodingContext {
                 receiver: Bytes::from("0x9964bff29baa37b47604f3f3f51f3b3c5149d6de"), // BOB*
                 exact_out: false,
@@ -1547,7 +1550,7 @@ mod tests {
 
     mod uniswap_v3 {
         use super::*;
-        use crate::encoding::models::SwapBuilder;
+        use crate::encoding::models::Swap;
         #[test]
         fn test_encode_uniswap_v3() {
             let fee = BigInt::from(500);
@@ -1562,7 +1565,7 @@ mod tests {
             };
             let token_in = Bytes::from("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
             let token_out = Bytes::from("0x6b175474e89094c44da98b954eedeac495271d0f");
-            let swap = SwapBuilder::new(usv3_pool, token_in.clone(), token_out.clone()).build();
+            let swap = Swap::new(usv3_pool, token_in.clone(), token_out.clone());
             let encoding_context = EncodingContext {
                 receiver: Bytes::from("0x0000000000000000000000000000000000000001"),
                 exact_out: false,
@@ -1606,7 +1609,7 @@ mod tests {
 
     mod balancer_v2 {
         use super::*;
-        use crate::encoding::models::SwapBuilder;
+        use crate::encoding::models::Swap;
 
         #[test]
         fn test_encode_balancer_v2() {
@@ -1619,7 +1622,7 @@ mod tests {
             };
             let token_in = Bytes::from("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
             let token_out = Bytes::from("0xba100000625a3754423978a60c9317c58a424e3D");
-            let swap = SwapBuilder::new(balancer_pool, token_in.clone(), token_out.clone()).build();
+            let swap = Swap::new(balancer_pool, token_in.clone(), token_out.clone());
             let encoding_context = EncodingContext {
                 // The receiver was generated with `makeAddr("bob*") using forge`
                 receiver: Bytes::from("0x9964bff29baa37b47604f3f3f51f3b3c5149d6de"),
@@ -1687,7 +1690,7 @@ mod tests {
                 static_attributes,
                 ..Default::default()
             };
-            let swap = SwapBuilder::new(usv4_pool, token_in.clone(), token_out.clone()).build();
+            let swap = Swap::new(usv4_pool, token_in.clone(), token_out.clone());
             let encoding_context = EncodingContext {
                 // The receiver is ALICE to match the solidity tests
                 receiver: Bytes::from("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2"),
@@ -1759,7 +1762,7 @@ mod tests {
                 ..Default::default()
             };
 
-            let swap = SwapBuilder::new(usv4_pool, token_in.clone(), token_out.clone()).build();
+            let swap = Swap::new(usv4_pool, token_in.clone(), token_out.clone());
 
             let encoding_context = EncodingContext {
                 receiver: Bytes::from("0x0000000000000000000000000000000000000001"),
@@ -1857,11 +1860,9 @@ mod tests {
             };
 
             let initial_swap =
-                SwapBuilder::new(usde_usdt_component, usde_address.clone(), usdt_address.clone())
-                    .build();
+                Swap::new(usde_usdt_component, usde_address.clone(), usdt_address.clone());
             let second_swap =
-                SwapBuilder::new(usdt_wbtc_component, usdt_address.clone(), wbtc_address.clone())
-                    .build();
+                Swap::new(usdt_wbtc_component, usdt_address.clone(), wbtc_address.clone());
 
             let encoder = UniswapV4SwapEncoder::new(
                 Bytes::from("0xF62849F9A0B5Bf2913b396098F7c7019b51A820a"),
@@ -2018,12 +2019,8 @@ mod tests {
                 ..Default::default()
             };
 
-            let first_swap =
-                SwapBuilder::new(usdc_weth_pool, usdc_address.clone(), weth_address.clone())
-                    .build();
-            let second_swap =
-                SwapBuilder::new(weth_usdt_pool, weth_address.clone(), usdt_address.clone())
-                    .build();
+            let first_swap = Swap::new(usdc_weth_pool, usdc_address.clone(), weth_address.clone());
+            let second_swap = Swap::new(weth_usdt_pool, weth_address.clone(), usdt_address.clone());
 
             // Encoder reads Angstrom config from environment variables:
             // - ANGSTROM_API_KEY (required)
@@ -2076,7 +2073,7 @@ mod tests {
 
             let component = ProtocolComponent { static_attributes, ..Default::default() };
 
-            let swap = SwapBuilder::new(component, token_in.clone(), token_out.clone()).build();
+            let swap = Swap::new(component, token_in.clone(), token_out.clone());
 
             let encoding_context = EncodingContext {
                 receiver: RECEIVER.into(),
@@ -2131,7 +2128,7 @@ mod tests {
                 historical_trade: false,
             };
 
-            let first_swap = SwapBuilder::new(
+            let first_swap = Swap::new(
                 ProtocolComponent {
                     static_attributes: HashMap::from([
                         ("fee".to_string(), Bytes::from(0_u64)),
@@ -2145,10 +2142,9 @@ mod tests {
                 },
                 group_token_in.clone(),
                 intermediary_token.clone(),
-            )
-            .build();
+            );
 
-            let second_swap = SwapBuilder::new(
+            let second_swap = Swap::new(
                 ProtocolComponent {
                     // 0.0025% fee & 0.005% base pool
                     static_attributes: HashMap::from([
@@ -2160,8 +2156,7 @@ mod tests {
                 },
                 intermediary_token.clone(),
                 group_token_out.clone(),
-            )
-            .build();
+            );
 
             let first_encoded_swap = encoder
                 .encode_swap(&first_swap, &encoding_context)
@@ -2270,7 +2265,7 @@ mod tests {
         ) {
             let mut static_attributes: HashMap<String, Bytes> = HashMap::new();
             static_attributes.insert("coins".into(), Bytes::from_str(coins).unwrap());
-            let swap = SwapBuilder::new(
+            let swap = Swap::new(
                 ProtocolComponent {
                     id: "pool-id".into(),
                     protocol_system: String::from("vm:curve"),
@@ -2279,8 +2274,7 @@ mod tests {
                 },
                 Bytes::from(token_in),
                 Bytes::from(token_out),
-            )
-            .build();
+            );
 
             let encoder =
                 CurveSwapEncoder::new(Bytes::default(), Chain::Ethereum, curve_config()).unwrap();
@@ -2315,8 +2309,7 @@ mod tests {
             };
             let token_in = Bytes::from("0x6B175474E89094C44Da98b954EedeAC495271d0F");
             let token_out = Bytes::from("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
-            let swap =
-                SwapBuilder::new(curve_tri_pool, token_in.clone(), token_out.clone()).build();
+            let swap = Swap::new(curve_tri_pool, token_in.clone(), token_out.clone());
 
             let encoding_context = EncodingContext {
                 // The receiver was generated with `makeAddr("bob*") using forge`
@@ -2384,7 +2377,7 @@ mod tests {
             };
             let token_in = Bytes::from("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
             let token_out = Bytes::from("0x4c9EDD5852cd905f086C759E8383e09bff1E68B3");
-            let swap = SwapBuilder::new(curve_pool, token_in.clone(), token_out.clone()).build();
+            let swap = Swap::new(curve_pool, token_in.clone(), token_out.clone());
             let encoding_context = EncodingContext {
                 // The receiver was generated with `makeAddr("bob*") using forge`
                 receiver: Bytes::from("0x9964bff29baa37b47604f3f3f51f3b3c5149d6de"),
@@ -2452,7 +2445,7 @@ mod tests {
             };
             let token_in = Bytes::from("0x0000000000000000000000000000000000000000");
             let token_out = Bytes::from("0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84");
-            let swap = SwapBuilder::new(curve_pool, token_in.clone(), token_out.clone()).build();
+            let swap = Swap::new(curve_pool, token_in.clone(), token_out.clone());
             let encoding_context = EncodingContext {
                 // The receiver was generated with `makeAddr("bob*") using forge`
                 receiver: Bytes::from("0x9964bff29baa37b47604f3f3f51f3b3c5149d6de"),
@@ -2521,7 +2514,7 @@ mod tests {
             };
             let token_in = Bytes::from("0x7bc3485026ac48b6cf9baf0a377477fff5703af8");
             let token_out = Bytes::from("0xc71ea051a5f82c67adcf634c36ffe6334793d24c");
-            let swap = SwapBuilder::new(balancer_pool, token_in.clone(), token_out.clone()).build();
+            let swap = Swap::new(balancer_pool, token_in.clone(), token_out.clone());
             let encoding_context = EncodingContext {
                 // The receiver was generated with `makeAddr("bob*") using forge`
                 receiver: Bytes::from("0x9964bff29baa37b47604f3f3f51f3b3c5149d6de"),
@@ -2574,7 +2567,7 @@ mod tests {
             };
             let token_in = Bytes::from("0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f");
             let token_out = Bytes::from("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
-            let swap = SwapBuilder::new(maverick_pool, token_in.clone(), token_out.clone()).build();
+            let swap = Swap::new(maverick_pool, token_in.clone(), token_out.clone());
             let encoding_context = EncodingContext {
                 // The receiver was generated with `makeAddr("bob*") using forge`
                 receiver: Bytes::from("0x9964bff29baa37b47604f3f3f51f3b3c5149d6de"),
@@ -2665,10 +2658,9 @@ mod tests {
             let token_in = Bytes::from("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"); // USDC
             let token_out = Bytes::from("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"); // WETH
 
-            let swap = SwapBuilder::new(bebop_component, token_in.clone(), token_out.clone())
+            let swap = Swap::new(bebop_component, token_in.clone(), token_out.clone())
                 .estimated_amount_in(BigUint::from_str("3000000000").unwrap())
-                .protocol_state(Arc::new(bebop_state))
-                .build();
+                .protocol_state(Arc::new(bebop_state));
 
             let encoding_context = EncodingContext {
                 receiver: Bytes::from("0xc5564C13A157E6240659fb81882A28091add8670"),
@@ -2719,7 +2711,7 @@ mod tests {
         use super::*;
         use crate::encoding::{
             evm::testing_utils::MockRFQState,
-            models::{SwapBuilder, TransferType},
+            models::{Swap, TransferType},
         };
 
         fn hashflow_config() -> Option<HashMap<String, String>> {
@@ -2741,9 +2733,8 @@ mod tests {
             let token_in = Bytes::from("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"); // USDC
             let token_out = Bytes::from("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"); // WETH
 
-            let swap = SwapBuilder::new(hashflow_component, token_in.clone(), token_out.clone())
-                .estimated_amount_in(BigUint::from_str("3000000000").unwrap())
-                .build();
+            let swap = Swap::new(hashflow_component, token_in.clone(), token_out.clone())
+                .estimated_amount_in(BigUint::from_str("3000000000").unwrap());
 
             let encoding_context = EncodingContext {
                 receiver: Bytes::from("0xc5564C13A157E6240659fb81882A28091add8670"),
@@ -2834,10 +2825,9 @@ mod tests {
             let token_in = Bytes::from("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"); // USDC
             let token_out = Bytes::from("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"); // WETH
 
-            let swap = SwapBuilder::new(hashflow_component, token_in.clone(), token_out.clone())
+            let swap = Swap::new(hashflow_component, token_in.clone(), token_out.clone())
                 .estimated_amount_in(BigUint::from_str("3000000000").unwrap())
-                .protocol_state(Arc::new(hashflow_state))
-                .build();
+                .protocol_state(Arc::new(hashflow_state));
 
             let encoding_context = EncodingContext {
                 receiver: Bytes::from("0xc5564C13A157E6240659fb81882A28091add8670"),
@@ -2881,7 +2871,7 @@ mod tests {
             };
             let token_in = Bytes::from("0x9d39a5de30e57443bff2a8307a4256c8797a3497");
             let token_out = Bytes::from("0xdac17f958d2ee523a2206206994597c13d831ec7");
-            let swap = SwapBuilder::new(fluid_dex, token_in.clone(), token_out.clone()).build();
+            let swap = Swap::new(fluid_dex, token_in.clone(), token_out.clone());
             let encoding_context = EncodingContext {
                 // The receiver was generated with `makeAddr("bob*") using forge`
                 receiver: Bytes::from("0x9964bff29baa37b47604f3f3f51f3b3c5149d6de"),
@@ -2935,8 +2925,7 @@ mod tests {
             };
             let token_in = Bytes::from("0x0000000000000000000000000000000000000000");
             let token_out = Bytes::from("0xae78736Cd615f374D3085123A210448E74Fc6393");
-            let swap =
-                SwapBuilder::new(rocketpool_pool, token_in.clone(), token_out.clone()).build();
+            let swap = Swap::new(rocketpool_pool, token_in.clone(), token_out.clone());
             let encoding_context = EncodingContext {
                 // The receiver was generated with `makeAddr("bob*") using forge`
                 receiver: Bytes::from("0x9964bff29baa37b47604f3f3f51f3b3c5149d6de"),
@@ -2985,8 +2974,7 @@ mod tests {
             };
             let token_in = Bytes::from("0xae78736Cd615f374D3085123A210448E74Fc6393");
             let token_out = Bytes::from("0x0000000000000000000000000000000000000000");
-            let swap =
-                SwapBuilder::new(rocketpool_pool, token_in.clone(), token_out.clone()).build();
+            let swap = Swap::new(rocketpool_pool, token_in.clone(), token_out.clone());
             let encoding_context = EncodingContext {
                 // The receiver was generated with `makeAddr("bob*") using forge`
                 receiver: Bytes::from("0x9964bff29baa37b47604f3f3f51f3b3c5149d6de"),
@@ -3038,7 +3026,7 @@ mod tests {
             };
             let token_in = Bytes::from("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2");
             let token_out = Bytes::from("0xfE6eb3b609a7C8352A241f7F3A21CEA4e9209B8f");
-            let swap = SwapBuilder::new(sp_eth_pool, token_in.clone(), token_out.clone()).build();
+            let swap = Swap::new(sp_eth_pool, token_in.clone(), token_out.clone());
             let encoding_context = EncodingContext {
                 // The receiver was generated with `makeAddr("bob") using forge`
                 receiver: Bytes::from("0x1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e"),
@@ -3089,7 +3077,7 @@ mod tests {
             };
             let token_in = Bytes::from("0xfE6eb3b609a7C8352A241f7F3A21CEA4e9209B8f");
             let token_out = Bytes::from("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2");
-            let swap = SwapBuilder::new(sp_eth_pool, token_in.clone(), token_out.clone()).build();
+            let swap = Swap::new(sp_eth_pool, token_in.clone(), token_out.clone());
             let encoding_context = EncodingContext {
                 // The receiver was generated with `makeAddr("bob") using forge`
                 receiver: Bytes::from("0x1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e"),
@@ -3133,7 +3121,7 @@ mod tests {
 
     mod lido {
         use super::*;
-        use crate::encoding::models::SwapBuilder;
+        use crate::encoding::models::Swap;
 
         fn lido_config() -> HashMap<String, String> {
             HashMap::from([
@@ -3157,8 +3145,7 @@ mod tests {
 
             let token_in = Bytes::from("0x0000000000000000000000000000000000000000");
             let token_out = Bytes::from("0xae7ab96520de3a18e5e111b5eaab095312d7fe84");
-            let swap =
-                SwapBuilder::new(lido_steth_pool, token_in.clone(), token_out.clone()).build();
+            let swap = Swap::new(lido_steth_pool, token_in.clone(), token_out.clone());
             let encoding_context = EncodingContext {
                 receiver: Bytes::from("0x1D96F2f6BeF1202E4Ce1Ff6Dad0c2CB002861d3e"), // BOB
                 exact_out: false,
@@ -3204,8 +3191,7 @@ mod tests {
 
             let token_in = Bytes::from("0xae7ab96520de3a18e5e111b5eaab095312d7fe84");
             let token_out = Bytes::from("0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0");
-            let swap =
-                SwapBuilder::new(lido_wsteth_pool, token_in.clone(), token_out.clone()).build();
+            let swap = Swap::new(lido_wsteth_pool, token_in.clone(), token_out.clone());
             let encoding_context = EncodingContext {
                 receiver: Bytes::from("0x1D96F2f6BeF1202E4Ce1Ff6Dad0c2CB002861d3e"), // BOB
                 exact_out: false,
@@ -3251,8 +3237,7 @@ mod tests {
 
             let token_in = Bytes::from("0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0");
             let token_out = Bytes::from("0xae7ab96520de3a18e5e111b5eaab095312d7fe84");
-            let swap =
-                SwapBuilder::new(lido_wsteth_pool, token_in.clone(), token_out.clone()).build();
+            let swap = Swap::new(lido_wsteth_pool, token_in.clone(), token_out.clone());
             let encoding_context = EncodingContext {
                 receiver: Bytes::from("0x1D96F2f6BeF1202E4Ce1Ff6Dad0c2CB002861d3e"), // BOB
                 exact_out: false,
@@ -3298,8 +3283,7 @@ mod tests {
 
             let token_in = Bytes::from("0xae7ab96520de3a18e5e111b5eaab095312d7fe84");
             let token_out = Bytes::from("0x0000000000000000000000000000000000000000");
-            let swap =
-                SwapBuilder::new(lido_wsteth_pool, token_in.clone(), token_out.clone()).build();
+            let swap = Swap::new(lido_wsteth_pool, token_in.clone(), token_out.clone());
             let encoding_context = EncodingContext {
                 receiver: Bytes::from("0x1D96F2f6BeF1202E4Ce1Ff6Dad0c2CB002861d3e"), // BOB
                 exact_out: false,

@@ -66,8 +66,8 @@ fn main() {
     let usdc = Bytes::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap();
     let usdt = Bytes::from_str("0xdAC17F958D2ee523a2206206994597C13D831ec7").unwrap();
 
-    let swap_dai_usdc = Swap {
-        component: ProtocolComponent {
+    let swap_dai_usdc = Swap::new(
+        ProtocolComponent {
             id: "0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168".to_string(),
             protocol_system: "uniswap_v3".to_string(),
             static_attributes: {
@@ -78,15 +78,11 @@ fn main() {
             },
             ..Default::default()
         },
-        token_in: dai.clone(),
-        token_out: usdc.clone(),
-        split: 0f64,
-        user_data: None,
-        protocol_state: None,
-        estimated_amount_in: None,
-    };
-    let swap_usdc_usdt = Swap {
-        component: ProtocolComponent {
+        dai.clone(),
+        usdc.clone(),
+    );
+    let swap_usdc_usdt = Swap::new(
+        ProtocolComponent {
             id: "0x3416cF6C708Da44DB2624D63ea0AAef7113527C6".to_string(),
             protocol_system: "uniswap_v3".to_string(),
             static_attributes: {
@@ -97,13 +93,9 @@ fn main() {
             },
             ..Default::default()
         },
-        token_in: usdc.clone(),
-        token_out: usdt.clone(),
-        split: 0f64,
-        user_data: None,
-        protocol_state: None,
-        estimated_amount_in: None,
-    };
+        usdc.clone(),
+        usdt.clone(),
+    );
 
     // Then we create a solution object with the previous swap
     let solution = Solution {
