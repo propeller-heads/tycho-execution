@@ -70,12 +70,13 @@ contract RocketpoolExecutor is IExecutor, RestrictTransferFrom {
         )
     {
         bool isDeposit = uint8(data[0]) == 1;
-        transferType = TransferType(uint8(data[1]));
         receiver = address(bytes20(data[2:22]));
         approvalNeeded = false;
 
         if (isDeposit) {
             // ETH -> rETH
+            // Security: Hardcode TransferNativeInMsgValue for deposits to prevent malicious encoding
+            transferType = RestrictTransferFrom.TransferType.TransferNativeInMsgValue;
             tokenIn = address(0);
             tokenOut = address(RETH);
         } else {

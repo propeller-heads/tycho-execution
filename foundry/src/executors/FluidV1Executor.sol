@@ -81,8 +81,19 @@ contract FluidV1Executor is IExecutor, ICallback, RestrictTransferFrom {
             address tokenOut
         )
     {
+        // Decode to check if this is a native sell
+        bool isNativeSell = uint8(data[42]) > 0;
+
+        // Security: Hardcode TransferNativeInMsgValue for native sells to prevent malicious encoding
+        if (isNativeSell) {
+            transferType = RestrictTransferFrom.TransferType.TransferNativeInMsgValue;
+        } else {
+            // For non-native cases, decode transferType from data
+            transferType = TransferType(uint8(data[41]));
+        }
+
         return (
-            RestrictTransferFrom.TransferType.ProtocolWillDebit,
+            transferType,
             address(0),
             address(0),
             false,

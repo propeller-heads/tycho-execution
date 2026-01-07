@@ -124,12 +124,10 @@ contract EkuboExecutor is
             receiver = address(core);
         } else {
             transferType = RestrictTransferFrom.TransferType.ProtocolWillDebit;
-            receiver=address(0);
+            receiver = address(0);
             tokenIn = address(0);
             amount = 0;
         }
-
-
     }
 
     function handleCallback(bytes calldata raw)

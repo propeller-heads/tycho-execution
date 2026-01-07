@@ -147,6 +147,8 @@ contract LidoExecutor is IExecutor, RestrictTransferFrom {
         if (pool == LidoPoolType.stETH && direction == LidoPoolDirection.Stake)
         {
             // ETH -> stETH
+            // Security: Hardcode TransferNativeInMsgValue for staking to prevent malicious encoding
+            transferType = RestrictTransferFrom.TransferType.TransferNativeInMsgValue;
             tokenIn = address(0);
             tokenOut = stETHAddress;
         } else if (

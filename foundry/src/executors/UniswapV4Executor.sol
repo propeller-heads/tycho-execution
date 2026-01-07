@@ -311,10 +311,10 @@ contract UniswapV4Executor is
             // After selector: poolKey (160 bytes), zeroForOne (32), amountIn (32), transferType (32), receiver (32), hookData (dynamic)
             // Extract amountIn at offset 4 + 160 + 32 = 196
             uint128 amountIn = uint128(bytes16(stripped[228:244]));
-            // Extract transferType at offset 244
-            transferType = TransferType(uint8(stripped[276]));
             // Extract zeroForOne at offset 164
             bool zeroForOne = uint8(stripped[196]) > 0;
+            // Extract transferType at offset 244
+            transferType = TransferType(uint8(stripped[276]));
 
             // PoolKey starts at offset 4: currency0 (20), currency1 (20), fee (4), tickSpacing (4), hooks (20)
             address currency0 = address(bytes20(stripped[16:36]));
@@ -328,10 +328,10 @@ contract UniswapV4Executor is
             // After selector: currencyIn (32), path offset (32), amountIn (32), transferType (32), receiver (32)
             // Extract amountIn at offset 4 + 32 + 32 = 68
             uint128 amountIn = uint128(bytes16(stripped[84:100]));
-            // Extract transferType at offset 100
-            transferType = TransferType(uint8(stripped[132]));
             // Extract currencyIn at offset 4
             tokenIn = address(bytes20(stripped[16:36]));
+            // Extract transferType at offset 100
+            transferType = TransferType(uint8(stripped[132]));
             amount = uint256(amountIn);
             receiver = address(poolManager);
             approvalNeeded = false;
