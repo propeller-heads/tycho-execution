@@ -7,7 +7,7 @@ use crate::encoding::{
     errors::EncodingError,
     evm::{
         approvals::permit2::Permit2,
-        constants::{GROUPABLE_PROTOCOLS, IN_TRANSFER_REQUIRED_PROTOCOLS},
+        constants::{FUNDS_IN_ROUTER_PROTOCOLS, GROUPABLE_PROTOCOLS},
         encoding_utils::encode_tycho_router_call,
         group_swaps::group_swaps,
         strategy_encoder::strategy_encoders::{
@@ -318,7 +318,7 @@ impl TychoExecutorEncoder {
                 ))
             })?;
 
-        let transfer = if IN_TRANSFER_REQUIRED_PROTOCOLS.contains(
+        let transfer = if !FUNDS_IN_ROUTER_PROTOCOLS.contains(
             &grouped_swap.swaps[0]
                 .component
                 .protocol_system

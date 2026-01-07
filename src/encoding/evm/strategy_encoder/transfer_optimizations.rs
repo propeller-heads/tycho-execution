@@ -5,7 +5,7 @@ use tycho_common::Bytes;
 use crate::encoding::{
     errors::EncodingError,
     evm::{
-        constants::{CALLBACK_CONSTRAINED_PROTOCOLS, IN_TRANSFER_REQUIRED_PROTOCOLS},
+        constants::{CALLBACK_CONSTRAINED_PROTOCOLS, FUNDS_IN_ROUTER_PROTOCOLS},
         group_swaps::SwapGroup,
     },
     models::{TransferType, UserTransferType},
@@ -40,7 +40,7 @@ impl TransferOptimization {
     ) -> TransferType {
         let is_first_swap = swap.token_in == *given_token;
         let in_transfer_required: bool =
-            IN_TRANSFER_REQUIRED_PROTOCOLS.contains(&swap.protocol_system.as_str());
+            !FUNDS_IN_ROUTER_PROTOCOLS.contains(&swap.protocol_system.as_str());
 
         if swap.token_in == self.native_token {
             // Funds are already in router. All protocols currently take care of native transfers.
@@ -86,7 +86,7 @@ impl TransferOptimization {
     ) -> Result<(Bytes, bool), EncodingError> {
         if let Some(next) = next_swap {
             // if the protocol of the next swap supports transfer in optimization
-            if IN_TRANSFER_REQUIRED_PROTOCOLS.contains(&next.protocol_system.as_str()) {
+            if !FUNDS_IN_ROUTER_PROTOCOLS.contains(&next.protocol_system.as_str()) {
                 // if the protocol does not allow for chained swaps, we can't optimize the
                 // receiver of this swap nor the transfer in of the next swap
                 if CALLBACK_CONSTRAINED_PROTOCOLS.contains(&next.protocol_system.as_str()) {
