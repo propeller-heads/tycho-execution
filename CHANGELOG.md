@@ -1,3 +1,10 @@
+## [0.150.0](https://github.com/propeller-heads/tycho-execution/compare/0.149.0...0.150.0) (2026-01-07)
+
+
+### Features
+
+* Get rid of SwapBuider and improve Swap ([8bf1573](https://github.com/propeller-heads/tycho-execution/commit/8bf1573b5a3af9efce93cd212475dd60fcf847f2))
+
 ## [0.149.0](https://github.com/propeller-heads/tycho-execution/compare/0.148.1...0.149.0) (2026-01-07)
 
 
