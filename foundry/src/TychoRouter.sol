@@ -557,8 +557,8 @@ contract TychoRouter is
             _updateDeltaAccounting(msg.sender, settlementToken, -int256(amountOut));
         }
 
-        // Settle all transient deltas to persistent storage
-        _settle(msg.sender, tokenIn, amountIn, settlementToken, amountOut);
+        // Finalize all transient deltas to persistent storage
+        _finalizeBalances(msg.sender, tokenIn, amountIn, settlementToken, amountOut);
 
         // Transfer tokens to receiver from router balance
         if (unwrapEth) {
@@ -639,8 +639,8 @@ contract TychoRouter is
             _updateDeltaAccounting(msg.sender, settlementToken, -int256(amountOut));
         }
 
-        // Settle all transient deltas to persistent storage
-        _settle(msg.sender, tokenIn, amountIn, settlementToken, amountOut);
+        // Finalize all transient deltas to persistent storage
+        _finalizeBalances(msg.sender, tokenIn, amountIn, settlementToken, amountOut);
 
         // Transfer tokens to receiver from router balance
         if (unwrapEth) {
@@ -719,8 +719,8 @@ contract TychoRouter is
             _updateDeltaAccounting(msg.sender, settlementToken, -int256(amountOut));
         }
 
-        // Settle all transient deltas to persistent storage
-        _settle(msg.sender, tokenIn, amountIn, settlementToken, amountOut);
+        // Finalize all transient deltas to persistent storage
+        _finalizeBalances(msg.sender, tokenIn, amountIn, settlementToken, amountOut);
 
         // Transfer tokens to receiver from router balance
         if (unwrapEth) {

@@ -239,14 +239,14 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
     }
 
     /**
-     * @dev Settle all transient deltas to persistent storage
-     * @param user The user whose deltas should be settled
+     * @dev Finalize all transient deltas to persistent storage
+     * @param user The user whose deltas should be finalized
      * @param inputToken The expected input token
      * @param inputAmount The expected input amount
      * @param outputToken The output token (may have positive delta)
      * @param outputAmount The amount being sent to receiver (not surplus)
      */
-    function _settle(
+    function _finalizeBalances(
         address user,
         address inputToken,
         uint256 inputAmount,
