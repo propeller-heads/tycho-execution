@@ -117,7 +117,7 @@ contract UniswapV4AngstromExecutorTest is Constants, TestUtils {
             USDC_ADDR,
             WETH_ADDR,
             true,
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             ALICE,
             firstPool
         );
@@ -156,7 +156,7 @@ contract UniswapV4AngstromExecutorTest is Constants, TestUtils {
             USDC_ADDR,
             WETH_ADDR,
             true,
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             ALICE,
             firstPool
         );

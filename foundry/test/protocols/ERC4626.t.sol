@@ -42,7 +42,7 @@ contract ERC4626ExecutorTest is Constants, TestUtils {
             WETH_ADDR,
             address(spETH),
             address(2),
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol,
+            RestrictTransferFrom.TransferType.None,
             false
         );
 
@@ -59,7 +59,7 @@ contract ERC4626ExecutorTest is Constants, TestUtils {
         assertEq(receiver, address(2));
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.FundsAlreadyInProtocol)
+            uint8(RestrictTransferFrom.TransferType.None)
         );
         assertEq(approvalNeeded, false);
     }
@@ -78,7 +78,7 @@ contract ERC4626ExecutorTest is Constants, TestUtils {
             WETH_ADDR,
             address(spETH),
             BOB,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol,
+            RestrictTransferFrom.TransferType.None,
             true
         );
 
@@ -99,7 +99,7 @@ contract ERC4626ExecutorTest is Constants, TestUtils {
             address(spETH),
             address(spETH),
             BOB,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol,
+            RestrictTransferFrom.TransferType.None,
             false
         );
 

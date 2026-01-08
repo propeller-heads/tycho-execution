@@ -69,7 +69,7 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
             uint8(2),
             uint8(0),
             true,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol,
+            RestrictTransferFrom.TransferType.None,
             ALICE
         );
 
@@ -94,7 +94,7 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
         assertEq(tokenApprovalNeeded, true);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.FundsAlreadyInProtocol)
+            uint8(RestrictTransferFrom.TransferType.None)
         );
         assertEq(receiver, ALICE);
     }
@@ -110,7 +110,7 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
             TRIPOOL,
             1,
             ALICE,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
+            RestrictTransferFrom.TransferType.None
         );
 
         (uint256 amountOut, address tokenOut, address receiver) = curveExecutorExposed.swap(amountIn, data);
@@ -130,7 +130,7 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
             STETH_POOL,
             1,
             ALICE,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
+            RestrictTransferFrom.TransferType.None
         );
 
         (uint256 amountOut, address tokenOut, address receiver) = curveExecutorExposed.swap(amountIn, data);
@@ -153,7 +153,7 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
             TRICRYPTO2_POOL,
             3,
             ALICE,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
+            RestrictTransferFrom.TransferType.None
         );
 
         (uint256 amountOut, address tokenOut, address receiver) = curveExecutorExposed.swap(amountIn, data);
@@ -173,7 +173,7 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
             SUSD_POOL,
             1,
             ALICE,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
+            RestrictTransferFrom.TransferType.None
         );
 
         (uint256 amountOut, address tokenOut, address receiver) = curveExecutorExposed.swap(amountIn, data);
@@ -193,7 +193,7 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
             FRAX_USDC_POOL,
             1,
             ALICE,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
+            RestrictTransferFrom.TransferType.None
         );
 
         (uint256 amountOut, address tokenOut, address receiver) = curveExecutorExposed.swap(amountIn, data);
@@ -213,7 +213,7 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
             USDE_USDC_POOL,
             1,
             ALICE,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
+            RestrictTransferFrom.TransferType.None
         );
 
         (uint256 amountOut, address tokenOut, address receiver) = curveExecutorExposed.swap(amountIn, data);
@@ -233,7 +233,7 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
             DOLA_FRAXPYUSD_POOL,
             1,
             ALICE,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
+            RestrictTransferFrom.TransferType.None
         );
 
         (uint256 amountOut, address tokenOut, address receiver) = curveExecutorExposed.swap(amountIn, data);
@@ -254,7 +254,7 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
             ETH_XYO_POOL,
             2,
             ALICE,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
+            RestrictTransferFrom.TransferType.None
         );
 
         (uint256 amountOut, address tokenOut, address receiver) = curveExecutorExposed.swap(amountIn, data);
@@ -274,7 +274,7 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
             BSGG_USDT_POOL,
             2,
             ALICE,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
+            RestrictTransferFrom.TransferType.None
         );
 
         (uint256 amountOut, address tokenOut, address receiver) = curveExecutorExposed.swap(amountIn, data);
@@ -294,7 +294,7 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
             TRICRYPTO_POOL,
             2,
             ALICE,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
+            RestrictTransferFrom.TransferType.None
         );
 
         (uint256 amountOut, address tokenOut, address receiver) = curveExecutorExposed.swap(amountIn, data);
@@ -314,7 +314,7 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
             UWU_WETH_POOL,
             2,
             ALICE,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
+            RestrictTransferFrom.TransferType.None
         );
 
         (uint256 amountOut, address tokenOut, address receiver) = curveExecutorExposed.swap(amountIn, data);
@@ -334,7 +334,7 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
             CRVUSD_USDT_POOL,
             1,
             ALICE,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
+            RestrictTransferFrom.TransferType.None
         );
 
         (uint256 amountOut, address tokenOut, address receiver) = curveExecutorExposed.swap(amountIn, data);
@@ -354,7 +354,7 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
             WSTTAO_WTAO_POOL,
             1,
             ALICE,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
+            RestrictTransferFrom.TransferType.None
         );
 
         (uint256 amountOut, address tokenOut, address receiver) = curveExecutorExposed.swap(amountIn, data);

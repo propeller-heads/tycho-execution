@@ -44,7 +44,8 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
      * @param amountIn The input amount (before fees)
      * @param data Encoded fee parameters:
      *        solutionFeeBps (uint16) | solutionFeeReceiver (address) |
-     *        routerFeeBps (uint16) | routerFeeReceiver (address) | token (address)
+     *        routerFeeOnOutputBps (uint16) | routerFeeOnSolverFeeBps (uint16) |
+     *        routerFeeReceiver (address) | token (address)
      * @return amountOut The output amount (after fee deductions)
      */
     function take_fee(uint256 amountIn, bytes calldata data)
@@ -54,31 +55,41 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
         (
             uint16 solutionFeeBps,
             address solutionFeeReceiver,
-            uint16 routerFeeBps,
+            uint16 routerFeeOnOutputBps,
+            uint16 routerFeeOnSolverFeeBps,
             address routerFeeReceiver,
             address token
         ) = _decodeData(data);
 
-        if (solutionFeeBps > MAX_FEE_BPS || routerFeeBps > MAX_FEE_BPS) {
+        if (solutionFeeBps > MAX_FEE_BPS || routerFeeOnOutputBps > MAX_FEE_BPS || routerFeeOnSolverFeeBps > MAX_FEE_BPS) {
             revert FeeExecutor__FeeTooHigh();
         }
 
         amountOut = amountIn;
+        uint256 solutionFee = 0;
 
         // Deduct solution fee if > 0
         if (solutionFeeBps > 0) {
-            uint256 solutionFee = (amountOut * solutionFeeBps) / 10000;
+            solutionFee = (amountOut * solutionFeeBps) / 10000;
             amountOut -= solutionFee;
             _updateDeltaAccounting(msg.sender, token, -int256(solutionFee));  // Negative to debit
             _updateDeltaAccounting(solutionFeeReceiver, token, int256(solutionFee));  // Positive to credit
         }
 
-        // Deduct router fee if > 0
-        if (routerFeeBps > 0) {
-            uint256 routerFee = (amountOut * routerFeeBps) / 10000;
-            amountOut -= routerFee;
-            _updateDeltaAccounting(msg.sender, token, -int256(routerFee));  // Negative to debit
-            _updateDeltaAccounting(routerFeeReceiver, token, int256(routerFee));  // Positive to credit
+        // Deduct router fee on output amount if > 0
+        if (routerFeeOnOutputBps > 0) {
+            uint256 routerFeeOnOutput = (amountOut * routerFeeOnOutputBps) / 10000;
+            amountOut -= routerFeeOnOutput;
+            _updateDeltaAccounting(msg.sender, token, -int256(routerFeeOnOutput));  // Negative to debit
+            _updateDeltaAccounting(routerFeeReceiver, token, int256(routerFeeOnOutput));  // Positive to credit
+        }
+
+        // Deduct router fee on solver fee if > 0 (calculated from solution fee)
+        if (routerFeeOnSolverFeeBps > 0 && solutionFee > 0) {
+            uint256 routerFeeOnSolverFee = (solutionFee * routerFeeOnSolverFeeBps) / 10000;
+            amountOut -= routerFeeOnSolverFee;
+            _updateDeltaAccounting(msg.sender, token, -int256(routerFeeOnSolverFee));  // Negative to debit
+            _updateDeltaAccounting(routerFeeReceiver, token, int256(routerFeeOnSolverFee));  // Positive to credit
         }
 
         return amountOut;
@@ -89,7 +100,8 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
      * @param data The encoded data
      * @return solutionFeeBps Solution fee in basis points
      * @return solutionFeeReceiver Address to receive the solution fee
-     * @return routerFeeBps Router fee in basis points
+     * @return routerFeeOnOutputBps Router fee on output amount in basis points
+     * @return routerFeeOnSolverFeeBps Router fee on solver fee in basis points
      * @return routerFeeReceiver Address to receive the router fee
      * @return token Token address for the fees
      */
@@ -99,7 +111,8 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
         returns (
             uint16 solutionFeeBps,
             address solutionFeeReceiver,
-            uint16 routerFeeBps,
+            uint16 routerFeeOnOutputBps,
+            uint16 routerFeeOnSolverFeeBps,
             address routerFeeReceiver,
             address token
         )
@@ -108,19 +121,21 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
         // ---------------------
         // 0  | solutionFeeBps (uint16)
         // 2  | solutionFeeReceiver (address)
-        // 22 | routerFeeBps (uint16)
-        // 24 | routerFeeReceiver (address)
-        // 44 | token (address)
-        // 64 | EOF
-        if (data.length != 64) {
+        // 22 | routerFeeOnOutputBps (uint16)
+        // 24 | routerFeeOnSolverFeeBps (uint16)
+        // 26 | routerFeeReceiver (address)
+        // 46 | token (address)
+        // 66 | EOF
+        if (data.length != 66) {
             revert FeeExecutor__InvalidDataLength();
         }
 
         solutionFeeBps = uint16(bytes2(data[0:2]));
         solutionFeeReceiver = address(bytes20(data[2:22]));
-        routerFeeBps = uint16(bytes2(data[22:24]));
-        routerFeeReceiver = address(bytes20(data[24:44]));
-        token = address(bytes20(data[44:64]));
+        routerFeeOnOutputBps = uint16(bytes2(data[22:24]));
+        routerFeeOnSolverFeeBps = uint16(bytes2(data[24:26]));
+        routerFeeReceiver = address(bytes20(data[26:46]));
+        token = address(bytes20(data[46:66]));
     }
 }
 

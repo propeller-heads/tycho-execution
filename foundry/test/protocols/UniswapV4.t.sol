@@ -77,7 +77,7 @@ contract UniswapV4ExecutorTest is Constants, TestUtils {
             USDE_ADDR,
             USDT_ADDR,
             zeroForOne,
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             ALICE,
             pools
         );
@@ -96,7 +96,7 @@ contract UniswapV4ExecutorTest is Constants, TestUtils {
         assertEq(zeroForOneDecoded, zeroForOne);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
+            uint8(RestrictTransferFrom.TransferType.Transfer)
         );
         assertEq(receiver, ALICE);
         assertEq(decodedPools[0].hook, address(0));
@@ -131,7 +131,7 @@ contract UniswapV4ExecutorTest is Constants, TestUtils {
             USDE_ADDR,
             USDT_ADDR,
             true,
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             ALICE,
             pools
         );
@@ -192,7 +192,7 @@ contract UniswapV4ExecutorTest is Constants, TestUtils {
             USDE_ADDR,
             WBTC_ADDR,
             true,
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             ALICE,
             pools
         );
@@ -249,7 +249,7 @@ contract UniswapV4ExecutorTest is Constants, TestUtils {
             USDC_ADDR,
             WETH_ADDR,
             true,
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             ALICE,
             pools
         );
@@ -315,7 +315,7 @@ contract UniswapV4ExecutorTestForEuler is Constants, TestUtils {
             RLUSD_ADDR,
             USDT_ADDR,
             true,
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             ALICE,
             pools
         );
@@ -355,7 +355,7 @@ contract UniswapV4ExecutorTestForEuler is Constants, TestUtils {
             RLUSD_ADDR,
             WBTC_ADDR,
             true,
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             ALICE,
             pools
         );
@@ -400,7 +400,7 @@ contract UniswapV4ExecutorTestForEuler is Constants, TestUtils {
             USDC_ADDR,
             USDT_ADDR,
             true,
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             ALICE,
             pools
         );
@@ -437,7 +437,7 @@ contract UniswapV4ExecutorTestForEuler is Constants, TestUtils {
             USDC_ADDR,
             USDT_ADDR,
             false,
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             ALICE,
             pools
         );
@@ -471,7 +471,7 @@ contract TychoRouterForUniswapV4Test is TychoRouterTestSetup {
             USDE_ADDR,
             USDT_ADDR,
             true,
-            RestrictTransferFrom.TransferType.TransferFromSender,
+            RestrictTransferFrom.TransferType.TransferFrom,
             ALICE,
             pools
         );
@@ -525,7 +525,7 @@ contract TychoRouterForUniswapV4Test is TychoRouterTestSetup {
             USDE_ADDR,
             WBTC_ADDR,
             true,
-            RestrictTransferFrom.TransferType.TransferFromSender,
+            RestrictTransferFrom.TransferType.TransferFrom,
             ALICE,
             pools
         );

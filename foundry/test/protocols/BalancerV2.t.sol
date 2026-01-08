@@ -46,7 +46,7 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
             WETH_BAL_POOL_ID,
             address(2),
             true,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
+            RestrictTransferFrom.TransferType.None
         );
 
         (
@@ -65,7 +65,7 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
         assertEq(needsApproval, true);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.FundsAlreadyInProtocol)
+            uint8(RestrictTransferFrom.TransferType.None)
         );
     }
 
@@ -85,7 +85,7 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
             WETH_BAL_POOL_ID,
             BOB,
             true,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
+            RestrictTransferFrom.TransferType.None
         );
 
         deal(WETH_ADDR, address(balancerV2Exposed), amountIn);
@@ -117,7 +117,7 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
         assertEq(needsApproval, true);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.FundsAlreadyInProtocol)
+            uint8(RestrictTransferFrom.TransferType.None)
         );
     }
 

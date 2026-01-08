@@ -72,12 +72,17 @@ contract TychoRouter is
     TychoVault
 {
     IWETH private immutable _weth;
-    uint16 private _routerFeeBps; // Router platform fee in basis points (e.g., 1 = 0.01%)
+    uint16 private _routerFeeOnOutputBps; // Router fee on output amount in basis points (e.g., 1 = 0.01%)
+    uint16 private _routerFeeOnSolverFeeBps; // Router fee on solver fee in basis points (e.g., 1 = 0.01%)
     address private _feeExecutor; // Address of the fee executor contract
 
-    // Per-user custom router fees
-    mapping(address => uint16) private _userRouterFees;
-    mapping(address => bool) private _hasCustomRouterFee;
+    // Per-user custom router fees on output amount
+    mapping(address => uint16) private _userRouterFeeOnOutput;
+    mapping(address => bool) private _hasCustomRouterFeeOnOutput;
+
+    // Per-user custom router fees on solver fee
+    mapping(address => uint16) private _userRouterFeeOnSolverFee;
+    mapping(address => bool) private _hasCustomRouterFeeOnSolverFee;
 
     using SafeERC20 for IERC20;
     using LibPrefixLengthEncodedByteArray for bytes;
@@ -98,11 +103,16 @@ contract TychoRouter is
     event Withdrawal(
         address indexed token, uint256 amount, address indexed receiver
     );
-    event RouterFeeUpdated(uint16 oldFeeBps, uint16 newFeeBps);
-    event UserRouterFeeUpdated(
+    event RouterFeeOnOutputUpdated(uint16 oldFeeBps, uint16 newFeeBps);
+    event RouterFeeOnSolverFeeUpdated(uint16 oldFeeBps, uint16 newFeeBps);
+    event UserRouterFeeOnOutputUpdated(
         address indexed user, uint16 oldFeeBps, uint16 newFeeBps
     );
-    event UserRouterFeeRemoved(address indexed user);
+    event UserRouterFeeOnSolverFeeUpdated(
+        address indexed user, uint16 oldFeeBps, uint16 newFeeBps
+    );
+    event UserRouterFeeOnOutputRemoved(address indexed user);
+    event UserRouterFeeOnSolverFeeRemoved(address indexed user);
     event FeeExecutorUpdated(address oldExecutor, address newExecutor);
 
     constructor(address _permit2, address weth) Dispatcher(_permit2) {
@@ -894,66 +904,135 @@ contract TychoRouter is
     }
 
     /**
-     * @dev Sets the router platform fee in basis points
+     * @dev Sets the router platform fee on output amount in basis points
      * @param feeBps The fee in basis points (e.g., 1 = 0.01%, 100 = 1%)
      */
-    function setRouterFee(uint16 feeBps)
+    function setRouterFeeOnOutput(uint16 feeBps)
         external
         onlyRole(ROUTER_FEE_SETTER_ROLE)
     {
-        uint16 oldFeeBps = _routerFeeBps;
-        _routerFeeBps = feeBps;
-        emit RouterFeeUpdated(oldFeeBps, feeBps);
+        uint16 oldFeeBps = _routerFeeOnOutputBps;
+        _routerFeeOnOutputBps = feeBps;
+        emit RouterFeeOnOutputUpdated(oldFeeBps, feeBps);
     }
 
     /**
-     * @dev Returns the current router platform fee in basis points
+     * @dev Returns the current router platform fee on output amount in basis points
      * @return The fee in basis points
      */
-    function getRouterFee() external view returns (uint16) {
-        return _routerFeeBps;
+    function getRouterFeeOnOutput() external view returns (uint16) {
+        return _routerFeeOnOutputBps;
     }
 
     /**
-     * @dev Sets a custom router fee for a specific user
+     * @dev Sets a custom router fee on output amount for a specific user
      * @param user The user address to set the custom fee for
      * @param feeBps The fee in basis points (e.g., 1 = 0.01%, 100 = 1%)
      */
-    function setRouterFeeForUser(address user, uint16 feeBps)
+    function setRouterFeeOnOutputForUser(address user, uint16 feeBps)
         external
         onlyRole(ROUTER_FEE_SETTER_ROLE)
     {
-        uint16 oldFeeBps =
-            _hasCustomRouterFee[user] ? _userRouterFees[user] : _routerFeeBps;
-        _userRouterFees[user] = feeBps;
-        _hasCustomRouterFee[user] = true;
-        emit UserRouterFeeUpdated(user, oldFeeBps, feeBps);
+        uint16 oldFeeBps = _hasCustomRouterFeeOnOutput[user]
+            ? _userRouterFeeOnOutput[user]
+            : _routerFeeOnOutputBps;
+        _userRouterFeeOnOutput[user] = feeBps;
+        _hasCustomRouterFeeOnOutput[user] = true;
+        emit UserRouterFeeOnOutputUpdated(user, oldFeeBps, feeBps);
     }
 
     /**
-     * @dev Removes the custom router fee for a specific user, reverting to default
+     * @dev Removes the custom router fee on output amount for a specific user, reverting to default
      * @param user The user address to remove the custom fee from
      */
-    function removeRouterFeeForUser(address user)
+    function removeRouterFeeOnOutputForUser(address user)
         external
         onlyRole(ROUTER_FEE_SETTER_ROLE)
     {
-        _hasCustomRouterFee[user] = false;
-        delete _userRouterFees[user];
-        emit UserRouterFeeRemoved(user);
+        _hasCustomRouterFeeOnOutput[user] = false;
+        delete _userRouterFeeOnOutput[user];
+        emit UserRouterFeeOnOutputRemoved(user);
     }
 
     /**
-     * @dev Returns the effective router fee for a specific user
+     * @dev Returns the effective router fee on output amount for a specific user
      * @param user The user address to check
      * @return The fee in basis points (custom if set, otherwise default)
      */
-    function getRouterFeeForUser(address user)
+    function getRouterFeeOnOutputForUser(address user)
         external
         view
         returns (uint16)
     {
-        return _hasCustomRouterFee[user] ? _userRouterFees[user] : _routerFeeBps;
+        return _hasCustomRouterFeeOnOutput[user]
+            ? _userRouterFeeOnOutput[user]
+            : _routerFeeOnOutputBps;
+    }
+
+    /**
+     * @dev Sets the router platform fee on solver fee in basis points
+     * @param feeBps The fee in basis points (e.g., 1 = 0.01%, 100 = 1%)
+     */
+    function setRouterFeeOnSolverFee(uint16 feeBps)
+        external
+        onlyRole(ROUTER_FEE_SETTER_ROLE)
+    {
+        uint16 oldFeeBps = _routerFeeOnSolverFeeBps;
+        _routerFeeOnSolverFeeBps = feeBps;
+        emit RouterFeeOnSolverFeeUpdated(oldFeeBps, feeBps);
+    }
+
+    /**
+     * @dev Returns the current router platform fee on solver fee in basis points
+     * @return The fee in basis points
+     */
+    function getRouterFeeOnSolverFee() external view returns (uint16) {
+        return _routerFeeOnSolverFeeBps;
+    }
+
+    /**
+     * @dev Sets a custom router fee on solver fee for a specific user
+     * @param user The user address to set the custom fee for
+     * @param feeBps The fee in basis points (e.g., 1 = 0.01%, 100 = 1%)
+     */
+    function setRouterFeeOnSolverFeeForUser(address user, uint16 feeBps)
+        external
+        onlyRole(ROUTER_FEE_SETTER_ROLE)
+    {
+        uint16 oldFeeBps = _hasCustomRouterFeeOnSolverFee[user]
+            ? _userRouterFeeOnSolverFee[user]
+            : _routerFeeOnSolverFeeBps;
+        _userRouterFeeOnSolverFee[user] = feeBps;
+        _hasCustomRouterFeeOnSolverFee[user] = true;
+        emit UserRouterFeeOnSolverFeeUpdated(user, oldFeeBps, feeBps);
+    }
+
+    /**
+     * @dev Removes the custom router fee on solver fee for a specific user, reverting to default
+     * @param user The user address to remove the custom fee from
+     */
+    function removeRouterFeeOnSolverFeeForUser(address user)
+        external
+        onlyRole(ROUTER_FEE_SETTER_ROLE)
+    {
+        _hasCustomRouterFeeOnSolverFee[user] = false;
+        delete _userRouterFeeOnSolverFee[user];
+        emit UserRouterFeeOnSolverFeeRemoved(user);
+    }
+
+    /**
+     * @dev Returns the effective router fee on solver fee for a specific user
+     * @param user The user address to check
+     * @return The fee in basis points (custom if set, otherwise default)
+     */
+    function getRouterFeeOnSolverFeeForUser(address user)
+        external
+        view
+        returns (uint16)
+    {
+        return _hasCustomRouterFeeOnSolverFee[user]
+            ? _userRouterFeeOnSolverFee[user]
+            : _routerFeeOnSolverFeeBps;
     }
 
     /**
@@ -1068,22 +1147,27 @@ contract TychoRouter is
         uint16 solutionFeeBps,
         address solutionFeeReceiver
     ) private returns (uint256) {
-        // Get the effective router fee for this user (custom or default)
-        uint16 effectiveRouterFeeBps = _hasCustomRouterFee[msg.sender]
-            ? _userRouterFees[msg.sender]
-            : _routerFeeBps;
+        // Get the effective router fees for this user (custom or default)
+        uint16 effectiveRouterFeeOnOutputBps = _hasCustomRouterFeeOnOutput[msg.sender]
+            ? _userRouterFeeOnOutput[msg.sender]
+            : _routerFeeOnOutputBps;
+
+        uint16 effectiveRouterFeeOnSolverFeeBps = _hasCustomRouterFeeOnSolverFee[msg.sender]
+            ? _userRouterFeeOnSolverFee[msg.sender]
+            : _routerFeeOnSolverFeeBps;
 
         if (
             _feeExecutor != address(0)
-                && (solutionFeeBps > 0 || effectiveRouterFeeBps > 0)
+                && (solutionFeeBps > 0 || effectiveRouterFeeOnOutputBps > 0 || effectiveRouterFeeOnSolverFeeBps > 0)
         ) {
             address feeToken = unwrapEth ? address(_weth) : tokenOut;
 
-            // Encode fee data: solutionFeeBps | solutionFeeReceiver | routerFeeBps | routerFeeReceiver | token
+            // Encode fee data: solutionFeeBps | solutionFeeReceiver | routerFeeOnOutputBps | routerFeeOnSolverFeeBps | routerFeeReceiver | token
             bytes memory feeData = abi.encodePacked(
                 solutionFeeBps, // solutionFeeBps
                 solutionFeeReceiver, // solutionFeeReceiver
-                effectiveRouterFeeBps, // routerFeeBps (custom or default)
+                effectiveRouterFeeOnOutputBps, // routerFeeOnOutputBps (custom or default)
+                effectiveRouterFeeOnSolverFeeBps, // routerFeeOnSolverFeeBps (custom or default)
                 address(this), // routerFeeReceiver = router
                 feeToken // token
             );
