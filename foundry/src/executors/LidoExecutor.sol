@@ -56,9 +56,8 @@ contract LidoExecutor is IExecutor, RestrictTransferFrom {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
-        address receiver;
         TransferType transferType;
         LidoPoolType pool;
         LidoPoolDirection direction;
@@ -72,6 +71,7 @@ contract LidoExecutor is IExecutor, RestrictTransferFrom {
             // stETH staking: ETH -> stETH
             // stETH is a rebasing token where balances are calculated from shares
             // Measure actual balance changes to account for rounding in share conversions
+            tokenOut = stETHAddress;
             uint256 balanceBefore = stETH.balanceOf(address(this));
 
             // slither-disable-next-line arbitrary-send-eth
@@ -97,7 +97,8 @@ contract LidoExecutor is IExecutor, RestrictTransferFrom {
             pool == LidoPoolType.wstETH && direction == LidoPoolDirection.Wrap
         ) {
             // wstETH wrapping: stETH -> wstETH
-            _transfer(address(this), transferType, stETHAddress, givenAmount);
+            //            _transfer(address(this), transferType, stETHAddress, givenAmount);
+            tokenOut = wstETH;
 
             if (approvalNeeded) {
                 stETH.forceApprove(wstETH, type(uint256).max - 1);
@@ -111,7 +112,8 @@ contract LidoExecutor is IExecutor, RestrictTransferFrom {
             pool == LidoPoolType.wstETH && direction == LidoPoolDirection.Unwrap
         ) {
             // wstETH unwrapping: wstETH -> stETH
-            _transfer(address(this), transferType, wstETH, givenAmount);
+            //            _transfer(address(this), transferType, wstETH, givenAmount);
+            tokenOut = stETHAddress;
             calculatedAmount = LidoWrappedPool(wstETH).unwrap(givenAmount);
             if (receiver != address(this)) {
                 uint256 receiverBalanceBefore = stETH.balanceOf(receiver);
@@ -123,6 +125,44 @@ contract LidoExecutor is IExecutor, RestrictTransferFrom {
             }
         } else {
             revert LidoExecutor__InvalidSwapDirection();
+        }
+    }
+
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            address tokenOut
+        )
+    {
+        LidoPoolType pool;
+        LidoPoolDirection direction;
+        bool approvalNeeded;
+        (receiver, transferType, pool, direction, approvalNeeded) =
+            _decodeData(data);
+
+        if (pool == LidoPoolType.stETH && direction == LidoPoolDirection.Stake)
+        {
+            // ETH -> stETH
+            // Security: Hardcode TransferNativeInMsgValue for staking to prevent malicious encoding
+            transferType = RestrictTransferFrom.TransferType.TransferNativeInMsgValue;
+            tokenIn = address(0);
+            tokenOut = stETHAddress;
+        } else if (
+            pool == LidoPoolType.wstETH && direction == LidoPoolDirection.Wrap
+        ) {
+            // stETH -> wstETH
+            tokenIn = stETHAddress;
+            tokenOut = wstETH;
+        } else if (
+            pool == LidoPoolType.wstETH && direction == LidoPoolDirection.Unwrap
+        ) {
+            // wstETH -> stETH
+            tokenIn = wstETH;
+            tokenOut = stETHAddress;
         }
     }
 

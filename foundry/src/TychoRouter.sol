@@ -69,12 +69,20 @@ contract TychoRouter is
     AccessControl,
     Dispatcher,
     Pausable,
-    RestrictTransferFrom,
     TychoVault
 {
     IWETH private immutable _weth;
-    uint16 private _routerFeeBps; // Router platform fee in basis points (e.g., 1 = 0.01%)
+    uint16 private _routerFeeOnOutputBps; // Router fee on output amount in basis points (e.g., 1 = 0.01%)
+    uint16 private _routerFeeOnSolverFeeBps; // Router fee on solver fee in basis points (e.g., 1 = 0.01%)
     address private _feeExecutor; // Address of the fee executor contract
+
+    // Per-user custom router fees on output amount
+    mapping(address => uint16) private _userRouterFeeOnOutput;
+    mapping(address => bool) private _hasCustomRouterFeeOnOutput;
+
+    // Per-user custom router fees on solver fee
+    mapping(address => uint16) private _userRouterFeeOnSolverFee;
+    mapping(address => bool) private _hasCustomRouterFeeOnSolverFee;
 
     using SafeERC20 for IERC20;
     using LibPrefixLengthEncodedByteArray for bytes;
@@ -95,10 +103,19 @@ contract TychoRouter is
     event Withdrawal(
         address indexed token, uint256 amount, address indexed receiver
     );
-    event RouterFeeUpdated(uint16 oldFeeBps, uint16 newFeeBps);
+    event RouterFeeOnOutputUpdated(uint16 oldFeeBps, uint16 newFeeBps);
+    event RouterFeeOnSolverFeeUpdated(uint16 oldFeeBps, uint16 newFeeBps);
+    event UserRouterFeeOnOutputUpdated(
+        address indexed user, uint16 oldFeeBps, uint16 newFeeBps
+    );
+    event UserRouterFeeOnSolverFeeUpdated(
+        address indexed user, uint16 oldFeeBps, uint16 newFeeBps
+    );
+    event UserRouterFeeOnOutputRemoved(address indexed user);
+    event UserRouterFeeOnSolverFeeRemoved(address indexed user);
     event FeeExecutorUpdated(address oldExecutor, address newExecutor);
 
-    constructor(address _permit2, address weth) RestrictTransferFrom(_permit2) {
+    constructor(address _permit2, address weth) Dispatcher(_permit2) {
         if (_permit2 == address(0) || weth == address(0)) {
             revert TychoRouter__AddressZero();
         }
@@ -109,7 +126,7 @@ contract TychoRouter is
 
     /**
      * @dev Override to resolve multiple inheritance
-     * Uses TychoVault's implementation
+     * Delegates to parent implementations (TychoVault)
      */
     function _updateDeltaAccounting(address user, address token, int256 deltaChange)
         internal
@@ -530,36 +547,28 @@ contract TychoRouter is
         amountOut = _splitSwap(amountIn, nTokens, swaps);
 
         // Deduct fees (both solution and router fees)
-        amountOut = _takeFees(
-            amountOut, tokenOut, unwrapEth, solutionFeeBps, solutionFeeReceiver
+        // FeeExecutor will transfer to receiver unless unwrapEth is true
+        address feeReceiver;
+        bool hasFees;
+        (amountOut, feeReceiver, hasFees) = _takeFees(
+            amountOut, tokenOut, unwrapEth, receiver, solutionFeeBps, solutionFeeReceiver
         );
 
         if (amountOut < minAmountOut) {
             revert TychoRouter__NegativeSlippage(amountOut, minAmountOut);
         }
 
-        // Credit output tokens that arrived at router to sender's vault (transient)
         address settlementToken = unwrapEth ? address(_weth) : tokenOut;
-        uint256 routerOutputBalance = _balanceOf(settlementToken, address(this));
-        if (routerOutputBalance > 0) {
-            _updateDeltaAccounting(msg.sender, settlementToken, int256(routerOutputBalance));
-        }
 
-        // Credit any leftover tokenIn funds to sender's vault (transient)
-        uint256 leftoverAmount = _balanceOf(tokenIn, address(this));
-        if (leftoverAmount > 0) {
-            _updateDeltaAccounting(msg.sender, tokenIn, int256(leftoverAmount));
-        }
+        // Finalize all transient deltas to persistent storage
+        _finalizeBalances(msg.sender, tokenIn, amountIn, settlementToken, amountOut, feeReceiver, receiver);
 
-        // Settle all transient deltas to persistent storage
-        _settle(msg.sender, tokenIn, amountIn, settlementToken, amountOut);
-
-        // Transfer tokens to receiver from router balance
+        // Only unwrap and transfer if unwrapEth is true
+        // Otherwise, FeeExecutor already transferred to receiver (if fees > 0)
+        // or the last executor sent directly to receiver (if fees = 0)
         if (unwrapEth) {
             _unwrapETH(amountOut);
             Address.sendValue(payable(receiver), amountOut);
-        } else {
-            SafeERC20.safeTransfer(IERC20(tokenOut), receiver, amountOut);
         }
 
         _verifyAmountOutWasReceived(
@@ -610,39 +619,31 @@ contract TychoRouter is
         (address executor, bytes calldata protocolData) =
             swap_.decodeSingleSwap();
 
-        amountOut = _callSwapOnExecutor(executor, amountIn, protocolData);
+        (amountOut,,) = _callSwapOnExecutor(executor, amountIn, protocolData);
 
         // Deduct fees (both solution and router fees)
-        amountOut = _takeFees(
-            amountOut, tokenOut, unwrapEth, solutionFeeBps, solutionFeeReceiver
+        // FeeExecutor will transfer to receiver unless unwrapEth is true
+        address feeReceiver;
+        bool hasFees;
+        (amountOut, feeReceiver, hasFees) = _takeFees(
+            amountOut, tokenOut, unwrapEth, receiver, solutionFeeBps, solutionFeeReceiver
         );
 
         if (amountOut < minAmountOut) {
             revert TychoRouter__NegativeSlippage(amountOut, minAmountOut);
         }
 
-        // Credit output tokens that arrived at router to sender's vault (transient)
         address settlementToken = unwrapEth ? address(_weth) : tokenOut;
-        uint256 routerOutputBalance = _balanceOf(settlementToken, address(this));
-        if (routerOutputBalance > 0) {
-            _updateDeltaAccounting(msg.sender, settlementToken, int256(routerOutputBalance));
-        }
 
-        // Credit any leftover tokenIn funds to sender's vault (transient)
-        uint256 leftoverAmount = _balanceOf(tokenIn, address(this));
-        if (leftoverAmount > 0) {
-            _updateDeltaAccounting(msg.sender, tokenIn, int256(leftoverAmount));
-        }
+        // Finalize all transient deltas to persistent storage
+        _finalizeBalances(msg.sender, tokenIn, amountIn, settlementToken, amountOut, feeReceiver, receiver);
 
-        // Settle all transient deltas to persistent storage
-        _settle(msg.sender, tokenIn, amountIn, settlementToken, amountOut);
-
-        // Transfer tokens to receiver from router balance
+        // Only unwrap and transfer if unwrapEth is true
+        // Otherwise, FeeExecutor already transferred to receiver (if fees > 0)
+        // or the last executor sent directly to receiver (if fees = 0)
         if (unwrapEth) {
             _unwrapETH(amountOut);
             Address.sendValue(payable(receiver), amountOut);
-        } else {
-            SafeERC20.safeTransfer(IERC20(tokenOut), receiver, amountOut);
         }
 
         _verifyAmountOutWasReceived(
@@ -693,36 +694,26 @@ contract TychoRouter is
         amountOut = _sequentialSwap(amountIn, swaps);
 
         // Deduct fees (both solution and router fees)
-        amountOut = _takeFees(
-            amountOut, tokenOut, unwrapEth, solutionFeeBps, solutionFeeReceiver
+        // FeeExecutor will transfer to receiver unless unwrapEth is true
+        address feeReceiver;
+        bool hasFees;
+        (amountOut, feeReceiver, hasFees) = _takeFees(
+            amountOut, tokenOut, unwrapEth, receiver, solutionFeeBps, solutionFeeReceiver
         );
 
         if (amountOut < minAmountOut) {
             revert TychoRouter__NegativeSlippage(amountOut, minAmountOut);
         }
 
-        // Credit output tokens that arrived at router to sender's vault (transient)
         address settlementToken = unwrapEth ? address(_weth) : tokenOut;
-        uint256 routerOutputBalance = _balanceOf(settlementToken, address(this));
-        if (routerOutputBalance > 0) {
-            _updateDeltaAccounting(msg.sender, settlementToken, int256(routerOutputBalance));
-        }
 
-        // Credit any leftover tokenIn funds to sender's vault (transient)
-        uint256 leftoverAmount = _balanceOf(tokenIn, address(this));
-        if (leftoverAmount > 0) {
-            _updateDeltaAccounting(msg.sender, tokenIn, int256(leftoverAmount));
-        }
-
-        // Settle all transient deltas to persistent storage
-        _settle(msg.sender, tokenIn, amountIn, settlementToken, amountOut);
+        // Finalize all transient deltas to persistent storage
+        _finalizeBalances(msg.sender, tokenIn, amountIn, settlementToken, amountOut, feeReceiver, receiver);
 
         // Transfer tokens to receiver from router balance
         if (unwrapEth) {
             _unwrapETH(amountOut);
             Address.sendValue(payable(receiver), amountOut);
-        } else {
-            SafeERC20.safeTransfer(IERC20(tokenOut), receiver, amountOut);
         }
 
         _verifyAmountOutWasReceived(
@@ -792,7 +783,7 @@ contract TychoRouter is
                 ? (amounts[tokenInIndex] * split) / 0xffffff
                 : remainingAmounts[tokenInIndex];
 
-            currentAmountOut =
+            (currentAmountOut,,) =
                 _callSwapOnExecutor(executor, currentAmountIn, protocolData);
             // Checks if the output token is the same as the input token
             if (tokenOutIndex == 0) {
@@ -826,7 +817,7 @@ contract TychoRouter is
             (address executor, bytes calldata protocolData) =
                 swap.decodeSingleSwap();
 
-            calculatedAmount =
+            (calculatedAmount,,) =
                 _callSwapOnExecutor(executor, calculatedAmount, protocolData);
         }
     }
@@ -889,24 +880,135 @@ contract TychoRouter is
     }
 
     /**
-     * @dev Sets the router platform fee in basis points
+     * @dev Sets the router platform fee on output amount in basis points
      * @param feeBps The fee in basis points (e.g., 1 = 0.01%, 100 = 1%)
      */
-    function setRouterFee(uint16 feeBps)
+    function setRouterFeeOnOutput(uint16 feeBps)
         external
         onlyRole(ROUTER_FEE_SETTER_ROLE)
     {
-        uint16 oldFeeBps = _routerFeeBps;
-        _routerFeeBps = feeBps;
-        emit RouterFeeUpdated(oldFeeBps, feeBps);
+        uint16 oldFeeBps = _routerFeeOnOutputBps;
+        _routerFeeOnOutputBps = feeBps;
+        emit RouterFeeOnOutputUpdated(oldFeeBps, feeBps);
     }
 
     /**
-     * @dev Returns the current router platform fee in basis points
+     * @dev Returns the current router platform fee on output amount in basis points
      * @return The fee in basis points
      */
-    function getRouterFee() external view returns (uint16) {
-        return _routerFeeBps;
+    function getRouterFeeOnOutput() external view returns (uint16) {
+        return _routerFeeOnOutputBps;
+    }
+
+    /**
+     * @dev Sets a custom router fee on output amount for a specific user
+     * @param user The user address to set the custom fee for
+     * @param feeBps The fee in basis points (e.g., 1 = 0.01%, 100 = 1%)
+     */
+    function setRouterFeeOnOutputForUser(address user, uint16 feeBps)
+        external
+        onlyRole(ROUTER_FEE_SETTER_ROLE)
+    {
+        uint16 oldFeeBps = _hasCustomRouterFeeOnOutput[user]
+            ? _userRouterFeeOnOutput[user]
+            : _routerFeeOnOutputBps;
+        _userRouterFeeOnOutput[user] = feeBps;
+        _hasCustomRouterFeeOnOutput[user] = true;
+        emit UserRouterFeeOnOutputUpdated(user, oldFeeBps, feeBps);
+    }
+
+    /**
+     * @dev Removes the custom router fee on output amount for a specific user, reverting to default
+     * @param user The user address to remove the custom fee from
+     */
+    function removeRouterFeeOnOutputForUser(address user)
+        external
+        onlyRole(ROUTER_FEE_SETTER_ROLE)
+    {
+        _hasCustomRouterFeeOnOutput[user] = false;
+        delete _userRouterFeeOnOutput[user];
+        emit UserRouterFeeOnOutputRemoved(user);
+    }
+
+    /**
+     * @dev Returns the effective router fee on output amount for a specific user
+     * @param user The user address to check
+     * @return The fee in basis points (custom if set, otherwise default)
+     */
+    function getRouterFeeOnOutputForUser(address user)
+        external
+        view
+        returns (uint16)
+    {
+        return _hasCustomRouterFeeOnOutput[user]
+            ? _userRouterFeeOnOutput[user]
+            : _routerFeeOnOutputBps;
+    }
+
+    /**
+     * @dev Sets the router platform fee on solver fee in basis points
+     * @param feeBps The fee in basis points (e.g., 1 = 0.01%, 100 = 1%)
+     */
+    function setRouterFeeOnSolverFee(uint16 feeBps)
+        external
+        onlyRole(ROUTER_FEE_SETTER_ROLE)
+    {
+        uint16 oldFeeBps = _routerFeeOnSolverFeeBps;
+        _routerFeeOnSolverFeeBps = feeBps;
+        emit RouterFeeOnSolverFeeUpdated(oldFeeBps, feeBps);
+    }
+
+    /**
+     * @dev Returns the current router platform fee on solver fee in basis points
+     * @return The fee in basis points
+     */
+    function getRouterFeeOnSolverFee() external view returns (uint16) {
+        return _routerFeeOnSolverFeeBps;
+    }
+
+    /**
+     * @dev Sets a custom router fee on solver fee for a specific user
+     * @param user The user address to set the custom fee for
+     * @param feeBps The fee in basis points (e.g., 1 = 0.01%, 100 = 1%)
+     */
+    function setRouterFeeOnSolverFeeForUser(address user, uint16 feeBps)
+        external
+        onlyRole(ROUTER_FEE_SETTER_ROLE)
+    {
+        uint16 oldFeeBps = _hasCustomRouterFeeOnSolverFee[user]
+            ? _userRouterFeeOnSolverFee[user]
+            : _routerFeeOnSolverFeeBps;
+        _userRouterFeeOnSolverFee[user] = feeBps;
+        _hasCustomRouterFeeOnSolverFee[user] = true;
+        emit UserRouterFeeOnSolverFeeUpdated(user, oldFeeBps, feeBps);
+    }
+
+    /**
+     * @dev Removes the custom router fee on solver fee for a specific user, reverting to default
+     * @param user The user address to remove the custom fee from
+     */
+    function removeRouterFeeOnSolverFeeForUser(address user)
+        external
+        onlyRole(ROUTER_FEE_SETTER_ROLE)
+    {
+        _hasCustomRouterFeeOnSolverFee[user] = false;
+        delete _userRouterFeeOnSolverFee[user];
+        emit UserRouterFeeOnSolverFeeRemoved(user);
+    }
+
+    /**
+     * @dev Returns the effective router fee on solver fee for a specific user
+     * @param user The user address to check
+     * @return The fee in basis points (custom if set, otherwise default)
+     */
+    function getRouterFeeOnSolverFeeForUser(address user)
+        external
+        view
+        returns (uint16)
+    {
+        return _hasCustomRouterFeeOnSolverFee[user]
+            ? _userRouterFeeOnSolverFee[user]
+            : _routerFeeOnSolverFeeBps;
     }
 
     /**
@@ -992,53 +1094,63 @@ contract TychoRouter is
     }
 
     /**
-     * @dev Gets balance of a token for a given address. Supports both native ETH and ERC20 tokens.
-     */
-    function _balanceOf(address token, address owner)
-        internal
-        view
-        returns (uint256)
-    {
-        return token == address(0)
-            ? owner.balance
-            : IERC20(token).balanceOf(owner);
-    }
-
-    /**
      * @dev Deducts both solution and router fees using the fee executor
      * @dev Calls FeeExecutor with encoded fee data via delegatecall
+     * @dev FeeExecutor transfers to receiver unless unwrapEth is true
      * @param amountOut The amount before fee deduction
      * @param tokenOut The output token address
      * @param unwrapEth Whether ETH will be unwrapped (fee is in WETH if true)
+     * @param receiver The address to receive the output tokens
      * @param solutionFeeBps Solution fee in basis points
      * @param solutionFeeReceiver Address to receive the solution fee
-     * @return The amount after fee deductions
+     * @return amountAfterFees The amount after fee deductions
+     * @return feeReceiver The solution fee receiver (address(0) if no solution fee)
+     * @return hasFees Whether any fees were taken
      */
     function _takeFees(
         uint256 amountOut,
         address tokenOut,
         bool unwrapEth,
+        address receiver,
         uint16 solutionFeeBps,
         address solutionFeeReceiver
-    ) private returns (uint256) {
-        if (
-            _feeExecutor != address(0)
-                && (solutionFeeBps > 0 || _routerFeeBps > 0)
-        ) {
+    ) private returns (uint256 amountAfterFees, address feeReceiver, bool hasFees) {
+        // Get the effective router fees for this user (custom or default)
+        uint16 effectiveRouterFeeOnOutputBps = _hasCustomRouterFeeOnOutput[msg.sender]
+            ? _userRouterFeeOnOutput[msg.sender]
+            : _routerFeeOnOutputBps;
+
+        uint16 effectiveRouterFeeOnSolverFeeBps = _hasCustomRouterFeeOnSolverFee[msg.sender]
+            ? _userRouterFeeOnSolverFee[msg.sender]
+            : _routerFeeOnSolverFeeBps;
+
+        hasFees = solutionFeeBps > 0 || effectiveRouterFeeOnOutputBps > 0 || effectiveRouterFeeOnSolverFeeBps > 0;
+
+        // TODO double check that it's okay to skip this call
+        // with our current encoding - since we are relying on this
+        // to send the output amount to the receiver. Find a way around this
+        // (like check the reciever of the final swap somehow, and if it's not the
+        // receiver we need to send it ourselves here?.
+        if (_feeExecutor != address(0) && hasFees) {
             address feeToken = unwrapEth ? address(_weth) : tokenOut;
 
-            // Encode fee data: solutionFeeBps | solutionFeeReceiver | routerFeeBps | routerFeeReceiver | token
+            // Encode fee data: solutionFeeBps | solutionFeeReceiver | routerFeeOnOutputBps | routerFeeOnSolverFeeBps | routerFeeReceiver | token | receiver | unwrapEth
             bytes memory feeData = abi.encodePacked(
                 solutionFeeBps, // solutionFeeBps
                 solutionFeeReceiver, // solutionFeeReceiver
-                _routerFeeBps, // routerFeeBps
+                effectiveRouterFeeOnOutputBps, // routerFeeOnOutputBps (custom or default)
+                effectiveRouterFeeOnSolverFeeBps, // routerFeeOnSolverFeeBps (custom or default)
                 address(this), // routerFeeReceiver = router
-                feeToken // token
+                feeToken, // token
+                receiver, // receiver
+                unwrapEth // unwrapEth
             );
 
             amountOut = _callTakeFees(_feeExecutor, amountOut, feeData);
+            // Return the solution fee receiver if there's a solution fee
+            return (amountOut, solutionFeeBps > 0 ? solutionFeeReceiver : address(0), true);
         }
-        return amountOut;
+        return (amountOut, address(0), false);
     }
 
     /**

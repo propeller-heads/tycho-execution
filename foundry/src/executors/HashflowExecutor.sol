@@ -50,12 +50,15 @@ contract HashflowExecutor is IExecutor, RestrictTransferFrom {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
+        IHashflowRouter.RFQTQuote memory quote;
+        bool approvalNeeded;
+        TransferType transferType;
         (
-            IHashflowRouter.RFQTQuote memory quote,
-            bool approvalNeeded,
-            TransferType transferType
+            quote,
+            approvalNeeded,
+            transferType
         ) = _decodeData(data);
 
         // Slippage checks
@@ -75,18 +78,31 @@ contract HashflowExecutor is IExecutor, RestrictTransferFrom {
         if (quote.baseToken == NATIVE_TOKEN) {
             ethValue = quote.effectiveBaseTokenAmount;
         }
-        _transfer(
-            address(this), transferType, address(quote.baseToken), givenAmount
-        );
-        uint256 balanceBefore = _balanceOf(quote.trader, quote.quoteToken);
+        //        _transfer(
+        //            address(this), transferType, address(quote.baseToken), givenAmount
+        //        );
+        tokenOut = quote.quoteToken;
+        receiver = quote.trader;
+        uint256 balanceBefore = _balanceOf(receiver, tokenOut);
         IHashflowRouter(hashflowRouter).tradeRFQT{value: ethValue}(quote);
-        uint256 balanceAfter = _balanceOf(quote.trader, quote.quoteToken);
+        uint256 balanceAfter = _balanceOf(receiver, tokenOut);
         calculatedAmount = balanceAfter - balanceBefore;
+    }
 
-        // Credit delta accounting with the output amount of the swap
-        if (quote.trader == address(this)) {
-            _updateDeltaAccounting(msg.sender, quote.quoteToken, int256(calculatedAmount));
-        }
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            address tokenOut
+        )
+    {
+        transferType = TransferType(uint8(data[0]));
+        receiver = address(bytes20(data[42:62])); // quote.trader
+        tokenIn = address(bytes20(data[62:82])); // quote.baseToken
+        tokenOut = address(bytes20(data[82:102])); // quote.quoteToken
     }
 
     function _decodeData(bytes calldata data)

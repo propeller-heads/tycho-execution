@@ -324,9 +324,9 @@ impl TychoExecutorEncoder {
                 .protocol_system
                 .as_str(),
         ) {
-            TransferType::TransferFromVault
+            TransferType::Transfer
         } else {
-            TransferType::FundsAlreadyInProtocol
+            TransferType::None
         };
         let encoding_context = EncodingContext {
             receiver: solution.receiver.clone(),

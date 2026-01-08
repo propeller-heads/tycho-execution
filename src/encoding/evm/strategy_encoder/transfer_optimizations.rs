@@ -48,38 +48,38 @@ impl TransferOptimization {
             TransferType::ProtocolWillDebit
         } else if (swap.token_in == self.wrapped_token) && wrap {
             // Wrapping already happened in the router, transfer from vault to protocol.
-            TransferType::TransferFromVault
+            TransferType::Transfer
         } else if is_first_swap {
             if in_transfer_required {
                 match self.user_transfer_type {
                     UserTransferType::UseVaultFunds => {
                         // Use vault funds - debit vault and transfer to pool
-                        TransferType::TransferFromVault
+                        TransferType::Transfer
                     }
                     _ => {
                         // TransferFromPermit2 or TransferFrom - pull from user to pool
-                        TransferType::TransferFromSender
+                        TransferType::TransferFrom
                     }
                 }
             // in transfer is not necessary for these protocols (Curve/Balancer)
             // They will pull funds from router via transferFrom
             } else if self.user_transfer_type == UserTransferType::UseVaultFunds {
                 // Use vault funds - protocol will debit from vault via transferFrom
-                TransferType::ProtocolWillDebitFromVault
+                TransferType::ProtocolWillDebit
             } else {
-                // Transfer from swapper to router
-                TransferType::TransferFromSender
+                // Transfer from user wallet to router, then protocol will pull from router
+                TransferType::TransferFromAndProtocolWillDebit
             }
         // all other swaps that not the first one
         } else if in_between_swap_optimization {
             // Funds were sent directly from previous pool to next pool (transfer optimization)
-            TransferType::FundsAlreadyInProtocol
+            TransferType::None
         } else if !in_transfer_required {
             // Protocol will pull funds from router via transferFrom - debit delta accounting
             TransferType::ProtocolWillDebit
         } else {
             // Transfer from router to protocol - funds are in delta accounting from previous swap
-            TransferType::TransferFromRouter
+            TransferType::Transfer
         }
     }
 
@@ -151,22 +151,22 @@ mod tests {
     #[rstest]
     // First swap tests
     // WETH -(univ2)-> DAI we expect a transfer from the user to the protocol
-    #[case(weth(), weth(), "uniswap_v2".to_string(), false, UserTransferType::TransferFrom,false, TransferType::TransferFromSender)]
+    #[case(weth(), weth(), "uniswap_v2".to_string(), false, UserTransferType::TransferFrom,false, TransferType::TransferFrom)]
     // Native token swap. Protocol will debit vault
     #[case(eth(), eth(),  "uniswap_v2".to_string(),false, UserTransferType::TransferFrom,false, TransferType::ProtocolWillDebit)]
     // ETH -(wrap)-> WETH -(univ2)-> DAI. Only a transfer from the router into the protocol is
     // needed
-    #[case(eth(), weth(),  "uniswap_v2".to_string(),true, UserTransferType::TransferFrom,false,TransferType::TransferFromVault)]
+    #[case(eth(), weth(),  "uniswap_v2".to_string(),true, UserTransferType::TransferFrom,false,TransferType::Transfer)]
     // USDC -(univ2)-> DAI and the tokens are already in the router. Only a transfer from the router
     // to the protocol is needed
-    #[case(usdc(), usdc(), "uniswap_v2".to_string(),false, UserTransferType::UseVaultFunds,false, TransferType::TransferFromVault)]
+    #[case(usdc(), usdc(), "uniswap_v2".to_string(),false, UserTransferType::UseVaultFunds,false, TransferType::Transfer)]
     // USDC -(curve)-> DAI using vault funds. Protocol will pull from vault via transferFrom
-    #[case(usdc(), usdc(), "vm:curve".to_string(),false, UserTransferType::UseVaultFunds, false,TransferType::ProtocolWillDebitFromVault)]
+    #[case(usdc(), usdc(), "vm:curve".to_string(),false, UserTransferType::UseVaultFunds, false,TransferType::ProtocolWillDebit)]
     // other swaps tests
     // tokens need to be transferred from router to the pool (from previous swap)
-    #[case(weth(), usdc(), "uniswap_v2".to_string(), false, UserTransferType::TransferFrom,false, TransferType::TransferFromRouter)]
+    #[case(weth(), usdc(), "uniswap_v2".to_string(), false, UserTransferType::TransferFrom,false, TransferType::Transfer)]
     // tokens are already in the pool (optimization)
-    #[case(weth(), usdc(), "uniswap_v2".to_string(), false, UserTransferType::TransferFrom, true, TransferType::FundsAlreadyInProtocol)]
+    #[case(weth(), usdc(), "uniswap_v2".to_string(), false, UserTransferType::TransferFrom, true, TransferType::None)]
     // tokens are already in the router and don't need a transfer - protocol will pull via
     // transferFrom
     #[case(weth(), usdc(), "vm:curve".to_string(), false, UserTransferType::TransferFrom, false, TransferType::ProtocolWillDebit)]

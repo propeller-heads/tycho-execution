@@ -62,7 +62,7 @@ contract FluidV1ExecutorTest is Test, Constants {
             dex,
             true,
             address(this),
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             false,
             expectedTokenOut
         );
@@ -87,7 +87,7 @@ contract FluidV1ExecutorTest is Test, Constants {
         assertEq(receiverVal, address(this));
         assertEq(
             uint8(transferTypeVal),
-            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
+            uint8(RestrictTransferFrom.TransferType.Transfer)
         );
         assertEq(tokenOut, expectedTokenOut);
     }
@@ -96,7 +96,7 @@ contract FluidV1ExecutorTest is Test, Constants {
         address dexAddress = 0x1DD125C32e4B5086c63CC13B3cA02C4A2a61Fa9b;
         IFluidV1Dex dex = IFluidV1Dex(dexAddress);
         RestrictTransferFrom.TransferType transferType =
-        RestrictTransferFrom.TransferType.TransferFromVault;
+        RestrictTransferFrom.TransferType.Transfer;
 
         executor.setSwapParams(dex, transferType);
         address dexVal = executor.getCurrentDex();
@@ -106,7 +106,7 @@ contract FluidV1ExecutorTest is Test, Constants {
         assertEq(dexVal, dexAddress);
         assertEq(
             uint8(transferTypeVal),
-            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
+            uint8(RestrictTransferFrom.TransferType.Transfer)
         );
     }
 
@@ -114,7 +114,7 @@ contract FluidV1ExecutorTest is Test, Constants {
         address dexAddress = 0x1DD125C32e4B5086c63CC13B3cA02C4A2a61Fa9b;
         executor.setSwapParams(
             IFluidV1Dex(dexAddress),
-            RestrictTransferFrom.TransferType.TransferFromVault
+            RestrictTransferFrom.TransferType.Transfer
         );
         bytes memory param = abi.encodePacked(bytes4(0x9410ae88));
 
@@ -126,7 +126,7 @@ contract FluidV1ExecutorTest is Test, Constants {
         address dexAddress = 0x1DD125C32e4B5086c63CC13B3cA02C4A2a61Fa9b;
         executor.setSwapParams(
             IFluidV1Dex(dexAddress),
-            RestrictTransferFrom.TransferType.TransferFromVault
+            RestrictTransferFrom.TransferType.Transfer
         );
         bytes memory param = abi.encodePacked(bytes4(0x9410ae88));
 
@@ -138,7 +138,7 @@ contract FluidV1ExecutorTest is Test, Constants {
         address dexAddress = 0x1DD125C32e4B5086c63CC13B3cA02C4A2a61Fa9b;
         executor.setSwapParams(
             IFluidV1Dex(dexAddress),
-            RestrictTransferFrom.TransferType.TransferFromVault
+            RestrictTransferFrom.TransferType.Transfer
         );
         bytes memory param = abi.encodePacked(bytes4(0x00000000));
 
@@ -156,14 +156,14 @@ contract FluidV1ExecutorTest is Test, Constants {
             dex,
             true,
             address(BOB),
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             false,
             address(USDT)
         );
         deal(address(sUSDe), address(executor), amountIn);
         uint256 balanceBefore = USDT.balanceOf(BOB);
 
-        uint256 amountOut = executor.swap(amountIn, params);
+        (uint256 amountOut, address tokenOut, address receiver) = executor.swap(amountIn, params);
 
         uint256 balanceAfter = USDT.balanceOf(BOB);
         assertEq(balanceAfter - balanceBefore, amountOut);
@@ -177,14 +177,14 @@ contract FluidV1ExecutorTest is Test, Constants {
             dex,
             false,
             address(BOB),
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             true,
             address(ezETH)
         );
         deal(address(executor), amountIn);
         uint256 balanceBefore = ezETH.balanceOf(BOB);
 
-        uint256 amountOut = executor.swap(amountIn, params);
+        (uint256 amountOut, address tokenOut, address receiver) = executor.swap(amountIn, params);
 
         uint256 balanceAfter = ezETH.balanceOf(BOB);
         assertEq(balanceAfter - balanceBefore, amountOut);
@@ -198,14 +198,14 @@ contract FluidV1ExecutorTest is Test, Constants {
             dex,
             true,
             address(BOB),
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             false,
             address(0) // native ETH output
         );
         deal(address(ezETH), address(executor), amountIn);
         uint256 balanceBefore = BOB.balance;
 
-        uint256 amountOut = executor.swap(amountIn, params);
+        (uint256 amountOut, address tokenOut, address receiver) = executor.swap(amountIn, params);
 
         uint256 balanceAfter = BOB.balance;
         assertEq(balanceAfter - balanceBefore, amountOut);

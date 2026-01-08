@@ -25,6 +25,9 @@ error TychoVault__InvalidInputDelta(
 abstract contract TychoVault is ERC6909, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
+    // Vault balances - using our own mapping to avoid expensive Transfer events from ERC6909
+    mapping(address => mapping(uint256 => uint256)) private _vaultBalances;
+
     // Transient storage slots for tracking deltas during swap sequences
     // keccak256("TychoVault#NEGATIVE_DELTA_COUNT")
     uint256 private constant _NEGATIVE_DELTA_COUNT_SLOT =
@@ -38,6 +41,38 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
     event VaultWithdrawal(
         address indexed user, address indexed token, uint256 amount
     );
+
+    /**
+     * @dev Override balanceOf to use our own mapping instead of ERC6909's
+     * This avoids expensive Transfer events on _mint and _burn
+     */
+    function balanceOf(address owner, uint256 id)
+        public
+        view
+        virtual
+        override
+        returns (uint256)
+    {
+        return _vaultBalances[owner][id];
+    }
+
+    /**
+     * @dev Override _update to use our own mapping and avoid emitting Transfer events
+     * This is called by all balance-changing operations (transfer, approve, etc.)
+     */
+    function _update(address from, address to, uint256 id, uint256 amount)
+        internal
+        virtual
+        override
+    {
+        if (from != address(0)) {
+            _vaultBalances[from][id] -= amount;
+        }
+        if (to != address(0)) {
+            _vaultBalances[to][id] += amount;
+        }
+        // Note: We intentionally do NOT emit Transfer events to save gas
+    }
 
     // ============ ERC6909 Vault Functions ============
 
@@ -203,20 +238,35 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
         _burn(user, id, amount);
     }
 
+    function _creditPersistentVault(address user, address token, uint256 amount)
+        internal
+        virtual
+    {
+        if (amount == 0) return;
+        uint256 id = uint256(uint160(token));
+        _mint(user, id, amount);
+    }
+
     /**
-     * @dev Settle all transient deltas to persistent storage
-     * @param user The user whose deltas should be settled
+     * @dev Finalize all transient deltas to persistent storage
+     * @dev Only finalizes fee-related balances (router fees and solution fees)
+     * @dev User output tokens go directly to receiver, not through vault
+     * @param user The user whose deltas should be finalized
      * @param inputToken The expected input token
      * @param inputAmount The expected input amount
-     * @param outputToken The output token (may have positive delta)
+     * @param outputToken The output token (fees are in this token)
      * @param outputAmount The amount being sent to receiver (not surplus)
+     * @param feeReceiver The solution fee receiver (address(0) if no solution fee)
+     * @param receiver The address receiving the output tokens
      */
-    function _settle(
+    function _finalizeBalances(
         address user,
         address inputToken,
         uint256 inputAmount,
         address outputToken,
-        uint256 outputAmount
+        uint256 outputAmount,
+        address feeReceiver,
+        address receiver
     ) internal {
         uint256 negativeCount = _getNegativeDeltaCount();
 
@@ -227,25 +277,34 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
             revert TychoVault__UnexpectedNegativeDelta(negativeCount);
         }
 
-        // Calculate surplus output (delta minus amount being sent to receiver)
-        int256 outputDelta = _getTDelta(user, outputToken);
-        if (outputDelta > 0) {
-            int256 surplus = outputDelta - int256(outputAmount);
-            // Only credit surplus if above dust threshold
-            if (surplus > 0 && uint256(surplus) > DUST_THRESHOLD) {
-                uint256 id = uint256(uint160(outputToken));
-                _mint(user, id, uint256(surplus));
-            }
+        // Settle router's delta (from router fees) to persistent vault
+        int256 routerDelta = _getTDelta(address(this), outputToken);
+        if (routerDelta > 0 && uint256(routerDelta) > DUST_THRESHOLD) {
+            uint256 id = uint256(uint160(outputToken));
+            _mint(address(this), id, uint256(routerDelta));
         }
 
-        // Also settle router's delta (from fees) to persistent vault
-        // Router's delta should be fully credited since it's not being sent to receiver
-        if (user != address(this)) {
-            int256 routerDelta = _getTDelta(address(this), outputToken);
-            if (routerDelta > 0 && uint256(routerDelta) > DUST_THRESHOLD) {
+        // Settle solution fee receiver's delta to persistent vault
+        if (feeReceiver != address(0) && feeReceiver != address(this)) {
+            int256 feeReceiverDelta = _getTDelta(feeReceiver, outputToken);
+            if (feeReceiverDelta > 0 && uint256(feeReceiverDelta) > DUST_THRESHOLD) {
                 uint256 id = uint256(uint160(outputToken));
-                _mint(address(this), id, uint256(routerDelta));
+                _mint(feeReceiver, id, uint256(feeReceiverDelta));
             }
         }
+    }
+
+    /**
+     * @dev Gets balance of a token for a given address. Supports both native ETH and ERC20 tokens.
+     */
+    function _balanceOf(address token, address owner)
+        internal
+        view
+        virtual
+        returns (uint256)
+    {
+        return token == address(0)
+            ? owner.balance
+            : IERC20(token).balanceOf(owner);
     }
 }

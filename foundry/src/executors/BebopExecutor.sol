@@ -39,26 +39,74 @@ contract BebopExecutor is IExecutor, RestrictTransferFrom {
     /// @param givenAmount The amount of input token to swap
     /// @param data Encoded swap data containing tokens and bebop calldata
     /// @return calculatedAmount The amount of output token received
+    /// @return tokenOut The address of the output token
+    /// @return receiver The address receiving the output tokens
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
         virtual
         override
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
+        address tokenIn;
+        TransferType transferType;
+        uint8 partialFillOffset;
+        uint256 originalFilledTakerAmount;
+        bool approvalNeeded;
+        bytes memory bebopCalldata;
         (
-            address tokenIn,
-            address tokenOut,
-            TransferType transferType,
-            uint8 partialFillOffset,
-            uint256 originalFilledTakerAmount,
-            bool approvalNeeded,
-            address receiver,
-            bytes memory bebopCalldata
+            tokenIn,
+            tokenOut,
+            transferType,
+            partialFillOffset,
+            originalFilledTakerAmount,
+            approvalNeeded,
+            receiver,
+            bebopCalldata
         ) = _decodeData(data);
 
-        _transfer(address(this), transferType, address(tokenIn), givenAmount);
+        //        _transfer(address(this), transferType, address(tokenIn), givenAmount);
 
+        // Execute the swap and get the calculated amount
+        calculatedAmount = _executeSwap(
+            tokenIn,
+            tokenOut,
+            receiver,
+            givenAmount,
+            originalFilledTakerAmount,
+            partialFillOffset,
+            approvalNeeded,
+            bebopCalldata
+        );
+    }
+
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            address tokenOut
+        )
+    {
+        tokenIn = address(bytes20(data[0:20]));
+        tokenOut = address(bytes20(data[20:40]));
+        transferType = TransferType(uint8(data[40]));
+        receiver = address(bytes20(data[75:95]));
+    }
+
+    /// @dev Executes the actual Bebop swap
+    function _executeSwap(
+        address tokenIn,
+        address tokenOut,
+        address receiver,
+        uint256 givenAmount,
+        uint256 originalFilledTakerAmount,
+        uint8 partialFillOffset,
+        bool approvalNeeded,
+        bytes memory bebopCalldata
+    ) internal returns (uint256 calculatedAmount) {
         // Modify the filledTakerAmount in the calldata
         // If the filledTakerAmount is the same as the original, the original calldata is returned
         bytes memory finalCalldata = _modifyFilledTakerAmount(
@@ -84,11 +132,6 @@ contract BebopExecutor is IExecutor, RestrictTransferFrom {
 
         uint256 balanceAfter = _balanceOf(tokenOut, receiver);
         calculatedAmount = balanceAfter - balanceBefore;
-
-        // Credit delta accounting with the output amount of the swap
-        if (receiver == address(this)) {
-            _updateDeltaAccounting(msg.sender, tokenOut, int256(calculatedAmount));
-        }
     }
 
     /// @dev Decodes the packed calldata

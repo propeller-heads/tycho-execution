@@ -49,7 +49,7 @@ contract UniswapXFillerTest is Test, TychoRouterTestSetup {
             WETH_DAI_POOL,
             address(filler),
             zeroForOne,
-            RestrictTransferFrom.TransferType.TransferFromSender
+            RestrictTransferFrom.TransferType.TransferFrom
         );
 
         bytes memory swap =
@@ -175,7 +175,7 @@ contract UniswapXFillerTest is Test, TychoRouterTestSetup {
             fillerAddr,
             DAI_USDT_USV3,
             zeroForOne,
-            RestrictTransferFrom.TransferType.TransferFromSender
+            RestrictTransferFrom.TransferType.TransferFrom
         );
 
         bytes memory swap =

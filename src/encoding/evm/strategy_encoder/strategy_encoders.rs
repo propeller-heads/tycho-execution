@@ -643,7 +643,7 @@ mod tests {
                 "a478c2975ab1ea89e8196811f51a7b7ade33eb11", // component id
                 "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver (router)
                 "00",                                       // zero2one
-                "00",                                       // transfer type TransferFrom
+                "00",                                       // transfer type TransferFrom (0)
             ));
             let hex_calldata = encode(&encoded_solution.swaps);
 
@@ -704,7 +704,7 @@ mod tests {
                 "a478c2975ab1ea89e8196811f51a7b7ade33eb11", // component id
                 "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver (router)
                 "00",                                       // zero2one
-                "01",                                       // transfer type TransferFromVault
+                "02",                                       // transfer type Transfer (2)
             ]
             .join("");
 
@@ -789,7 +789,7 @@ mod tests {
                 "bb2b8038a1640196fbe3e38816f3e67cba72d940", // component id
                 "004375dff511095cc5a197a54140a24efef3a416", // receiver (next pool)
                 "00",                                       // zero to one
-                "00",                                       // transfer type TransferFrom
+                "00",                                       // transfer type TransferFrom (0)
                 // swap 2
                 "0052",                                     // swap length
                 "5615deb798bb3e4dfa0139dfa1b3d433cc23b72f", // executor address
@@ -797,7 +797,7 @@ mod tests {
                 "004375dff511095cc5a197a54140a24efef3a416", // component id
                 "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver (router)
                 "01",                                       // zero to one
-                "02",                                       // transfer type FundsAlreadyInProtocol
+                "05",                                       // transfer type None (5)
             ));
 
             assert_eq!(hex_calldata, expected);
@@ -932,7 +932,7 @@ mod tests {
                 "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver
                 "88e6a0c2ddd26feeb64f039a2c41296fcb3f5640", // component id
                 "01",                                       // zero2one
-                "00",                                       // transfer type TransferFrom
+                "00",                                       // transfer type TransferFrom (0)
                 "006e",                                     // ple encoded swaps
                 "00",                                       // token in index
                 "01",                                       // token out index
@@ -944,7 +944,7 @@ mod tests {
                 "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver
                 "8ad599c3a0ff1de082011efddc58f1908eb6e6d8", // component id
                 "01",                                       // zero2one
-                "00",                                       // transfer type TransferFrom
+                "00",                                       // transfer type TransferFrom (0)
                 "0057",                                     // ple encoded swaps
                 "01",                                       // token in index
                 "00",                                       // token out index
@@ -954,7 +954,7 @@ mod tests {
                 "b4e16d0168e52d35cacd2c6185b44281ec28c9dc", // component id,
                 "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver (router)
                 "00",                                       // zero2one
-                "01",                                       // transfer type FundsAlreadyInProtocol
+                "02",                                       // transfer type Transfer (2)
             ]
             .join("");
             assert_eq!(hex_calldata, expected_swaps);
@@ -1079,7 +1079,7 @@ mod tests {
                 "b4e16d0168e52d35cacd2c6185b44281ec28c9dc", // component id
                 "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver
                 "01",                                       // zero2one
-                "00",                                       // transfer type TransferFrom
+                "00",                                       // transfer type TransferFrom (0)
                 "006e",                                     // ple encoded swaps
                 "01",                                       // token in index
                 "00",                                       // token out index
@@ -1091,7 +1091,7 @@ mod tests {
                 "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver (router)
                 "88e6a0c2ddd26feeb64f039a2c41296fcb3f5640", // component id
                 "00",                                       // zero2one
-                "01",                                       // transfer type FundsAlreadyInProtocol
+                "02",                                       // transfer type Transfer (2)
                 "006e",                                     // ple encoded swaps
                 "01",                                       // token in index
                 "00",                                       // token out index
@@ -1103,7 +1103,7 @@ mod tests {
                 "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver (router)
                 "8ad599c3a0ff1de082011efddc58f1908eb6e6d8", // component id
                 "00",                                       // zero2one
-                "01",                                       // transfer type FundsAlreadyInProtocol
+                "02",                                       // transfer type Transfer (2)
             ]
             .join("");
 

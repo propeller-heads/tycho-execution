@@ -12,7 +12,7 @@ error UniswapV2Executor__InvalidFactory();
 error UniswapV2Executor__InvalidInitCode();
 error UniswapV2Executor__InvalidFee();
 
-contract UniswapV2Executor is IExecutor, RestrictTransferFrom {
+contract UniswapV2Executor is IExecutor {
     using SafeERC20 for IERC20;
 
     address public immutable factory;
@@ -25,7 +25,7 @@ contract UniswapV2Executor is IExecutor, RestrictTransferFrom {
         bytes32 _initCode,
         address _permit2,
         uint256 _feeBps
-    ) RestrictTransferFrom(_permit2) {
+    ) {
         if (_factory == address(0)) {
             revert UniswapV2Executor__InvalidFactory();
         }
@@ -45,13 +45,12 @@ contract UniswapV2Executor is IExecutor, RestrictTransferFrom {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
         IERC20 tokenIn;
         address target;
-        address receiver;
         bool zeroForOne;
-        TransferType transferType;
+        RestrictTransferFrom.TransferType transferType;
 
         (tokenIn, target, receiver, zeroForOne, transferType) =
             _decodeData(data);
@@ -60,20 +59,31 @@ contract UniswapV2Executor is IExecutor, RestrictTransferFrom {
 
         calculatedAmount = _getAmountOut(target, givenAmount, zeroForOne);
 
-        _transfer(target, transferType, address(tokenIn), givenAmount);
+        //                _transfer(target, transferType, address(tokenIn), givenAmount);
 
         IUniswapV2Pair pool = IUniswapV2Pair(target);
+        tokenOut = zeroForOne ? pool.token1() : pool.token0();
         if (zeroForOne) {
             pool.swap(0, calculatedAmount, receiver, "");
         } else {
             pool.swap(calculatedAmount, 0, receiver, "");
         }
+    }
 
-        if (receiver == address(this)) {
-            address tokenOut = zeroForOne ? pool.token1() : pool.token0();
-            // Credit delta accounting with the output amount of the swap
-            _updateDeltaAccounting(msg.sender, tokenOut, int256(calculatedAmount));
-        }
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            address tokenOut
+        )
+    {
+        tokenIn = address(bytes20(data[0:20]));
+        receiver = address(bytes20(data[20:40]));
+        transferType = RestrictTransferFrom.TransferType(uint8(data[61]));
+        tokenOut = address(0);
     }
 
     function _decodeData(bytes calldata data)
@@ -84,7 +94,7 @@ contract UniswapV2Executor is IExecutor, RestrictTransferFrom {
             address target,
             address receiver,
             bool zeroForOne,
-            TransferType transferType
+            RestrictTransferFrom.TransferType transferType
         )
     {
         if (data.length != 62) {
@@ -94,7 +104,7 @@ contract UniswapV2Executor is IExecutor, RestrictTransferFrom {
         target = address(bytes20(data[20:40]));
         receiver = address(bytes20(data[40:60]));
         zeroForOne = data[60] != 0;
-        transferType = TransferType(uint8(data[61]));
+        transferType = RestrictTransferFrom.TransferType(uint8(data[61]));
     }
 
     function _getAmountOut(address target, uint256 amountIn, bool zeroForOne)

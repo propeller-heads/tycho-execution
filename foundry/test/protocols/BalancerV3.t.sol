@@ -47,7 +47,7 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
             osETH_ADDR,
             waEthWETH_ADDR,
             WETH_osETH_pool,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol,
+            RestrictTransferFrom.TransferType.None,
             BOB
         );
 
@@ -66,7 +66,7 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
         assertEq(poolId, WETH_osETH_pool);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.FundsAlreadyInProtocol)
+            uint8(RestrictTransferFrom.TransferType.None)
         );
         assertEq(receiver, BOB);
     }
@@ -76,7 +76,7 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
             osETH_ADDR,
             waEthWETH_ADDR,
             WETH_osETH_pool,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
+            RestrictTransferFrom.TransferType.None
         );
 
         vm.expectRevert(BalancerV3Executor__InvalidDataLength.selector);
@@ -89,7 +89,7 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
             osETH_ADDR,
             waEthWETH_ADDR,
             WETH_osETH_pool,
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             BOB
         );
 
@@ -97,7 +97,7 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
 
         uint256 balanceBefore = IERC20(waEthWETH_ADDR).balanceOf(BOB);
 
-        uint256 amountOut = balancerV3Exposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) = balancerV3Exposed.swap(amountIn, protocolData);
 
         uint256 balanceAfter = IERC20(waEthWETH_ADDR).balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);
@@ -116,7 +116,7 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
         deal(waEthUSDT_ADDR, address(balancerV3Exposed), amountIn);
         uint256 balanceBefore = IERC20(aaveGHO_ADDR).balanceOf(BOB);
 
-        uint256 amountOut = balancerV3Exposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) = balancerV3Exposed.swap(amountIn, protocolData);
 
         uint256 balanceAfter = IERC20(aaveGHO_ADDR).balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);

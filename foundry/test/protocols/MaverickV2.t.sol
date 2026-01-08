@@ -44,7 +44,7 @@ contract MaverickV2ExecutorTest is TestUtils, Constants {
             GHO_ADDR,
             GHO_USDC_POOL,
             address(2),
-            RestrictTransferFrom.TransferType.TransferFromVault
+            RestrictTransferFrom.TransferType.Transfer
         );
 
         (
@@ -59,7 +59,7 @@ contract MaverickV2ExecutorTest is TestUtils, Constants {
         assertEq(receiver, address(2));
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
+            uint8(RestrictTransferFrom.TransferType.Transfer)
         );
     }
 
@@ -77,13 +77,13 @@ contract MaverickV2ExecutorTest is TestUtils, Constants {
             GHO_ADDR,
             GHO_USDC_POOL,
             BOB,
-            RestrictTransferFrom.TransferType.TransferFromVault
+            RestrictTransferFrom.TransferType.Transfer
         );
 
         deal(GHO_ADDR, address(maverickV2Exposed), amountIn);
         uint256 balanceBefore = USDC.balanceOf(BOB);
 
-        uint256 amountOut = maverickV2Exposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) = maverickV2Exposed.swap(amountIn, protocolData);
 
         uint256 balanceAfter = USDC.balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);
@@ -107,7 +107,7 @@ contract MaverickV2ExecutorTest is TestUtils, Constants {
         assertEq(receiver, BOB);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
+            uint8(RestrictTransferFrom.TransferType.Transfer)
         );
     }
 
@@ -120,7 +120,7 @@ contract MaverickV2ExecutorTest is TestUtils, Constants {
         deal(GHO_ADDR, address(maverickV2Exposed), amountIn);
         uint256 balanceBefore = USDC.balanceOf(BOB);
 
-        uint256 amountOut = maverickV2Exposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) = maverickV2Exposed.swap(amountIn, protocolData);
 
         uint256 balanceAfter = USDC.balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);

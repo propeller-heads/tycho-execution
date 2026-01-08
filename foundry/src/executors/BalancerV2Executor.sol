@@ -25,18 +25,25 @@ contract BalancerV2Executor is IExecutor, RestrictTransferFrom {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
+        IERC20 tokenIn;
+        IERC20 tokenOutIERC20;
+        bytes32 poolId;
+        bool approvalNeeded;
+        TransferType transferType;
         (
-            IERC20 tokenIn,
-            IERC20 tokenOut,
-            bytes32 poolId,
-            address receiver,
-            bool approvalNeeded,
-            TransferType transferType
+            tokenIn,
+            tokenOutIERC20,
+            poolId,
+            receiver,
+            approvalNeeded,
+            transferType
         ) = _decodeData(data);
 
-        _transfer(address(this), transferType, address(tokenIn), givenAmount);
+        tokenOut = address(tokenOutIERC20);
+
+        //        _transfer(address(this), transferType, address(tokenIn), givenAmount);
 
         if (approvalNeeded) {
             // slither-disable-next-line unused-return
@@ -47,7 +54,7 @@ contract BalancerV2Executor is IExecutor, RestrictTransferFrom {
             poolId: poolId,
             kind: IVault.SwapKind.GIVEN_IN,
             assetIn: IAsset(address(tokenIn)),
-            assetOut: IAsset(address(tokenOut)),
+            assetOut: IAsset(address(tokenOutIERC20)),
             amount: givenAmount,
             userData: ""
         });
@@ -63,11 +70,22 @@ contract BalancerV2Executor is IExecutor, RestrictTransferFrom {
 
         calculatedAmount =
             IVault(VAULT).swap(singleSwap, funds, limit, block.timestamp);
+    }
 
-        // Credit delta accounting with the output amount of the swap
-        if (receiver == address(this)) {
-            _updateDeltaAccounting(msg.sender, address(tokenOut), int256(calculatedAmount));
-        }
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            address tokenOut
+        )
+    {
+        tokenIn = address(bytes20(data[0:20]));
+        tokenOut = address(bytes20(data[20:40]));
+        receiver = address(bytes20(data[72:92]));
+        transferType = TransferType(uint8(data[93]));
     }
 
     function _decodeData(bytes calldata data)

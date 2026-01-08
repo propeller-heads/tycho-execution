@@ -3,6 +3,8 @@ pragma solidity ^0.8.26;
 
 import {RestrictTransferFrom} from "../RestrictTransferFrom.sol";
 import {TychoVault} from "../TychoVault.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 error FeeExecutor__InvalidDataLength();
 error FeeExecutor__FeeTooHigh();
@@ -14,6 +16,8 @@ error FeeExecutor__FeeTooHigh();
  * @dev This executor is called mandatorily after each swap sequence
  */
 contract FeeExecutor is RestrictTransferFrom, TychoVault {
+    using SafeERC20 for IERC20;
+
     uint16 private constant MAX_FEE_BPS = 5000; // 50% max
 
     constructor(address _permit2) RestrictTransferFrom(_permit2) {}
@@ -40,11 +44,14 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
 
     /**
      * @dev Deducts fees from the input amount and credits them to fee receivers' vaults
+     * @dev Transfers the remaining amount to the receiver unless unwrapEth is true
      * @dev Verifies msg.sender has sufficient balance in vault before deducting
      * @param amountIn The input amount (before fees)
      * @param data Encoded fee parameters:
      *        solutionFeeBps (uint16) | solutionFeeReceiver (address) |
-     *        routerFeeBps (uint16) | routerFeeReceiver (address) | token (address)
+     *        routerFeeOnOutputBps (uint16) | routerFeeOnSolverFeeBps (uint16) |
+     *        routerFeeReceiver (address) | token (address) |
+     *        receiver (address) | unwrapEth (bool)
      * @return amountOut The output amount (after fee deductions)
      */
     function take_fee(uint256 amountIn, bytes calldata data)
@@ -54,31 +61,51 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
         (
             uint16 solutionFeeBps,
             address solutionFeeReceiver,
-            uint16 routerFeeBps,
+            uint16 routerFeeOnOutputBps,
+            uint16 routerFeeOnSolverFeeBps,
             address routerFeeReceiver,
-            address token
+            address token,
+            address receiver,
+            bool unwrapEth
         ) = _decodeData(data);
 
-        if (solutionFeeBps > MAX_FEE_BPS || routerFeeBps > MAX_FEE_BPS) {
+        if (solutionFeeBps > MAX_FEE_BPS || routerFeeOnOutputBps > MAX_FEE_BPS || routerFeeOnSolverFeeBps > MAX_FEE_BPS) {
             revert FeeExecutor__FeeTooHigh();
         }
 
         amountOut = amountIn;
+        uint256 solutionFee = 0;
 
         // Deduct solution fee if > 0
         if (solutionFeeBps > 0) {
-            uint256 solutionFee = (amountOut * solutionFeeBps) / 10000;
+            solutionFee = (amountOut * solutionFeeBps) / 10000;
             amountOut -= solutionFee;
-            _updateDeltaAccounting(msg.sender, token, -int256(solutionFee));  // Negative to debit
-            _updateDeltaAccounting(solutionFeeReceiver, token, int256(solutionFee));  // Positive to credit
+            _creditPersistentVault(solutionFeeReceiver, token, solutionFee);
         }
 
-        // Deduct router fee if > 0
-        if (routerFeeBps > 0) {
-            uint256 routerFee = (amountOut * routerFeeBps) / 10000;
-            amountOut -= routerFee;
-            _updateDeltaAccounting(msg.sender, token, -int256(routerFee));  // Negative to debit
-            _updateDeltaAccounting(routerFeeReceiver, token, int256(routerFee));  // Positive to credit
+        uint256 totalRouterFeesTaken = 0;
+        // Deduct router fee on output amount if > 0
+        if (routerFeeOnOutputBps > 0) {
+            uint256 routerFeeOnOutput = (amountOut * routerFeeOnOutputBps) / 10000;
+            amountOut -= routerFeeOnOutput;
+            totalRouterFeesTaken += routerFeeOnOutput;
+        }
+
+        // Deduct router fee on solver fee if > 0 (calculated from solution fee)
+        if (routerFeeOnSolverFeeBps > 0 && solutionFee > 0) {
+            uint256 routerFeeOnSolverFee = (solutionFee * routerFeeOnSolverFeeBps) / 10000;
+            amountOut -= routerFeeOnSolverFee;
+            totalRouterFeesTaken += routerFeeOnSolverFee;
+        }
+
+        if (totalRouterFeesTaken > 0) {
+            _creditPersistentVault(address(this), token, totalRouterFeesTaken);
+        }
+
+        // Transfer to amountOut to receiver unless we need to unwrap ETH (router will
+        // handle that)
+        if (!unwrapEth) {
+            IERC20(token).safeTransfer(receiver, amountOut);
         }
 
         return amountOut;
@@ -89,9 +116,12 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
      * @param data The encoded data
      * @return solutionFeeBps Solution fee in basis points
      * @return solutionFeeReceiver Address to receive the solution fee
-     * @return routerFeeBps Router fee in basis points
+     * @return routerFeeOnOutputBps Router fee on output amount in basis points
+     * @return routerFeeOnSolverFeeBps Router fee on solver fee in basis points
      * @return routerFeeReceiver Address to receive the router fee
      * @return token Token address for the fees
+     * @return receiver Address to receive the remaining tokens
+     * @return unwrapEth Whether ETH needs to be unwrapped
      */
     function _decodeData(bytes calldata data)
         internal
@@ -99,28 +129,37 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
         returns (
             uint16 solutionFeeBps,
             address solutionFeeReceiver,
-            uint16 routerFeeBps,
+            uint16 routerFeeOnOutputBps,
+            uint16 routerFeeOnSolverFeeBps,
             address routerFeeReceiver,
-            address token
+            address token,
+            address receiver,
+            bool unwrapEth
         )
     {
         // expected calldata layout
         // ---------------------
         // 0  | solutionFeeBps (uint16)
         // 2  | solutionFeeReceiver (address)
-        // 22 | routerFeeBps (uint16)
-        // 24 | routerFeeReceiver (address)
-        // 44 | token (address)
-        // 64 | EOF
-        if (data.length != 64) {
+        // 22 | routerFeeOnOutputBps (uint16)
+        // 24 | routerFeeOnSolverFeeBps (uint16)
+        // 26 | routerFeeReceiver (address)
+        // 46 | token (address)
+        // 66 | receiver (address)
+        // 86 | unwrapEth (bool/uint8)
+        // 87 | EOF
+        if (data.length != 87) {
             revert FeeExecutor__InvalidDataLength();
         }
 
         solutionFeeBps = uint16(bytes2(data[0:2]));
         solutionFeeReceiver = address(bytes20(data[2:22]));
-        routerFeeBps = uint16(bytes2(data[22:24]));
-        routerFeeReceiver = address(bytes20(data[24:44]));
-        token = address(bytes20(data[44:64]));
+        routerFeeOnOutputBps = uint16(bytes2(data[22:24]));
+        routerFeeOnSolverFeeBps = uint16(bytes2(data[24:26]));
+        routerFeeReceiver = address(bytes20(data[26:46]));
+        token = address(bytes20(data[46:66]));
+        receiver = address(bytes20(data[66:86]));
+        unwrapEth = uint8(bytes1(data[86:87])) != 0;
     }
 }
 

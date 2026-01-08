@@ -69,7 +69,7 @@ contract SlipstreamsExecutorTest is
             BASE_WETH,
             BASE_USDC,
             expectedTickSpacing,
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             address(2),
             address(3),
             false
@@ -93,7 +93,7 @@ contract SlipstreamsExecutorTest is
         assertEq(zeroForOne, false);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
+            uint8(RestrictTransferFrom.TransferType.Transfer)
         );
     }
 
@@ -107,13 +107,13 @@ contract SlipstreamsExecutorTest is
             BASE_WETH,
             BASE_USDC,
             IUniswapV3Pool(SLIPSTREAMS_WETH_USDC_POOL).tickSpacing(),
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             address(this),
             SLIPSTREAMS_WETH_USDC_POOL,
             zeroForOne
         );
 
-        uint256 amountOut = slipstreamsExposed.swap(amountIn, data);
+        (uint256 amountOut, address tokenOut, address receiver) = slipstreamsExposed.swap(amountIn, data);
 
         assertEq(IERC20(BASE_WETH).balanceOf(address(slipstreamsExposed)), 0);
         assertGe(IERC20(BASE_USDC).balanceOf(address(this)), amountOut);
@@ -129,13 +129,13 @@ contract SlipstreamsExecutorTest is
             BASE_WETH,
             BASE_BMI,
             IUniswapV3Pool(SLIPSTREAMS_WETH_BMI_POOL).tickSpacing(),
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             address(this),
             SLIPSTREAMS_WETH_BMI_POOL,
             zeroForOne
         );
 
-        uint256 amountOut = slipstreamsExposed.swap(amountIn, data);
+        (uint256 amountOut, address tokenOut, address receiver) = slipstreamsExposed.swap(amountIn, data);
 
         assertEq(IERC20(BASE_WETH).balanceOf(address(slipstreamsExposed)), 0);
         assertGe(IERC20(BASE_BMI).balanceOf(address(this)), amountOut);
@@ -167,7 +167,7 @@ contract SlipstreamsExecutorTest is
             BASE_WETH,
             BASE_USDC,
             poolTickSpacing,
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             address(slipstreamsExposed)
         );
         uint256 dataOffset = 3; // some offset
@@ -199,7 +199,7 @@ contract SlipstreamsExecutorTest is
             BASE_WETH,
             BASE_USDC,
             uint24(100),
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             address(this),
             fakePool,
             zeroForOne

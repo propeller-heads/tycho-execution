@@ -25,28 +25,28 @@ contract RocketpoolExecutor is IExecutor, RestrictTransferFrom {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
-        (bool isDeposit, TransferType transferType, address receiver) =
-            _decodeData(data);
+        bool isDeposit;
+        TransferType transferType;
+        (isDeposit, transferType, receiver) = _decodeData(data);
 
         if (isDeposit) {
             // ETH -> rETH: Deposit ETH to Rocketpool to receive rETH
             // We don't need to _transfer ETH into this contract since it must be sent along with the call
+            tokenOut = address(RETH);
             uint256 rethBefore = RETH.balanceOf(address(this));
             ROCKET_DEPOSIT_POOL.deposit{value: givenAmount}();
             calculatedAmount = RETH.balanceOf(address(this)) - rethBefore;
 
             if (receiver != address(this)) {
                 RETH.safeTransfer(receiver, calculatedAmount);
-            } else {
-                // Credit vault if funds stayed in router
-                _updateDeltaAccounting(msg.sender, address(RETH), int256(calculatedAmount));
             }
         } else {
             // rETH -> ETH: Burn rETH to receive ETH
             // Use _transfer to get rETH into this contract based on transferType
-            _transfer(address(this), transferType, address(RETH), givenAmount);
+            //            _transfer(address(this), transferType, address(RETH), givenAmount);
+            tokenOut = address(0);
 
             uint256 ethBefore = address(this).balance;
             RETH.burn(givenAmount);
@@ -54,10 +54,33 @@ contract RocketpoolExecutor is IExecutor, RestrictTransferFrom {
 
             if (receiver != address(this)) {
                 Address.sendValue(payable(receiver), calculatedAmount);
-            } else {
-                // Credit vault if funds stayed in router (ETH)
-                _updateDeltaAccounting(msg.sender, address(0), int256(calculatedAmount));
             }
+        }
+    }
+
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            address tokenOut
+        )
+    {
+        bool isDeposit = uint8(data[0]) == 1;
+        receiver = address(bytes20(data[2:22]));
+
+        if (isDeposit) {
+            // ETH -> rETH
+            // Security: Hardcode TransferNativeInMsgValue for deposits to prevent malicious encoding
+            transferType = RestrictTransferFrom.TransferType.TransferNativeInMsgValue;
+            tokenIn = address(0);
+            tokenOut = address(RETH);
+        } else {
+            // rETH -> ETH
+            tokenIn = address(RETH);
+            tokenOut = address(0);
         }
     }
 

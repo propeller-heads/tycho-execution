@@ -19,10 +19,9 @@ contract ERC4626Executor is IExecutor, RestrictTransferFrom {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
         address target;
-        address receiver;
         IERC20 tokenIn;
         TransferType transferType;
         bool approvalNeeded;
@@ -33,9 +32,8 @@ contract ERC4626Executor is IExecutor, RestrictTransferFrom {
             // slither-disable-next-line unused-return
             tokenIn.forceApprove(target, type(uint256).max);
         }
-        _transfer(address(this), transferType, address(tokenIn), givenAmount);
+        //        _transfer(address(this), transferType, address(tokenIn), givenAmount);
 
-        address tokenOut;
         if (address(tokenIn) == target) {
             // shares --> asset
             tokenOut = IERC4626(target).asset();
@@ -48,10 +46,30 @@ contract ERC4626Executor is IExecutor, RestrictTransferFrom {
         } else {
             revert ERC4626Executor__InvalidTarget();
         }
+    }
 
-        // Credit delta accounting with the output amount of the swap
-        if (receiver == address(this)) {
-            _updateDeltaAccounting(msg.sender, tokenOut, int256(calculatedAmount));
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            address tokenOut
+        )
+    {
+        tokenIn = address(bytes20(data[0:20]));
+        address target = address(bytes20(data[20:40]));
+        receiver = address(bytes20(data[40:60]));
+        transferType = TransferType(uint8(data[60]));
+
+        // Determine tokenOut based on target
+        if (tokenIn == target) {
+            // shares --> asset
+            tokenOut = IERC4626(target).asset();
+        } else {
+            // asset --> shares
+            tokenOut = target;
         }
     }
 

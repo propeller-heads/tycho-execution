@@ -53,29 +53,36 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
     function swap(uint256 amountIn, bytes calldata data)
         external
         payable
-        returns (uint256)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
         if (data.length != 85) {
             revert CurveExecutor__InvalidDataLength();
         }
 
+        address tokenIn;
+        address pool;
+        uint8 poolType;
+        int128 i;
+        int128 j;
+        bool approvalNeeded;
+        TransferType transferType;
         (
-            address tokenIn,
-            address tokenOut,
-            address pool,
-            uint8 poolType,
-            int128 i,
-            int128 j,
-            bool approvalNeeded,
-            TransferType transferType,
-            address receiver
+            tokenIn,
+            tokenOut,
+            pool,
+            poolType,
+            i,
+            j,
+            approvalNeeded,
+            transferType,
+            receiver
         ) = _decodeData(data);
 
         if (approvalNeeded && tokenIn != nativeToken) {
             // slither-disable-next-line unused-return
             IERC20(tokenIn).forceApprove(address(pool), type(uint256).max);
         }
-        _transfer(address(this), transferType, tokenIn, amountIn);
+        //        _transfer(address(this), transferType, tokenIn, amountIn);
 
         /// Inspired by Curve's router contract: https://github.com/curvefi/curve-router-ng/blob/9ab006ca848fc7f1995b6fbbecfecc1e0eb29e2a/contracts/Router.vy#L44
         uint256 balanceBefore = _balanceOf(tokenOut);
@@ -105,19 +112,31 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
         }
 
         uint256 balanceAfter = _balanceOf(tokenOut);
-        uint256 amountOut = balanceAfter - balanceBefore;
+        calculatedAmount = balanceAfter - balanceBefore;
 
         if (receiver != address(this)) {
             if (tokenOut == nativeToken) {
-                Address.sendValue(payable(receiver), amountOut);
+                Address.sendValue(payable(receiver), calculatedAmount);
             } else {
-                IERC20(tokenOut).safeTransfer(receiver, amountOut);
+                IERC20(tokenOut).safeTransfer(receiver, calculatedAmount);
             }
-        } else {
-            // Credit vault if funds stayed in router
-            _updateDeltaAccounting(msg.sender, tokenOut, int256(amountOut));
         }
-        return amountOut;
+    }
+
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            address tokenOut
+        )
+    {
+        tokenIn = address(bytes20(data[0:20]));
+        tokenOut = address(bytes20(data[20:40]));
+        transferType = TransferType(uint8(data[64]));
+        receiver = address(bytes20(data[65:85]));
     }
 
     function _decodeData(bytes calldata data)

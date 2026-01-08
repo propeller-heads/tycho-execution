@@ -70,12 +70,12 @@ contract RestrictTransferFrom {
     }
 
     enum TransferType {
-        TransferFromSender,
-        TransferFromVault,
-        TransferFromRouter,
-        FundsAlreadyInProtocol,
+        TransferFrom,
+        TransferFromAndProtocolWillDebit,
+        Transfer,
+        TransferNativeInMsgValue,
         ProtocolWillDebit,
-        ProtocolWillDebitFromVault
+        None
     }
 
     /**
@@ -103,11 +103,14 @@ contract RestrictTransferFrom {
 
     /**
      * @dev This function is used to transfer the tokens from the sender to the receiver.
-     * This function is called within the Executor contracts.
-     * If the TransferType is TransferFrom, it will check if the amount is within the allowed amount and transfer those funds from the user.
-     * If the TransferType is Transfer, it will transfer the funds from the TychoRouter to the receiver.
-     * If the TransferType is TransferFromVault, it will debit the user's vault balance and transfer from the router (funds already there).
-     * If the TransferType is None, it will debit the user's vault balance and expect the protocol to take care of any transfers.
+     * This function is called within the Dispatcher before calling executors.
+     * Handles 6 transfer scenarios:
+     * - TransferFrom: Transfer from user wallet to protocol
+     * - TransferFromAndProtocolWillDebit: Transfer from user wallet to router, protocol takes it
+     * - Transfer: Transfer from router balance to protocol (could be from vault or previous swap)
+     * - TransferNativeInMsgValue: Native ETH sent via msg.value (hardcoded in executor for security)
+     * - ProtocolWillDebit: Protocol takes from router/vault
+     * - None: Funds already transferred from previous pool
      */
     // slither-disable-next-line assembly
     function _transfer(
@@ -120,7 +123,7 @@ contract RestrictTransferFrom {
         assembly {
             sender := tload(_SENDER_SLOT)
         }
-        if (transferType == TransferType.TransferFromSender) {
+        if (transferType == TransferType.TransferFrom) {
             // Perform transferFrom the user's wallet
             _restrictTransferFrom(sender, amount, tokenIn);
             bool isPermit2;
@@ -134,48 +137,44 @@ contract RestrictTransferFrom {
                 // slither-disable-next-line arbitrary-send-erc20
                 IERC20(tokenIn).safeTransferFrom(sender, receiver, amount);
             }
-            // If the receiver is address(this), that means the protocol will debit
-            // after performing the transferFrom, so no crediting the transient storage
-            // should be necessary in any case.
-        } else if (transferType == TransferType.TransferFromVault) {
-            // Use vault funds instead of funds from the user's wallet.
+        } else if (transferType == TransferType.TransferFromAndProtocolWillDebit) {
+            // Perform transferFrom the user's wallet to our router
             _restrictTransferFrom(sender, amount, tokenIn);
-            // Debit the persistent storage vault balance
-            // Funds go straight to the receiver, no need to credit transient storage.
-            _debitPersistentVault(sender, tokenIn, amount);
-            if (tokenIn == address(0)) {
-                Address.sendValue(payable(receiver), amount);
-            } else {
-                IERC20(tokenIn).safeTransfer(receiver, amount);
+            bool isPermit2;
+            assembly {
+                isPermit2 := tload(_IS_PERMIT2_SLOT)
             }
-        } else if (transferType == TransferType.TransferFromRouter) {
-            // We expect funds in transient storage accounting from previous swap.
-            // Debit the delta accounting (negative amount) since funds are leaving the router
+            if (isPermit2) {
+                // Permit2.permit is already called from the TychoRouter
+                permit2.transferFrom(sender, address(this), uint160(amount), tokenIn);
+            } else {
+                // slither-disable-next-line arbitrary-send-erc20
+                IERC20(tokenIn).safeTransferFrom(sender, address(this), amount);
+            }
+            IERC20(tokenIn).forceApprove(receiver, amount);
+        } else if (transferType == TransferType.Transfer) {
+            // Transfer using the user's router balance.
+            // This could mean the funds come from the user's vault (first swap)
+            // or funds are in the router from the previous swap.
             _updateDeltaAccounting(sender, tokenIn, -int256(amount));
             if (tokenIn == address(0)) {
                 Address.sendValue(payable(receiver), amount);
             } else {
                 IERC20(tokenIn).safeTransfer(receiver, amount);
             }
+        } else if (transferType == TransferType.TransferNativeInMsgValue) {
+            // Protocols like Fluid or Lido require us to send the ETH as
+            // msg.value when calling the swap function from inside the executor.
+            // This transfer type must be encoded from the executor for security purposes
+            _updateDeltaAccounting(sender, tokenIn, -int256(amount));
         } else if (transferType == TransferType.ProtocolWillDebit) {
-            // Happens for protocols like Curve or Balancer (they perform a
-            // transferFrom on their side) when not the first swap. We assume
-            // That funds have been credited to the delta accounting form the
-            // previous swap.
-            // Since we are not taking the funds from the vault, we debit the delta
-            // accounting (negative amount)
+            // Funds are either in the router from the previous swap, or will
+            // be taken from our vault (in the case of the first swap).
             _updateDeltaAccounting(sender, tokenIn, -int256(amount));
-        } else if (transferType == TransferType.ProtocolWillDebitFromVault) {
-            // Used when Curve or Balancer is the first swap and user wants to use vault balances.
-            // Protocol will pull funds from router via transferFrom.
-            _restrictTransferFrom(sender, amount, tokenIn);
-            // Debit the actual vault balance (persistent storage)
-            _debitPersistentVault(sender, tokenIn, amount);
-            // We don't credit the delta accounting since the funds land directly in
-            // the protocol and don't pass through our router.
-        } else if (transferType == TransferType.FundsAlreadyInProtocol) {
-            // Funds were sent directly from the previous pool without passing through our router
-            // Nothing to do here
+            IERC20(tokenIn).forceApprove(receiver, amount);
+        } else if (transferType == TransferType.None) {
+            // Funds were sent directly from the previous pool without passing
+            // through our router. Nothing to do here. No approval, no transfer.
             return;
         } else {
             revert RestrictTransferFrom__UnknownTransferType();

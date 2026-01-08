@@ -295,21 +295,21 @@ pub struct EncodingContext {
 ///
 /// # Fields
 ///
-/// * `TransferFromSender`: Transfer the token from the sender to the protocol/router.
-/// * `TransferFromVault`: Transfer from vault to protocol (debiting user's persistent vault balance).
-/// * `TransferFromRouter`: Transfer from router to protocol (debiting delta accounting from previous swap).
-/// * `FundsAlreadyInProtocol`: Funds were sent directly to the next pool (transfer optimization).
-/// * `ProtocolWillDebit`: Protocol will pull funds from router via transferFrom (debit delta accounting).
-/// * `ProtocolWillDebitFromVault`: Protocol will pull funds from vault via transferFrom (debit persistent vault).
+/// * `TransferFrom`: Transfer from user wallet to protocol.
+/// * `TransferFromAndProtocolWillDebit`: Transfer from user wallet to router, protocol takes it.
+/// * `Transfer`: Transfer from router balance to protocol (could be from vault or previous swap).
+/// * `TransferNativeInMsgValue`: Native ETH sent via msg.value (hardcoded in executor for security).
+/// * `ProtocolWillDebit`: Protocol takes from router/vault.
+/// * `None`: Funds already transferred from previous pool.
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum TransferType {
-    TransferFromSender = 0,
-    TransferFromVault = 1,
-    TransferFromRouter = 2,
-    FundsAlreadyInProtocol = 3,
+    TransferFrom = 0,
+    TransferFromAndProtocolWillDebit = 1,
+    Transfer = 2,
+    TransferNativeInMsgValue = 3,
     ProtocolWillDebit = 4,
-    ProtocolWillDebitFromVault = 5,
+    None = 5,
 }
 
 mod tests {

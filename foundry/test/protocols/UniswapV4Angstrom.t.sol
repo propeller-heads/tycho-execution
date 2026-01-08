@@ -117,12 +117,12 @@ contract UniswapV4AngstromExecutorTest is Constants, TestUtils {
             USDC_ADDR,
             WETH_ADDR,
             true,
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             ALICE,
             firstPool
         );
 
-        uint256 amountOut = angstromExecutor.swap(amountIn, data);
+        (uint256 amountOut, address tokenOut, address receiver) = angstromExecutor.swap(amountIn, data);
 
         assertEq(
             USDC.balanceOf(POOL_MANAGER), poolManagerBalanceBefore + amountIn
@@ -156,7 +156,7 @@ contract UniswapV4AngstromExecutorTest is Constants, TestUtils {
             USDC_ADDR,
             WETH_ADDR,
             true,
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             ALICE,
             firstPool
         );
@@ -180,7 +180,7 @@ contract UniswapV4AngstromExecutorTest is Constants, TestUtils {
         uint256 usdcBalanceBeforePool = USDC.balanceOf(POOL_MANAGER);
         uint256 usdcBalanceBeforeExecutor =
             USDC.balanceOf(address(angstromExecutor));
-        uint256 amountOut = angstromExecutor.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) = angstromExecutor.swap(amountIn, protocolData);
 
         // Verify USDC was transferred to pool manager
         assertEq(USDC.balanceOf(POOL_MANAGER), usdcBalanceBeforePool + amountIn);

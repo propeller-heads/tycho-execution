@@ -46,7 +46,7 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
             WETH_BAL_POOL_ID,
             address(2),
             true,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
+            RestrictTransferFrom.TransferType.None
         );
 
         (
@@ -65,7 +65,7 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
         assertEq(needsApproval, true);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.FundsAlreadyInProtocol)
+            uint8(RestrictTransferFrom.TransferType.None)
         );
     }
 
@@ -85,13 +85,13 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
             WETH_BAL_POOL_ID,
             BOB,
             true,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
+            RestrictTransferFrom.TransferType.None
         );
 
         deal(WETH_ADDR, address(balancerV2Exposed), amountIn);
         uint256 balanceBefore = BAL.balanceOf(BOB);
 
-        uint256 amountOut = balancerV2Exposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) = balancerV2Exposed.swap(amountIn, protocolData);
 
         uint256 balanceAfter = BAL.balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);
@@ -117,7 +117,7 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
         assertEq(needsApproval, true);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.FundsAlreadyInProtocol)
+            uint8(RestrictTransferFrom.TransferType.None)
         );
     }
 
@@ -130,7 +130,7 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
         deal(WETH_ADDR, address(balancerV2Exposed), amountIn);
         uint256 balanceBefore = BAL.balanceOf(BOB);
 
-        uint256 amountOut = balancerV2Exposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) = balancerV2Exposed.swap(amountIn, protocolData);
 
         uint256 balanceAfter = BAL.balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);

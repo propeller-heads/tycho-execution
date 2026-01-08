@@ -29,7 +29,7 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
         if (data.length != 81) {
             revert BalancerV3Executor__InvalidDataLength();
@@ -40,7 +40,7 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
                 abi.encodePacked(givenAmount, data)
             )
         );
-        calculatedAmount = abi.decode(abi.decode(result, (bytes)), (uint256));
+        (calculatedAmount, tokenOut, receiver) = abi.decode(abi.decode(result, (bytes)), (uint256, address, address));
     }
 
     function verifyCallback(
@@ -59,13 +59,19 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
         returns (bytes memory result)
     {
         verifyCallback(data);
+        uint256 amountGiven;
+        IERC20 tokenIn;
+        IERC20 tokenOut;
+        address poolId;
+        TransferType transferType;
+        address receiver;
         (
-            uint256 amountGiven,
-            IERC20 tokenIn,
-            IERC20 tokenOut,
-            address poolId,
-            TransferType transferType,
-            address receiver
+            amountGiven,
+            tokenIn,
+            tokenOut,
+            poolId,
+            transferType,
+            receiver
         ) = _decodeData(data);
 
         uint256 amountCalculated;
@@ -83,17 +89,57 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
             })
         );
 
-        _transfer(address(VAULT), transferType, address(tokenIn), amountIn);
+        //        _transfer(address(VAULT), transferType, address(tokenIn), amountIn);
         // slither-disable-next-line unused-return
         VAULT.settle(tokenIn, amountIn);
         VAULT.sendTo(tokenOut, receiver, amountOut);
 
-        // Credit delta accounting with the output amount of the swap
-        if (receiver == address(this)) {
-            _updateDeltaAccounting(msg.sender, address(tokenOut), int256(amountOut));
-        }
+        return abi.encode(amountCalculated, address(tokenOut), receiver);
+    }
 
-        return abi.encode(amountCalculated);
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            address tokenOut
+        )
+    {
+        return (
+            RestrictTransferFrom.TransferType.ProtocolWillDebit,
+            address(0),
+            address(0),
+            address(0)
+        );
+    }
+
+    function getCallbackTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            uint256 amount
+        )
+    {
+        verifyCallback(data);
+        // Remove the first 68 bytes 4 selector + 32 dataOffset + 32 dataLength and extra padding at the end
+        bytes calldata callbackData = data[68:181];
+        uint256 amountGiven;
+        IERC20 tokenInIERC20;
+        (
+            amountGiven,
+            tokenInIERC20,
+            ,
+            ,
+            transferType,
+        ) = _decodeData(callbackData);
+        tokenIn = address(tokenInIERC20);
+        receiver = address(VAULT);
+        amount = amountGiven;
     }
 
     function handleCallback(bytes calldata data)

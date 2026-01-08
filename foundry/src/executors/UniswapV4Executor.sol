@@ -97,15 +97,19 @@ contract UniswapV4Executor is
         external
         payable
         virtual
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
+        address tokenIn;
+        bool zeroForOne;
+        TransferType transferType;
+        UniswapV4Executor.UniswapV4Pool[] memory pools;
         (
-            address tokenIn,
-            address tokenOut,
-            bool zeroForOne,
-            TransferType transferType,
-            address receiver,
-            UniswapV4Executor.UniswapV4Pool[] memory pools
+            tokenIn,
+            tokenOut,
+            zeroForOne,
+            transferType,
+            receiver,
+            pools
         ) = _decodeData(data);
         bytes memory swapData;
         if (pools.length == 1) {
@@ -153,12 +157,7 @@ contract UniswapV4Executor is
         bytes memory result = poolManager.unlock(swapData);
         uint128 amountOut = abi.decode(result, (uint128));
 
-        // Credit delta accounting with the output amount of the swap
-        if (receiver == address(this)) {
-            _updateDeltaAccounting(msg.sender, tokenOut, int256(uint256(amountOut)));
-        }
-
-        return amountOut;
+        calculatedAmount = uint256(amountOut);
     }
 
     // slither-disable-next-line dead-code
@@ -267,6 +266,72 @@ contract UniswapV4Executor is
             pools[i + 1] = UniswapV4Pool(
                 intermediaryToken, fee, tickSpacing, hook, hookData
             );
+        }
+    }
+
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            address tokenOut
+        )
+    {
+        return (
+            RestrictTransferFrom.TransferType.ProtocolWillDebit,
+            address(0),
+            address(0),
+            address(0)
+        );
+    }
+
+    function getCallbackTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            uint256 amount
+        )
+    {
+        verifyCallback(data);
+        // The handleCallback receives: selector (4) + dataOffset (32) + dataLength (32) + actualData
+        // The actualData starts at offset 68 and contains the selector + arguments of the internal call
+        bytes calldata stripped = data[68:];
+        bytes4 selector = bytes4(stripped[:4]);
+
+        if (selector == SWAP_EXACT_INPUT_SINGLE_SELECTOR) {
+            // swapExactInputSingle(PoolKey,bool,uint128,TransferType,address,bytes)
+            // After selector: poolKey (160 bytes), zeroForOne (32), amountIn (32), transferType (32), receiver (32), hookData (dynamic)
+            // Extract amountIn at offset 4 + 160 + 32 = 196
+            uint128 amountIn = uint128(bytes16(stripped[228:244]));
+            // Extract zeroForOne at offset 164
+            bool zeroForOne = uint8(stripped[196]) > 0;
+            // Extract transferType at offset 244
+            transferType = TransferType(uint8(stripped[276]));
+
+            // PoolKey starts at offset 4: currency0 (20), currency1 (20), fee (4), tickSpacing (4), hooks (20)
+            address currency0 = address(bytes20(stripped[16:36]));
+            address currency1 = address(bytes20(stripped[36:56]));
+            tokenIn = zeroForOne ? currency0 : currency1;
+            amount = uint256(amountIn);
+            receiver = address(poolManager);
+        } else if (selector == SWAP_EXACT_INPUT_SELECTOR) {
+            // swapExactInput(Currency,PathKey[],uint128,TransferType,address)
+            // After selector: currencyIn (32), path offset (32), amountIn (32), transferType (32), receiver (32)
+            // Extract amountIn at offset 4 + 32 + 32 = 68
+            uint128 amountIn = uint128(bytes16(stripped[84:100]));
+            // Extract currencyIn at offset 4
+            tokenIn = address(bytes20(stripped[16:36]));
+            // Extract transferType at offset 100
+            transferType = TransferType(uint8(stripped[132]));
+            amount = uint256(amountIn);
+            receiver = address(poolManager);
+        } else {
+            revert UniswapV4Executor__UnknownCallback(selector);
         }
     }
 
@@ -465,12 +530,12 @@ contract UniswapV4Executor is
             // slither-disable-next-line unused-return
             poolManager.settle{value: amount}();
         } else {
-            _transfer(
-                address(poolManager),
-                transferType,
-                Currency.unwrap(currency),
-                amount
-            );
+            //            _transfer(
+            //                address(poolManager),
+            //                transferType,
+            //                Currency.unwrap(currency),
+            //                amount
+            //            );
             // slither-disable-next-line unused-return
             poolManager.settle();
         }

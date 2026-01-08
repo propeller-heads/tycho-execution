@@ -57,13 +57,73 @@ contract EkuboExecutor is
     function swap(uint256 amountIn, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
         if (data.length < 92) revert EkuboExecutor__InvalidDataLength();
 
         // amountIn must be at most type(int128).MAX
         calculatedAmount =
             uint256(_lock(bytes.concat(bytes16(uint128(amountIn)), data)));
+
+        // Decode tokenOut and receiver from data
+        receiver = address(bytes20(data[17:37]));
+
+        // Find tokenOut - it's the last token in the path
+        // Calculate the number of hops
+        uint256 hopsLength = (data.length - POOL_DATA_OFFSET) / HOP_BYTE_LEN;
+        if (hopsLength > 0) {
+            // TokenOut is at the start of the last hop
+            uint256 lastHopOffset = POOL_DATA_OFFSET + ((hopsLength - 1) * HOP_BYTE_LEN);
+            tokenOut = address(bytes20(data[lastHopOffset:lastHopOffset + 20]));
+        } else {
+            // No hops, tokenOut is tokenIn (shouldn't happen in practice)
+            tokenOut = address(bytes20(data[37:57]));
+        }
+    }
+
+    function getTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            address tokenOut
+        )
+    {
+        return (
+            RestrictTransferFrom.TransferType.ProtocolWillDebit,
+            address(0),
+            address(0),
+            address(0)
+        );
+    }
+
+    function getCallbackTransferData(bytes calldata data)
+        external
+        payable
+        returns (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            uint256 amount
+        )
+    {
+        bytes4 selector = bytes4(data[:4]);
+
+        if (selector == PAY_CALLBACK_SELECTOR) {
+            bytes calldata payData = data[36:];
+
+            tokenIn = address(bytes20(payData[12:32])); // This arg is abi-encoded
+            amount = uint256(uint128(bytes16(payData[32:48])));
+            transferType = TransferType(uint8(payData[48]));
+            receiver = address(core);
+        } else {
+            transferType = RestrictTransferFrom.TransferType.ProtocolWillDebit;
+            receiver = address(0);
+            tokenIn = address(0);
+            amount = 0;
+        }
     }
 
     function handleCallback(bytes calldata raw)
@@ -200,14 +260,6 @@ contract EkuboExecutor is
 
         _pay(tokenIn, tokenInDebtAmount, transferType);
         core.withdraw(nextTokenIn, receiver, uint128(nextAmountIn));
-
-        // Credit delta accounting with the output amount of the swap
-        if (receiver == address(this)) {
-            _updateDeltaAccounting(
-                msg.sender, nextTokenIn, int256(uint256(uint128(nextAmountIn)))
-            );
-        }
-
         return nextAmountIn;
     }
 
@@ -280,7 +332,7 @@ contract EkuboExecutor is
         address token = address(bytes20(payData[12:32])); // This arg is abi-encoded
         uint128 amount = uint128(bytes16(payData[32:48]));
         TransferType transferType = TransferType(uint8(payData[48]));
-        _transfer(address(core), transferType, token, amount);
+//        _transfer(address(core), transferType, token, amount);
     }
 
     // To receive withdrawals from Core

@@ -46,7 +46,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
     function testDecodeParams() public view {
         bytes memory params = abi.encodePacked(
             uint8(1), // isDeposit = true
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             BOB
         );
 
@@ -59,7 +59,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         assertTrue(isDeposit);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
+            uint8(RestrictTransferFrom.TransferType.Transfer)
         );
         assertEq(receiver, BOB);
     }
@@ -67,7 +67,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
     function testDecodeParamsBurn() public view {
         bytes memory params = abi.encodePacked(
             uint8(0), // isDeposit = false (burn)
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             ALICE
         );
 
@@ -80,7 +80,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         assertFalse(isDeposit);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
+            uint8(RestrictTransferFrom.TransferType.Transfer)
         );
         assertEq(receiver, ALICE);
     }
@@ -101,7 +101,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         uint256 amountIn = 4.5 ether;
         bytes memory protocolData = abi.encodePacked(
             uint8(1), // isDeposit = true
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             BOB
         );
 
@@ -109,7 +109,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         vm.deal(address(rocketpoolExecutor), amountIn);
 
         uint256 rethBalanceBefore = RETH.balanceOf(BOB);
-        uint256 amountOut = rocketpoolExecutor.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) = rocketpoolExecutor.swap(amountIn, protocolData);
         uint256 rethBalanceAfter = RETH.balanceOf(BOB);
 
         // Check balances
@@ -125,7 +125,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         uint256 amountIn = 1 ether;
         bytes memory protocolData = abi.encodePacked(
             uint8(0), // isDeposit = false (burn)
-            RestrictTransferFrom.TransferType.TransferFromVault,
+            RestrictTransferFrom.TransferType.Transfer,
             BOB
         );
 
@@ -133,7 +133,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         deal(RETH_ADDR, address(rocketpoolExecutor), amountIn);
 
         uint256 ethBalanceBefore = BOB.balance;
-        uint256 amountOut = rocketpoolExecutor.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) = rocketpoolExecutor.swap(amountIn, protocolData);
         uint256 ethBalanceAfter = BOB.balance;
 
         // Check balances
@@ -155,7 +155,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         assertTrue(isDeposit);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
+            uint8(RestrictTransferFrom.TransferType.Transfer)
         );
         assertEq(receiver, BOB);
     }
@@ -174,7 +174,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         assertFalse(isDeposit);
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.TransferFromVault)
+            uint8(RestrictTransferFrom.TransferType.Transfer)
         );
         assertEq(receiver, BOB);
     }
@@ -194,7 +194,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         vm.deal(address(rocketpoolExecutor), amountIn);
 
         uint256 rethBalanceBefore = RETH.balanceOf(BOB);
-        uint256 amountOut = rocketpoolExecutor.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) = rocketpoolExecutor.swap(amountIn, protocolData);
         uint256 rethBalanceAfter = RETH.balanceOf(BOB);
 
         // Check balances
@@ -216,7 +216,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         deal(RETH_ADDR, address(rocketpoolExecutor), amountIn);
 
         uint256 ethBalanceBefore = BOB.balance;
-        uint256 amountOut = rocketpoolExecutor.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) = rocketpoolExecutor.swap(amountIn, protocolData);
         uint256 ethBalanceAfter = BOB.balance;
 
         // Check balances

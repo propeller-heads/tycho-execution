@@ -7,6 +7,7 @@ import "@interfaces/ICallback.sol";
 error Dispatcher__UnapprovedExecutor(address executor);
 error Dispatcher__NonContractExecutor();
 error Dispatcher__InvalidDataLength();
+error Dispatcher__AddressZero();
 
 /**
  * @title Dispatcher - Dispatch execution to external contracts
@@ -19,7 +20,7 @@ error Dispatcher__InvalidDataLength();
  *  Note: Executor contracts need to implement the IExecutor interface unless
  *  an alternate selector is specified.
  */
-contract Dispatcher {
+contract Dispatcher is RestrictTransferFrom {
     mapping(address => bool) public executors;
 
     // keccak256("Dispatcher#CURRENTLY_SWAPPING_EXECUTOR_SLOT")
@@ -28,6 +29,12 @@ contract Dispatcher {
 
     event ExecutorSet(address indexed executor);
     event ExecutorRemoved(address indexed executor);
+
+    constructor(address _permit2) RestrictTransferFrom(_permit2) {
+        if (_permit2 == address(0)) {
+            revert Dispatcher__AddressZero();
+        }
+    }
 
     /**
      * @dev Adds or replaces an approved executor contract address if it is a
@@ -60,7 +67,7 @@ contract Dispatcher {
         address executor,
         uint256 amount,
         bytes calldata data
-    ) internal returns (uint256 calculatedAmount) {
+    ) internal returns (uint256 calculatedAmount, address tokenOut, address receiver) {
         if (!executors[executor]) {
             revert Dispatcher__UnapprovedExecutor(executor);
         }
@@ -68,6 +75,31 @@ contract Dispatcher {
         assembly {
             tstore(_CURRENTLY_SWAPPING_EXECUTOR_SLOT, executor)
         }
+
+        (bool transferDataSuccess, bytes memory transferData) = executor.staticcall(
+            abi.encodeWithSelector(IExecutor.getTransferData.selector, data)
+        );
+
+        if (!transferDataSuccess) {
+            revert(
+                string(
+                    transferData.length > 0
+                        ? transferData
+                        : abi.encodePacked("Getting transfer data failed")
+                )
+            );
+        }
+
+        (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            address tokenOut
+        ) = abi.decode(
+            transferData,
+            (RestrictTransferFrom.TransferType, address, address, address)
+        );
+        _transfer(receiver, transferType, tokenIn, amount);
 
         // slither-disable-next-line controlled-delegatecall,low-level-calls,calls-loop
         (bool success, bytes memory result) = executor.delegatecall(
@@ -89,7 +121,13 @@ contract Dispatcher {
             );
         }
 
-        calculatedAmount = abi.decode(result, (uint256));
+        (calculatedAmount, tokenOut, receiver) =
+            abi.decode(result, (uint256, address, address));
+
+        // Credit delta accounting if tokens stayed in router
+        if (receiver == address(this)) {
+            _updateDeltaAccounting(msg.sender, tokenOut, int256(calculatedAmount));
+        }
     }
 
     /**
@@ -142,6 +180,32 @@ contract Dispatcher {
             revert Dispatcher__UnapprovedExecutor(executor);
         }
 
+        (bool transferDataSuccess, bytes memory transferData) = executor.delegatecall(
+            abi.encodeWithSelector(
+                ICallback.getCallbackTransferData.selector, data
+            )
+        );
+
+        if (!transferDataSuccess) {
+            revert(
+                string(
+                    transferData.length > 0
+                        ? transferData
+                        : abi.encodePacked("Getting transfer data failed")
+                )
+            );
+        }
+
+        (
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            uint256 amount
+        ) = abi.decode(
+            transferData,
+            (RestrictTransferFrom.TransferType, address, address, uint256)
+        );
+        _transfer(receiver, transferType, tokenIn, amount);
         // slither-disable-next-line controlled-delegatecall,low-level-calls
         (bool success, bytes memory result) = executor.delegatecall(
             abi.encodeWithSelector(ICallback.handleCallback.selector, data)

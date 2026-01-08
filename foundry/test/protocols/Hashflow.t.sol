@@ -39,7 +39,7 @@ contract HashflowUtils is Test {
         return encodeRfqtQuote(
             quote,
             true,
-            RestrictTransferFrom.TransferType.FundsAlreadyInProtocol
+            RestrictTransferFrom.TransferType.None
         );
     }
 }
@@ -114,7 +114,7 @@ contract HashflowExecutorECR20Test is Constants, TestUtils, HashflowUtils {
         assertEq(approvalNeeded, true, "Approval flag mismatch");
         assertEq(
             uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.FundsAlreadyInProtocol),
+            uint8(RestrictTransferFrom.TransferType.None),
             "Transfer type mismatch"
         );
     }
@@ -135,7 +135,7 @@ contract HashflowExecutorECR20Test is Constants, TestUtils, HashflowUtils {
         uint256 balanceBefore = USDC.balanceOf(trader);
 
         vm.prank(trader);
-        uint256 amountOut = executor.swap(amountIn, encodedQuote);
+        (uint256 amountOut, address tokenOut, address receiver) = executor.swap(amountIn, encodedQuote);
 
         uint256 balanceAfter = USDC.balanceOf(trader);
         assertGt(balanceAfter, balanceBefore);
@@ -153,7 +153,7 @@ contract HashflowExecutorECR20Test is Constants, TestUtils, HashflowUtils {
         uint256 balanceBefore = USDC.balanceOf(trader);
 
         vm.prank(trader);
-        uint256 amountOut = executor.swap(amountIn, encodedQuote);
+        (uint256 amountOut, address tokenOut, address receiver) = executor.swap(amountIn, encodedQuote);
 
         uint256 balanceAfter = USDC.balanceOf(trader);
         assertGt(balanceAfter, balanceBefore);
@@ -171,7 +171,7 @@ contract HashflowExecutorECR20Test is Constants, TestUtils, HashflowUtils {
         uint256 balanceBefore = USDC.balanceOf(trader);
 
         vm.prank(trader);
-        uint256 amountOut = executor.swap(amountIn, encodedQuote);
+        (uint256 amountOut, address tokenOut, address receiver) = executor.swap(amountIn, encodedQuote);
 
         uint256 balanceAfter = USDC.balanceOf(trader);
         assertGt(balanceAfter, balanceBefore);
@@ -233,7 +233,7 @@ contract HashflowExecutorNativeTest is Constants, HashflowUtils {
         uint256 balanceBefore = USDC.balanceOf(trader);
 
         vm.prank(trader);
-        uint256 amountOut = executor.swap(amountIn, encodedQuote);
+        (uint256 amountOut, address tokenOut, address receiver) = executor.swap(amountIn, encodedQuote);
 
         uint256 balanceAfter = USDC.balanceOf(trader);
         assertGt(balanceAfter, balanceBefore);
