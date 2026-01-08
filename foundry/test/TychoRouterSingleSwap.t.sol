@@ -117,7 +117,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
         bytes memory swap =
             encodeSingleSwap(address(usv2Executor), protocolData);
 
-        vm.expectRevert(TychoRouter__UndefinedMinAmountOut.selector);
+        vm.expectRevert(TychoRouter__UndefinedMinReceiverAmount.selector);
         tychoRouter.singleSwap(
             amountIn,
             WETH_ADDR,

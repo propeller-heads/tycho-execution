@@ -107,7 +107,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
         IERC20(WETH_ADDR).approve(tychoRouterAddr, amountIn);
 
         bytes[] memory swaps = _getSequentialSwaps();
-        vm.expectRevert(TychoRouter__UndefinedMinAmountOut.selector);
+        vm.expectRevert(TychoRouter__UndefinedMinReceiverAmount.selector);
         tychoRouter.sequentialSwap(
             amountIn,
             WETH_ADDR,

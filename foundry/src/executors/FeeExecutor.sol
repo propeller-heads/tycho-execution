@@ -44,8 +44,7 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
 
     /**
      * @dev Deducts fees from the input amount and credits them to fee receivers' vaults
-     * @dev Transfers the remaining amount to the receiver unless unwrapEth is true
-     * @dev Verifies msg.sender has sufficient balance in vault before deducting
+     * @dev Note: Does NOT transfer to receiver - caller must handle that after checking for solver subsidy
      * @param amountIn The input amount (before fees)
      * @param data Encoded fee parameters:
      *        solverFeeBps (uint16) | solverFeeReceiver (address) |
@@ -106,11 +105,8 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
             _creditPersistentVault(address(this), token, totalRouterFeesTaken);
         }
 
-        // Transfer to amountOut to receiver unless we need to unwrap ETH (router will
-        // handle that)
-        if (!unwrapEth) {
-            IERC20(token).safeTransfer(receiver, amountOut);
-        }
+        // Don't transfer to receiver here - the router needs to check if solver
+        // subsidy is required first, then handle the final transfer
 
         return amountOut;
     }

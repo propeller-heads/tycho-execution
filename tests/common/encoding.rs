@@ -87,7 +87,8 @@ pub fn encode_tycho_router_call(
     }
 
     let given_amount = biguint_to_u256(&solution.given_amount);
-    let min_amount_out = biguint_to_u256(&solution.checked_amount);
+    let min_receiver_amount = biguint_to_u256(&solution.min_receiver_amount);
+    let max_solver_contribution = biguint_to_u256(&solution.max_solver_contribution);
     let given_token = bytes_to_address(&solution.given_token)?;
     let checked_token = bytes_to_address(&solution.checked_token)?;
     let receiver = bytes_to_address(&solution.receiver)?;
@@ -113,7 +114,8 @@ pub fn encode_tycho_router_call(
             given_amount,
             given_token,
             checked_token,
-            min_amount_out,
+            min_receiver_amount,
+            max_solver_contribution,
             wrap,
             unwrap,
             receiver,
@@ -121,6 +123,8 @@ pub fn encode_tycho_router_call(
                 "permit2 object must be set to use permit2".to_string(),
             ))?,
             signature,
+            solution.fee_bps,
+            solution.fee_receiver.clone(),
             encoded_solution.swaps,
         )
             .abi_encode()
@@ -132,11 +136,14 @@ pub fn encode_tycho_router_call(
             given_amount,
             given_token,
             checked_token,
-            min_amount_out,
+            min_receiver_amount,
+            max_solver_contribution,
             wrap,
             unwrap,
             receiver,
             *user_transfer_type == UserTransferType::TransferFrom,
+            solution.fee_bps,
+            solution.fee_receiver.clone(),
             encoded_solution.swaps,
         )
             .abi_encode()
@@ -148,7 +155,8 @@ pub fn encode_tycho_router_call(
             given_amount,
             given_token,
             checked_token,
-            min_amount_out,
+            min_receiver_amount,
+            max_solver_contribution,
             wrap,
             unwrap,
             receiver,
@@ -156,6 +164,8 @@ pub fn encode_tycho_router_call(
                 "permit2 object must be set to use permit2".to_string(),
             ))?,
             signature,
+            solution.fee_bps,
+            solution.fee_receiver.clone(),
             encoded_solution.swaps,
         )
             .abi_encode()
@@ -167,11 +177,14 @@ pub fn encode_tycho_router_call(
             given_amount,
             given_token,
             checked_token,
-            min_amount_out,
+            min_receiver_amount,
+            max_solver_contribution,
             wrap,
             unwrap,
             receiver,
             *user_transfer_type == UserTransferType::TransferFrom,
+            solution.fee_bps,
+            solution.fee_receiver.clone(),
             encoded_solution.swaps,
         )
             .abi_encode()
@@ -183,7 +196,8 @@ pub fn encode_tycho_router_call(
             given_amount,
             given_token,
             checked_token,
-            min_amount_out,
+            min_receiver_amount,
+            max_solver_contribution,
             wrap,
             unwrap,
             n_tokens,
@@ -192,6 +206,8 @@ pub fn encode_tycho_router_call(
                 "permit2 object must be set to use permit2".to_string(),
             ))?,
             signature,
+            solution.fee_bps,
+            solution.fee_receiver.clone(),
             encoded_solution.swaps,
         )
             .abi_encode()
@@ -203,12 +219,15 @@ pub fn encode_tycho_router_call(
             given_amount,
             given_token,
             checked_token,
-            min_amount_out,
+            min_receiver_amount,
+            max_solver_contribution,
             wrap,
             unwrap,
             n_tokens,
             receiver,
             *user_transfer_type == UserTransferType::TransferFrom,
+            solution.fee_bps,
+            solution.fee_receiver.clone(),
             encoded_solution.swaps,
         )
             .abi_encode()

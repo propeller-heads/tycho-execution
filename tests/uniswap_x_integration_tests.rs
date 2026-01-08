@@ -74,7 +74,8 @@ fn test_sequential_swap_usx() {
         given_token: dai.clone(),
         given_amount: BigUint::from_str("2_000_000000000000000000").unwrap(),
         checked_token: usdt.clone(),
-        checked_amount: BigUint::from_str("1_990_000000").unwrap(),
+        min_receiver_amount: BigUint::from_str("1_990_000000").unwrap(),
+        max_solver_contribution: BigUint::from_str("10_000000").unwrap(), // 10 USDT max solver contribution
         sender: filler.clone(),
         receiver: filler.clone(),
         swaps: vec![swap_dai_usdc, swap_usdc_usdt],

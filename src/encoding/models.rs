@@ -52,9 +52,16 @@ pub struct Solution {
     /// supported.
     #[serde(default)]
     pub exact_out: bool,
-    /// Minimum amount to be checked for the solution to be valid.
+    /// Minimum amount that the receiver must receive at the end of the transaction.
+    /// If the swap output is between max_solver_contribution and min_receiver_amount,
+    /// the solver will use their own funds to make up the difference.
     #[serde(with = "biguint_string")]
-    pub checked_amount: BigUint,
+    pub min_receiver_amount: BigUint,
+    /// Maximum amount the solver is willing to pay out of pocket to subsidize this trade.
+    /// This represents the maximum slippage the solver will cover.
+    /// If (min_receiver_amount - actual_swap_output) > max_solver_contribution, the tx reverts.
+    #[serde(with = "biguint_string")]
+    pub max_solver_contribution: BigUint,
     /// List of swaps to fulfill the solution.
     pub swaps: Vec<Swap>,
     /// If set, the corresponding native action will be executed.

@@ -164,7 +164,7 @@ contract TychoRouterSplitSwapTest is TychoRouterTestSetup {
 
         bytes[] memory swaps = _getSplitSwaps(true);
 
-        vm.expectRevert(TychoRouter__UndefinedMinAmountOut.selector);
+        vm.expectRevert(TychoRouter__UndefinedMinReceiverAmount.selector);
         tychoRouter.splitSwap(
             amountIn,
             WETH_ADDR,
