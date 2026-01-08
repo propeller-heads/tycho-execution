@@ -486,7 +486,9 @@ mod tests {
     fn get_swap_encoder_registry() -> SwapEncoderRegistry {
         let executors_addresses =
             fs::read_to_string("config/test_executor_addresses.json").unwrap();
-        SwapEncoderRegistry::new(Some(executors_addresses), eth_chain()).unwrap()
+        SwapEncoderRegistry::new(eth_chain())
+            .with_default_encoders(Some(executors_addresses))
+            .unwrap()
     }
 
     fn get_tycho_router_encoder(user_transfer_type: UserTransferType) -> TychoRouterEncoder {

@@ -14,14 +14,22 @@ use crate::encoding::{
 /// Registry containing all supported `SwapEncoders`.
 #[derive(Clone)]
 pub struct SwapEncoderRegistry {
+    chain: Chain,
     /// A hashmap containing the protocol system as a key and the `SwapEncoder` as a value.
     encoders: HashMap<String, Box<dyn SwapEncoder>>,
 }
 
 impl SwapEncoderRegistry {
+    pub fn new(chain: Chain) -> Self {
+        Self { chain, encoders: HashMap::new() }
+    }
+
     /// Populates the registry with the `SwapEncoders` for the given blockchain by parsing the
     /// executors' addresses in the file at the given path.
-    pub fn new(executors_addresses: Option<String>, chain: Chain) -> Result<Self, EncodingError> {
+    pub fn with_default_encoders(
+        mut self,
+        executors_addresses: Option<String>,
+    ) -> Result<Self, EncodingError> {
         let config_str = if let Some(addresses) = executors_addresses {
             addresses
         } else {
@@ -29,17 +37,16 @@ impl SwapEncoderRegistry {
         };
         let config: HashMap<Chain, HashMap<String, String>> = serde_json::from_str(&config_str)?;
         let executors = config
-            .get(&chain)
+            .get(&self.chain)
             .ok_or(EncodingError::FatalError("No executors found for chain".to_string()))?;
 
         let protocol_specific_config: HashMap<Chain, HashMap<String, HashMap<String, String>>> =
             serde_json::from_str(PROTOCOL_SPECIFIC_CONFIG)?;
         let protocol_specific_config = protocol_specific_config
-            .get(&chain)
+            .get(&self.chain)
             .ok_or(EncodingError::FatalError(
                 "No protocol specific config found for chain".to_string(),
             ))?;
-        let mut encoders = HashMap::new();
         for (protocol, executor_address) in executors {
             let builder = SwapEncoderBuilder::new(
                 protocol,
@@ -49,16 +56,22 @@ impl SwapEncoderRegistry {
                         protocol
                     ))
                 })?,
-                chain,
+                self.chain,
                 protocol_specific_config
                     .get(protocol)
                     .cloned(),
             );
             let encoder = builder.build()?;
-            encoders.insert(protocol.to_string(), encoder);
+            self.encoders
+                .insert(protocol.to_string(), encoder);
         }
+        Ok(self)
+    }
 
-        Ok(Self { encoders })
+    pub fn register_encoder(mut self, protocol: &str, encoder: Box<dyn SwapEncoder>) -> Self {
+        self.encoders
+            .insert(protocol.to_string(), encoder);
+        self
     }
 
     #[allow(clippy::borrowed_box)]
