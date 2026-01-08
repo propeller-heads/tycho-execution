@@ -62,7 +62,6 @@ contract MaverickV2Executor is IExecutor, RestrictTransferFrom {
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             address tokenOut
         )
     {
@@ -70,7 +69,6 @@ contract MaverickV2Executor is IExecutor, RestrictTransferFrom {
         address target = address(bytes20(data[20:40]));
         receiver = address(bytes20(data[40:60]));
         transferType = TransferType(uint8(data[60]));
-        approvalNeeded = false;
 
         // Determine tokenOut based on target pool
         IMaverickV2Pool pool = IMaverickV2Pool(target);

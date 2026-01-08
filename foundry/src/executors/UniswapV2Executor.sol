@@ -77,14 +77,12 @@ contract UniswapV2Executor is IExecutor {
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             address tokenOut
         )
     {
         tokenIn = address(bytes20(data[0:20]));
         receiver = address(bytes20(data[20:40]));
         transferType = RestrictTransferFrom.TransferType(uint8(data[61]));
-        approvalNeeded = false;
         tokenOut = address(0);
     }
 

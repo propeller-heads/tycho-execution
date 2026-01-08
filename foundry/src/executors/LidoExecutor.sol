@@ -135,12 +135,12 @@ contract LidoExecutor is IExecutor, RestrictTransferFrom {
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             address tokenOut
         )
     {
         LidoPoolType pool;
         LidoPoolDirection direction;
+        bool approvalNeeded;
         (receiver, transferType, pool, direction, approvalNeeded) =
             _decodeData(data);
 

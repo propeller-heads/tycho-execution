@@ -77,7 +77,6 @@ contract FluidV1Executor is IExecutor, ICallback, RestrictTransferFrom {
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             address tokenOut
         )
     {
@@ -96,7 +95,6 @@ contract FluidV1Executor is IExecutor, ICallback, RestrictTransferFrom {
             transferType,
             address(0),
             address(0),
-            false,
             address(0)
         );
     }
@@ -108,7 +106,6 @@ contract FluidV1Executor is IExecutor, ICallback, RestrictTransferFrom {
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             uint256 amount
         )
     {
@@ -116,7 +113,6 @@ contract FluidV1Executor is IExecutor, ICallback, RestrictTransferFrom {
         (tokenIn, amount) = abi.decode(data[4:68], (address, uint256));
         transferType = _getTransferType();
         receiver = liquidity;
-        approvalNeeded = false;
     }
 
     // Stores swap parameter packed into transient storage

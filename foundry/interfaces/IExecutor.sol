@@ -36,7 +36,6 @@ interface IExecutor {
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             address tokenOut
         );
 }

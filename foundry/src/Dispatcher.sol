@@ -90,20 +90,14 @@ contract Dispatcher is RestrictTransferFrom {
             );
         }
 
-        RestrictTransferFrom.TransferType transferType;
-        address receiver;
-        address tokenIn;
-        bool approvalNeeded;
-        address tokenOut;
         (
-            transferType,
-            receiver,
-            tokenIn,
-            approvalNeeded,
-            tokenOut
+            RestrictTransferFrom.TransferType transferType,
+            address receiver,
+            address tokenIn,
+            address tokenOut
         ) = abi.decode(
             transferData,
-            (RestrictTransferFrom.TransferType, address, address, bool, address)
+            (RestrictTransferFrom.TransferType, address, address, address)
         );
         _transfer(receiver, transferType, tokenIn, amount);
 
@@ -206,11 +200,10 @@ contract Dispatcher is RestrictTransferFrom {
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             uint256 amount
         ) = abi.decode(
             transferData,
-            (RestrictTransferFrom.TransferType, address, address, bool, uint256)
+            (RestrictTransferFrom.TransferType, address, address, uint256)
         );
         _transfer(receiver, transferType, tokenIn, amount);
         // slither-disable-next-line controlled-delegatecall,low-level-calls

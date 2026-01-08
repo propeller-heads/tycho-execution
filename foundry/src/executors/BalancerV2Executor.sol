@@ -79,14 +79,12 @@ contract BalancerV2Executor is IExecutor, RestrictTransferFrom {
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             address tokenOut
         )
     {
         tokenIn = address(bytes20(data[0:20]));
         tokenOut = address(bytes20(data[20:40]));
         receiver = address(bytes20(data[72:92]));
-        approvalNeeded = data[92] != 0;
         transferType = TransferType(uint8(data[93]));
     }
 

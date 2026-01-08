@@ -276,7 +276,6 @@ contract UniswapV4Executor is
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             address tokenOut
         )
     {
@@ -284,7 +283,6 @@ contract UniswapV4Executor is
             RestrictTransferFrom.TransferType.ProtocolWillDebit,
             address(0),
             address(0),
-            false,
             address(0)
         );
     }
@@ -296,7 +294,6 @@ contract UniswapV4Executor is
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             uint256 amount
         )
     {
@@ -322,7 +319,6 @@ contract UniswapV4Executor is
             tokenIn = zeroForOne ? currency0 : currency1;
             amount = uint256(amountIn);
             receiver = address(poolManager);
-            approvalNeeded = false;
         } else if (selector == SWAP_EXACT_INPUT_SELECTOR) {
             // swapExactInput(Currency,PathKey[],uint128,TransferType,address)
             // After selector: currencyIn (32), path offset (32), amountIn (32), transferType (32), receiver (32)
@@ -334,7 +330,6 @@ contract UniswapV4Executor is
             transferType = TransferType(uint8(stripped[132]));
             amount = uint256(amountIn);
             receiver = address(poolManager);
-            approvalNeeded = false;
         } else {
             revert UniswapV4Executor__UnknownCallback(selector);
         }

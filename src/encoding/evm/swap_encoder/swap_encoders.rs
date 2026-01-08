@@ -18,7 +18,6 @@ use tycho_common::{
 use crate::encoding::{
     errors::EncodingError,
     evm::{
-        approvals::protocol_approvals_manager::ProtocolApprovalsManager,
         constants::ANGSTROM_DEFAULT_BLOCKS_IN_FUTURE,
         utils::{
             biguint_to_u256, bytes_to_address, get_runtime, get_static_attribute,
@@ -410,21 +409,6 @@ impl SwapEncoder for BalancerV2SwapEncoder {
         swap: &Swap,
         encoding_context: &EncodingContext,
     ) -> Result<Vec<u8>, EncodingError> {
-        let token_approvals_manager = ProtocolApprovalsManager::new()?;
-        let token = bytes_to_address(&swap.token_in)?;
-        let mut approval_needed: bool = true;
-
-        if let Some(router_address) = &encoding_context.router_address {
-            if !encoding_context.historical_trade {
-                let tycho_router_address = bytes_to_address(router_address)?;
-                approval_needed = token_approvals_manager.approval_needed(
-                    token,
-                    tycho_router_address,
-                    Address::from_slice(&self.vault_address),
-                )?;
-            }
-        };
-
         let component_id = AlloyBytes::from_str(&swap.component.id)
             .map_err(|_| EncodingError::FatalError("Invalid component ID".to_string()))?;
 
@@ -433,7 +417,6 @@ impl SwapEncoder for BalancerV2SwapEncoder {
             bytes_to_address(&swap.token_out)?,
             component_id,
             bytes_to_address(&encoding_context.receiver)?,
-            approval_needed,
             (encoding_context.transfer_type as u8).to_be_bytes(),
         );
         Ok(args.abi_encode_packed())
@@ -640,7 +623,6 @@ impl SwapEncoder for CurveSwapEncoder {
         swap: &Swap,
         encoding_context: &EncodingContext,
     ) -> Result<Vec<u8>, EncodingError> {
-        let token_approvals_manager = ProtocolApprovalsManager::new()?;
         let native_token_curve_address = Address::from_slice(&self.native_token_curve_address);
         let token_in = if swap.token_in == self.native_token_address {
             native_token_curve_address
@@ -652,24 +634,9 @@ impl SwapEncoder for CurveSwapEncoder {
         } else {
             bytes_to_address(&swap.token_out)?
         };
-        let approval_needed: bool;
 
         let component_address = Address::from_str(&swap.component.id)
             .map_err(|_| EncodingError::FatalError("Invalid curve pool address".to_string()))?;
-        if let Some(router_address) = &encoding_context.router_address {
-            if token_in != native_token_curve_address {
-                let tycho_router_address = bytes_to_address(router_address)?;
-                approval_needed = token_approvals_manager.approval_needed(
-                    token_in,
-                    tycho_router_address,
-                    component_address,
-                )?;
-            } else {
-                approval_needed = false;
-            }
-        } else {
-            approval_needed = true;
-        }
 
         let factory_bytes = get_static_attribute(swap, "factory")?.to_vec();
         // the conversion to Address is necessary to checksum the address
@@ -695,7 +662,6 @@ impl SwapEncoder for CurveSwapEncoder {
             pool_type.to_be_bytes::<1>(),
             i.to_be_bytes::<1>(),
             j.to_be_bytes::<1>(),
-            approval_needed,
             (encoding_context.transfer_type as u8).to_be_bytes(),
             bytes_to_address(&encoding_context.receiver)?,
         );
@@ -868,26 +834,6 @@ impl SwapEncoder for BebopSwapEncoder {
     ) -> Result<Vec<u8>, EncodingError> {
         let token_in = bytes_to_address(&swap.token_in)?;
         let token_out = bytes_to_address(&swap.token_out)?;
-        let sender = encoding_context
-            .router_address
-            .clone()
-            .ok_or(EncodingError::FatalError(
-                "The router address is needed to perform a Hashflow swap".to_string(),
-            ))?;
-        let approval_needed = if swap.token_in == self.native_token_address {
-            false
-        } else {
-            let tycho_router_address = bytes_to_address(&sender)?;
-            let settlement_address = Address::from_str(&self.settlement_address.to_string())
-                .map_err(|_| {
-                    EncodingError::FatalError("Invalid bebop settlement address".to_string())
-                })?;
-            ProtocolApprovalsManager::new()?.approval_needed(
-                token_in,
-                tycho_router_address,
-                settlement_address,
-            )?
-        };
 
         let protocol_state = swap
             .protocol_state
@@ -961,14 +907,13 @@ impl SwapEncoder for BebopSwapEncoder {
 
         // Encode packed data for the executor
         // Format: token_in | token_out | transfer_type | partial_fill_offset |
-        //         original_filled_taker_amount | approval_needed | receiver | bebop_calldata
+        //         original_filled_taker_amount | receiver | bebop_calldata
         let args = (
             token_in,
             token_out,
             (encoding_context.transfer_type as u8).to_be_bytes(),
             partial_fill_offset.to_be_bytes(),
             original_filled_taker_amount.to_be_bytes::<32>(),
-            (approval_needed as u8).to_be_bytes(),
             receiver,
             &bebop_calldata[..],
         );
@@ -1031,27 +976,6 @@ impl SwapEncoder for HashflowSwapEncoder {
         swap: &Swap,
         encoding_context: &EncodingContext,
     ) -> Result<Vec<u8>, EncodingError> {
-        // Native tokens doesn't need approval, only ERC20 tokens do
-        let sender = encoding_context
-            .router_address
-            .clone()
-            .ok_or(EncodingError::FatalError(
-                "The router address is needed to perform a Hashflow swap".to_string(),
-            ))?;
-
-        // Native ETH doesn't need approval, only ERC20 tokens do
-        let approval_needed = if swap.token_in == self.native_token_address {
-            false
-        } else {
-            let tycho_router_address = bytes_to_address(&sender)?;
-            let hashflow_router_address = Address::from_slice(&self.hashflow_router_address);
-            ProtocolApprovalsManager::new()?.approval_needed(
-                bytes_to_address(&swap.token_in)?,
-                tycho_router_address,
-                hashflow_router_address,
-            )?
-        };
-
         // Get quote
         let protocol_state = swap
             .protocol_state
@@ -1088,7 +1012,7 @@ impl SwapEncoder for HashflowSwapEncoder {
         })?;
 
         // Encode packed data for the executor
-        // Format: approval_needed | transfer_type | hashflow_calldata[..]
+        // Format: transfer_type | hashflow_calldata[..]
         let hashflow_fields = [
             "pool",
             "external_account",
@@ -1114,7 +1038,6 @@ impl SwapEncoder for HashflowSwapEncoder {
         }
         let args = (
             (encoding_context.transfer_type as u8).to_be_bytes(),
-            (approval_needed as u8).to_be_bytes(),
             &hashflow_calldata[..],
         );
         Ok(args.abi_encode_packed())
@@ -1330,29 +1253,12 @@ impl SwapEncoder for ERC4626SwapEncoder {
     ) -> Result<Vec<u8>, EncodingError> {
         let component_id = AlloyBytes::from_str(&swap.component.id)
             .map_err(|_| EncodingError::FatalError("Invalid component ID".to_string()))?;
-        let token_approvals_manager = ProtocolApprovalsManager::new()?;
-        let token = bytes_to_address(&swap.token_in)?;
-        let token_out = bytes_to_address(&swap.token_out)?;
-        let pool_address = Address::from_slice(&component_id);
-        let mut approval_needed: bool = false;
 
-        if let Some(router_address) = &encoding_context.router_address {
-            // only deposit requires approval
-            if !encoding_context.historical_trade && token_out.eq(&pool_address) {
-                let tycho_router_address = bytes_to_address(router_address)?;
-                approval_needed = token_approvals_manager.approval_needed(
-                    token,
-                    tycho_router_address,
-                    pool_address,
-                )?;
-            }
-        };
         let args = (
             bytes_to_address(&swap.token_in)?,
             component_id,
             bytes_to_address(&encoding_context.receiver)?,
             (encoding_context.transfer_type as u8).to_be_bytes(),
-            approval_needed,
         );
         Ok(args.abi_encode_packed())
     }
@@ -1426,29 +1332,14 @@ impl SwapEncoder for LidoSwapEncoder {
         swap: &Swap,
         encoding_context: &EncodingContext,
     ) -> Result<Vec<u8>, EncodingError> {
-        let (pool, direction, approval_needed) = if swap.token_in == self.eth_address &&
+        let (pool, direction) = if swap.token_in == self.eth_address &&
             swap.token_out == self.st_eth_address
         {
-            (LidoPool::StETH, LidoPoolDirection::Stake, false)
+            (LidoPool::StETH, LidoPoolDirection::Stake)
         } else if swap.token_in == self.st_eth_address && swap.token_out == self.wst_eth_address {
-            let token_approvals_manager = ProtocolApprovalsManager::new()?;
-            let token = bytes_to_address(&self.st_eth_address)?;
-            let mut approval_needed: bool = true;
-
-            if let Some(router_address) = &encoding_context.router_address {
-                if !encoding_context.historical_trade {
-                    let tycho_router_address = bytes_to_address(router_address)?;
-                    approval_needed = token_approvals_manager.approval_needed(
-                        token,
-                        tycho_router_address,
-                        bytes_to_address(&self.wst_eth_address)?,
-                    )?;
-                }
-            }
-
-            (LidoPool::WStETH, LidoPoolDirection::Wrap, approval_needed)
+            (LidoPool::WStETH, LidoPoolDirection::Wrap)
         } else if swap.token_in == self.wst_eth_address && swap.token_out == self.st_eth_address {
-            (LidoPool::WStETH, LidoPoolDirection::Unwrap, false)
+            (LidoPool::WStETH, LidoPoolDirection::Unwrap)
         } else {
             return Err(EncodingError::InvalidInput("Combination not allowed".to_owned()))
         };
@@ -1458,7 +1349,6 @@ impl SwapEncoder for LidoSwapEncoder {
             (encoding_context.transfer_type as u8).to_be_bytes(),
             (pool as u8).to_be_bytes(),
             (direction as u8).to_be_bytes(),
-            approval_needed,
         );
 
         Ok(args.abi_encode_packed())
@@ -1651,8 +1541,6 @@ mod tests {
                     "5c6ee304399dbdb9c8ef030ab642b10820db8f56000200000000000000000014",
                     // receiver
                     "9964bff29baa37b47604f3f3f51f3b3c5149d6de",
-                    // approval needed
-                    "01",
                     // transfer type None
                     "05"
                 ))
@@ -2350,8 +2238,6 @@ mod tests {
                     "00",
                     // j index
                     "01",
-                    // approval needed
-                    "01",
                     // transfer type None
                     "05",
                     // receiver,
@@ -2417,8 +2303,6 @@ mod tests {
                     "01",
                     // j index
                     "00",
-                    // approval needed
-                    "01",
                     // transfer type None
                     "05",
                     // receiver
@@ -2494,8 +2378,6 @@ mod tests {
                     "00",
                     // j index
                     "01",
-                    // approval needed
-                    "01",
                     // transfer type None
                     "05",
                     // receiver
@@ -2548,8 +2430,8 @@ mod tests {
                     "c71ea051a5f82c67adcf634c36ffe6334793d24c",
                     // pool id
                     "85b2b559bc2d21104c4defdd6efca8a20343361d",
-                    // transfer type None
-                    "01",
+                    // transfer type Transfer
+                    "02",
                     // receiver
                     "9964bff29baa37b47604f3f3f51f3b3c5149d6de",
                 ))
@@ -2699,8 +2581,6 @@ mod tests {
                 "0c",
                 //  original taker amount
                 "0000000000000000000000000000000000000000000000000de0b6b3a7640000",
-                // approval needed
-                "01",
                 //receiver,
                 "c5564c13a157e6240659fb81882a28091add8670",
             ));
@@ -2859,7 +2739,6 @@ mod tests {
 
             let expected_swap = String::from(concat!(
                 "02", // transfer type
-                "01", // approval needed
             ));
             assert_eq!(hex_swap, expected_swap + &hashflow_calldata.to_string()[2..]);
         }
@@ -3069,9 +2948,7 @@ mod tests {
                     // receiver
                     "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
                     // transfer from
-                    "00",
-                    // approval needed
-                    "01"
+                    "00"
                 ))
                 .to_lowercase()
             );
@@ -3120,8 +2997,6 @@ mod tests {
                     // receiver
                     "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
                     // transfer from
-                    "00",
-                    // no need to approve
                     "00"
                 ))
                 .to_lowercase()
@@ -3187,8 +3062,6 @@ mod tests {
                     "00",
                     // direction
                     "00",
-                    // approval_needed
-                    "00",
                 ))
             );
         }
@@ -3233,8 +3106,6 @@ mod tests {
                     // pool
                     "01",
                     // direction
-                    "01",
-                    // approval_needed
                     "01",
                 ))
             );
@@ -3281,8 +3152,6 @@ mod tests {
                     "01",
                     // direction
                     "02",
-                    // approval_needed
-                    "00",
                 ))
             );
         }

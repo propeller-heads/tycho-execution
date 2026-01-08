@@ -65,13 +65,11 @@ contract RocketpoolExecutor is IExecutor, RestrictTransferFrom {
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             address tokenOut
         )
     {
         bool isDeposit = uint8(data[0]) == 1;
         receiver = address(bytes20(data[2:22]));
-        approvalNeeded = false;
 
         if (isDeposit) {
             // ETH -> rETH

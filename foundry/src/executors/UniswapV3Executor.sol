@@ -147,7 +147,6 @@ contract UniswapV3Executor is IExecutor, ICallback, RestrictTransferFrom {
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             address tokenOut
         )
     {
@@ -155,7 +154,6 @@ contract UniswapV3Executor is IExecutor, ICallback, RestrictTransferFrom {
             RestrictTransferFrom.TransferType.ProtocolWillDebit,
             address(0),
             address(0),
-            false,
             address(0)
         );
     }
@@ -167,7 +165,6 @@ contract UniswapV3Executor is IExecutor, ICallback, RestrictTransferFrom {
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             uint256 amount
         )
     {
@@ -178,7 +175,6 @@ contract UniswapV3Executor is IExecutor, ICallback, RestrictTransferFrom {
         tokenIn = address(bytes20(data[132:152]));
         transferType = TransferType(uint8(data[175]));
         receiver = msg.sender;
-        approvalNeeded = false;
     }
 
     function _decodeData(bytes calldata data)

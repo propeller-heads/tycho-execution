@@ -32,7 +32,6 @@ interface ICallback {
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             uint256 amount
         );
 }

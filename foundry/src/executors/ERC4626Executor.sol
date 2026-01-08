@@ -55,7 +55,6 @@ contract ERC4626Executor is IExecutor, RestrictTransferFrom {
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             address tokenOut
         )
     {
@@ -63,7 +62,6 @@ contract ERC4626Executor is IExecutor, RestrictTransferFrom {
         address target = address(bytes20(data[20:40]));
         receiver = address(bytes20(data[40:60]));
         transferType = TransferType(uint8(data[60]));
-        approvalNeeded = data[61] != 0;
 
         // Determine tokenOut based on target
         if (tokenIn == target) {

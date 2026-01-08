@@ -104,7 +104,6 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             address tokenOut
         )
     {
@@ -112,7 +111,6 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
             RestrictTransferFrom.TransferType.ProtocolWillDebit,
             address(0),
             address(0),
-            false,
             address(0)
         );
     }
@@ -124,7 +122,6 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             uint256 amount
         )
     {
@@ -142,7 +139,6 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
         ) = _decodeData(callbackData);
         tokenIn = address(tokenInIERC20);
         receiver = address(VAULT);
-        approvalNeeded = false;
         amount = amountGiven;
     }
 

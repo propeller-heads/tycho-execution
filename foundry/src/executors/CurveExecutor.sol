@@ -130,13 +130,11 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             address tokenOut
         )
     {
         tokenIn = address(bytes20(data[0:20]));
         tokenOut = address(bytes20(data[20:40]));
-        approvalNeeded = data[63] != 0;
         transferType = TransferType(uint8(data[64]));
         receiver = address(bytes20(data[65:85]));
     }

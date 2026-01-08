@@ -96,12 +96,10 @@ contract HashflowExecutor is IExecutor, RestrictTransferFrom {
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             address tokenOut
         )
     {
         transferType = TransferType(uint8(data[0]));
-        approvalNeeded = data[1] != 0;
         receiver = address(bytes20(data[42:62])); // quote.trader
         tokenIn = address(bytes20(data[62:82])); // quote.baseToken
         tokenOut = address(bytes20(data[82:102])); // quote.quoteToken

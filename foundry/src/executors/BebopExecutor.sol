@@ -87,14 +87,12 @@ contract BebopExecutor is IExecutor, RestrictTransferFrom {
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             address tokenOut
         )
     {
         tokenIn = address(bytes20(data[0:20]));
         tokenOut = address(bytes20(data[20:40]));
         transferType = TransferType(uint8(data[40]));
-        approvalNeeded = data[74] != 0;
         receiver = address(bytes20(data[75:95]));
     }
 

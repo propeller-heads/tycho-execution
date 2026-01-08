@@ -88,7 +88,6 @@ contract EkuboExecutor is
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             address tokenOut
         )
     {
@@ -96,7 +95,6 @@ contract EkuboExecutor is
             RestrictTransferFrom.TransferType.ProtocolWillDebit,
             address(0),
             address(0),
-            false,
             address(0)
         );
     }
@@ -108,13 +106,11 @@ contract EkuboExecutor is
             RestrictTransferFrom.TransferType transferType,
             address receiver,
             address tokenIn,
-            bool approvalNeeded,
             uint256 amount
         )
     {
         bytes4 selector = bytes4(data[:4]);
 
-        approvalNeeded = false;
         if (selector == PAY_CALLBACK_SELECTOR) {
             bytes calldata payData = data[36:];
 
