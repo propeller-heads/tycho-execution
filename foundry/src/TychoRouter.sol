@@ -194,8 +194,8 @@ contract TychoRouter is
         uint256 nTokens,
         address receiver,
         bool isTransferFromAllowed,
-        uint16 solutionFeeBps,
-        address solutionFeeReceiver,
+        uint16 solverFeeBps,
+        address solverFeeReceiver,
         bytes calldata swaps
     ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
         uint256 initialBalanceTokenOut = _balanceOf(tokenOut, receiver);
@@ -211,8 +211,8 @@ contract TychoRouter is
             unwrapEth,
             nTokens,
             receiver,
-            solutionFeeBps,
-            solutionFeeReceiver,
+            solverFeeBps,
+            solverFeeReceiver,
             swaps
         );
     }
@@ -254,8 +254,8 @@ contract TychoRouter is
         address receiver,
         IAllowanceTransfer.PermitSingle calldata permitSingle,
         bytes calldata signature,
-        uint16 solutionFeeBps,
-        address solutionFeeReceiver,
+        uint16 solverFeeBps,
+        address solverFeeReceiver,
         bytes calldata swaps
     ) external payable whenNotPaused nonReentrant returns (uint256 amountOut) {
         uint256 initialBalanceTokenOut = _balanceOf(tokenOut, receiver);
@@ -275,8 +275,8 @@ contract TychoRouter is
             unwrapEth,
             nTokens,
             receiver,
-            solutionFeeBps,
-            solutionFeeReceiver,
+            solverFeeBps,
+            solverFeeReceiver,
             swaps
         );
     }
@@ -313,8 +313,8 @@ contract TychoRouter is
         bool unwrapEth,
         address receiver,
         bool isTransferFromAllowed,
-        uint16 solutionFeeBps,
-        address solutionFeeReceiver,
+        uint16 solverFeeBps,
+        address solverFeeReceiver,
         bytes calldata swaps
     ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
         uint256 initialBalanceTokenOut = _balanceOf(tokenOut, receiver);
@@ -329,8 +329,8 @@ contract TychoRouter is
             wrapEth,
             unwrapEth,
             receiver,
-            solutionFeeBps,
-            solutionFeeReceiver,
+            solverFeeBps,
+            solverFeeReceiver,
             swaps
         );
     }
@@ -369,8 +369,8 @@ contract TychoRouter is
         address receiver,
         IAllowanceTransfer.PermitSingle calldata permitSingle,
         bytes calldata signature,
-        uint16 solutionFeeBps,
-        address solutionFeeReceiver,
+        uint16 solverFeeBps,
+        address solverFeeReceiver,
         bytes calldata swaps
     ) external payable whenNotPaused nonReentrant returns (uint256 amountOut) {
         uint256 initialBalanceTokenOut = _balanceOf(tokenOut, receiver);
@@ -390,8 +390,8 @@ contract TychoRouter is
             wrapEth,
             unwrapEth,
             receiver,
-            solutionFeeBps,
-            solutionFeeReceiver,
+            solverFeeBps,
+            solverFeeReceiver,
             swaps
         );
     }
@@ -426,8 +426,8 @@ contract TychoRouter is
         bool unwrapEth,
         address receiver,
         bool isTransferFromAllowed,
-        uint16 solutionFeeBps,
-        address solutionFeeReceiver,
+        uint16 solverFeeBps,
+        address solverFeeReceiver,
         bytes calldata swapData
     ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
         uint256 initialBalanceTokenOut = _balanceOf(tokenOut, receiver);
@@ -442,8 +442,8 @@ contract TychoRouter is
             wrapEth,
             unwrapEth,
             receiver,
-            solutionFeeBps,
-            solutionFeeReceiver,
+            solverFeeBps,
+            solverFeeReceiver,
             swapData
         );
     }
@@ -482,8 +482,8 @@ contract TychoRouter is
         address receiver,
         IAllowanceTransfer.PermitSingle calldata permitSingle,
         bytes calldata signature,
-        uint16 solutionFeeBps,
-        address solutionFeeReceiver,
+        uint16 solverFeeBps,
+        address solverFeeReceiver,
         bytes calldata swapData
     ) external payable whenNotPaused nonReentrant returns (uint256 amountOut) {
         uint256 initialBalanceTokenOut = _balanceOf(tokenOut, receiver);
@@ -502,8 +502,8 @@ contract TychoRouter is
             wrapEth,
             unwrapEth,
             receiver,
-            solutionFeeBps,
-            solutionFeeReceiver,
+            solverFeeBps,
+            solverFeeReceiver,
             swapData
         );
     }
@@ -526,8 +526,8 @@ contract TychoRouter is
         bool unwrapEth,
         uint256 nTokens,
         address receiver,
-        uint16 solutionFeeBps,
-        address solutionFeeReceiver,
+        uint16 solverFeeBps,
+        address solverFeeReceiver,
         bytes calldata swaps
     ) internal returns (uint256 amountOut) {
         if (receiver == address(0)) {
@@ -551,7 +551,7 @@ contract TychoRouter is
         address feeReceiver;
         bool hasFees;
         (amountOut, feeReceiver, hasFees) = _takeFees(
-            amountOut, tokenOut, unwrapEth, receiver, solutionFeeBps, solutionFeeReceiver
+            amountOut, tokenOut, unwrapEth, receiver, solverFeeBps, solverFeeReceiver
         );
 
         if (amountOut < minAmountOut) {
@@ -598,8 +598,8 @@ contract TychoRouter is
         bool wrapEth,
         bool unwrapEth,
         address receiver,
-        uint16 solutionFeeBps,
-        address solutionFeeReceiver,
+        uint16 solverFeeBps,
+        address solverFeeReceiver,
         bytes calldata swap_
     ) internal returns (uint256 amountOut) {
         if (receiver == address(0)) {
@@ -626,7 +626,7 @@ contract TychoRouter is
         address feeReceiver;
         bool hasFees;
         (amountOut, feeReceiver, hasFees) = _takeFees(
-            amountOut, tokenOut, unwrapEth, receiver, solutionFeeBps, solutionFeeReceiver
+            amountOut, tokenOut, unwrapEth, receiver, solverFeeBps, solverFeeReceiver
         );
 
         if (amountOut < minAmountOut) {
@@ -673,8 +673,8 @@ contract TychoRouter is
         bool wrapEth,
         bool unwrapEth,
         address receiver,
-        uint16 solutionFeeBps,
-        address solutionFeeReceiver,
+        uint16 solverFeeBps,
+        address solverFeeReceiver,
         bytes calldata swaps
     ) internal returns (uint256 amountOut) {
         if (receiver == address(0)) {
@@ -698,7 +698,7 @@ contract TychoRouter is
         address feeReceiver;
         bool hasFees;
         (amountOut, feeReceiver, hasFees) = _takeFees(
-            amountOut, tokenOut, unwrapEth, receiver, solutionFeeBps, solutionFeeReceiver
+            amountOut, tokenOut, unwrapEth, receiver, solverFeeBps, solverFeeReceiver
         );
 
         if (amountOut < minAmountOut) {
@@ -1101,8 +1101,8 @@ contract TychoRouter is
      * @param tokenOut The output token address
      * @param unwrapEth Whether ETH will be unwrapped (fee is in WETH if true)
      * @param receiver The address to receive the output tokens
-     * @param solutionFeeBps Solution fee in basis points
-     * @param solutionFeeReceiver Address to receive the solution fee
+     * @param solverFeeBps Solution fee in basis points
+     * @param solverFeeReceiver Address to receive the solution fee
      * @return amountAfterFees The amount after fee deductions
      * @return feeReceiver The solution fee receiver (address(0) if no solution fee)
      * @return hasFees Whether any fees were taken
@@ -1112,8 +1112,8 @@ contract TychoRouter is
         address tokenOut,
         bool unwrapEth,
         address receiver,
-        uint16 solutionFeeBps,
-        address solutionFeeReceiver
+        uint16 solverFeeBps,
+        address solverFeeReceiver
     ) private returns (uint256 amountAfterFees, address feeReceiver, bool hasFees) {
         // Get the effective router fees for this user (custom or default)
         uint16 effectiveRouterFeeOnOutputBps = _hasCustomRouterFeeOnOutput[msg.sender]
@@ -1124,7 +1124,8 @@ contract TychoRouter is
             ? _userRouterFeeOnSolverFee[msg.sender]
             : _routerFeeOnSolverFeeBps;
 
-        hasFees = solutionFeeBps > 0 || effectiveRouterFeeOnOutputBps > 0 || effectiveRouterFeeOnSolverFeeBps > 0;
+        hasFees = solverFeeBps > 0 || effectiveRouterFeeOnOutputBps > 0 ||
+            effectiveRouterFeeOnSolverFeeBps > 0;
 
         // TODO double check that it's okay to skip this call
         // with our current encoding - since we are relying on this
@@ -1134,10 +1135,12 @@ contract TychoRouter is
         if (_feeExecutor != address(0) && hasFees) {
             address feeToken = unwrapEth ? address(_weth) : tokenOut;
 
-            // Encode fee data: solutionFeeBps | solutionFeeReceiver | routerFeeOnOutputBps | routerFeeOnSolverFeeBps | routerFeeReceiver | token | receiver | unwrapEth
+            // Encode fee data: solverFeeBps | solverFeeReceiver |
+            routerFeeOnOutputBps |
+            routerFeeOnSolverFeeBps | routerFeeReceiver | token | receiver | unwrapEth
             bytes memory feeData = abi.encodePacked(
-                solutionFeeBps, // solutionFeeBps
-                solutionFeeReceiver, // solutionFeeReceiver
+                solverFeeBps, // solverFeeBps
+                solverFeeReceiver, // solverFeeReceiver
                 effectiveRouterFeeOnOutputBps, // routerFeeOnOutputBps (custom or default)
                 effectiveRouterFeeOnSolverFeeBps, // routerFeeOnSolverFeeBps (custom or default)
                 address(this), // routerFeeReceiver = router
@@ -1148,7 +1151,7 @@ contract TychoRouter is
 
             amountOut = _callTakeFees(_feeExecutor, amountOut, feeData);
             // Return the solution fee receiver if there's a solution fee
-            return (amountOut, solutionFeeBps > 0 ? solutionFeeReceiver : address(0), true);
+            return (amountOut, solverFeeBps > 0 ? solverFeeReceiver : address(0), true);
         }
         return (amountOut, address(0), false);
     }
