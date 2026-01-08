@@ -1,7 +1,6 @@
 mod balancer_v2;
 mod balancer_v3;
 mod bebop;
-mod builder;
 mod curve;
 mod ekubo;
 mod erc_4626;

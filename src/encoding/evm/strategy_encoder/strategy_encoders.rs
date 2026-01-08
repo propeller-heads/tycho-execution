@@ -586,7 +586,7 @@ mod tests {
         let executors_addresses =
             fs::read_to_string("config/test_executor_addresses.json").unwrap();
         let eth_chain = eth_chain();
-        let mut registry = SwapEncoderRegistry::new(eth_chain);
+        let registry = SwapEncoderRegistry::new(eth_chain);
         registry
             .with_default_encoders(Some(executors_addresses))
             .unwrap()
