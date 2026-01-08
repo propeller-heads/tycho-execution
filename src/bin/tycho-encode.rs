@@ -98,7 +98,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     None
                 };
             let swap_encoder_registry = SwapEncoderRegistry::new(Chain::Ethereum)
-                .with_default_encoders(executors_addresses)?;
+                .add_default_encoders(executors_addresses)?;
             builder = builder.swap_encoder_registry(swap_encoder_registry);
             if let Some(router_address) = cli.router_address {
                 builder = builder.router_address(router_address);

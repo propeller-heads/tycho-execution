@@ -32,9 +32,9 @@ impl SwapEncoderRegistry {
         Self { chain, encoders: HashMap::new() }
     }
 
-    /// Populates the registry with the `SwapEncoders` for the given blockchain by parsing the
-    /// executors' addresses in the file at the given path.
-    pub fn with_default_encoders(
+    /// Populates the registry with the default `SwapEncoders` for the given blockchain by
+    /// parsing the executors' addresses in the file at the given path.
+    pub fn add_default_encoders(
         mut self,
         executors_addresses: Option<String>,
     ) -> Result<Self, EncodingError> {
@@ -74,6 +74,7 @@ impl SwapEncoderRegistry {
         Ok(self)
     }
 
+    // Adds an encoder to the registry
     pub fn register_encoder(mut self, protocol: &str, encoder: Box<dyn SwapEncoder>) -> Self {
         self.encoders
             .insert(protocol.to_string(), encoder);

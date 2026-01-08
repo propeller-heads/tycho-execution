@@ -20,7 +20,7 @@ fn main() {
 
     // Initialize the encoder
     let swap_encoder_registry = SwapEncoderRegistry::new(chain)
-        .with_default_encoders(None)
+        .add_default_encoders(None)
         .expect("Failed to get default SwapEncoderRegistry");
     let encoder = TychoRouterEncoderBuilder::new()
         .chain(Chain::Ethereum)

@@ -487,7 +487,7 @@ mod tests {
         let executors_addresses =
             fs::read_to_string("config/test_executor_addresses.json").unwrap();
         SwapEncoderRegistry::new(eth_chain())
-            .with_default_encoders(Some(executors_addresses))
+            .add_default_encoders(Some(executors_addresses))
             .unwrap()
     }
 

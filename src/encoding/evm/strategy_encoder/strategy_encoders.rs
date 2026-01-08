@@ -588,7 +588,7 @@ mod tests {
         let eth_chain = eth_chain();
         let registry = SwapEncoderRegistry::new(eth_chain);
         registry
-            .with_default_encoders(Some(executors_addresses))
+            .add_default_encoders(Some(executors_addresses))
             .unwrap()
     }
 

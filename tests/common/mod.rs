@@ -77,7 +77,7 @@ pub fn get_signer() -> PrivateKeySigner {
 pub fn get_tycho_router_encoder(user_transfer_type: UserTransferType) -> Box<dyn TychoEncoder> {
     let executors_addresses = fs::read_to_string("config/test_executor_addresses.json").unwrap();
     let swap_encoder_registry = SwapEncoderRegistry::new(Chain::Ethereum)
-        .with_default_encoders(Some(executors_addresses))
+        .add_default_encoders(Some(executors_addresses))
         .unwrap();
     TychoRouterEncoderBuilder::new()
         .chain(Chain::Ethereum)
@@ -93,7 +93,7 @@ pub fn get_base_tycho_router_encoder(
 ) -> Box<dyn TychoEncoder> {
     let executors_addresses = fs::read_to_string("config/test_executor_addresses.json").unwrap();
     let swap_encoder_registry = SwapEncoderRegistry::new(Chain::Base)
-        .with_default_encoders(Some(executors_addresses))
+        .add_default_encoders(Some(executors_addresses))
         .unwrap();
     TychoRouterEncoderBuilder::new()
         .chain(Chain::Base)
