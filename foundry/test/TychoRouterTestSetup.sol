@@ -32,7 +32,7 @@ import "@src/TychoRouter.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 
 contract TychoRouterExposed is TychoRouter {
-    constructor(address _permit2, address weth) TychoRouter(_permit2, weth) {}
+    constructor(address _permit2, address weth) TychoRouter(_permit2, weth, msg.sender) {}
 
     /**
      * @dev Override to resolve multiple inheritance

@@ -76,6 +76,7 @@ contract TychoRouter is
     uint16 private _routerFeeOnOutputBps; // Router fee on output amount in basis points (e.g., 1 = 0.01%)
     uint16 private _routerFeeOnSolverFeeBps; // Router fee on solver fee in basis points (e.g., 1 = 0.01%)
     address private _feeExecutor; // Address of the fee executor contract
+    address private _routerFeeReceiver; // Address that receives router fees in their vault
 
     // Per-user custom router fees on output amount
     mapping(address => uint16) private _userRouterFeeOnOutput;
@@ -115,14 +116,16 @@ contract TychoRouter is
     event UserRouterFeeOnOutputRemoved(address indexed user);
     event UserRouterFeeOnSolverFeeRemoved(address indexed user);
     event FeeExecutorUpdated(address oldExecutor, address newExecutor);
+    event RouterFeeReceiverUpdated(address oldReceiver, address newReceiver);
 
-    constructor(address _permit2, address weth) Dispatcher(_permit2) {
-        if (_permit2 == address(0) || weth == address(0)) {
+    constructor(address _permit2, address weth, address routerFeeReceiver) Dispatcher(_permit2) {
+        if (_permit2 == address(0) || weth == address(0) || routerFeeReceiver == address(0)) {
             revert TychoRouter__AddressZero();
         }
         permit2 = IAllowanceTransfer(_permit2);
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _weth = IWETH(weth);
+        _routerFeeReceiver = routerFeeReceiver;
     }
 
     /**
@@ -574,9 +577,8 @@ contract TychoRouter is
 
         // Deduct fees (both solution and router fees)
         // Note: FeeExecutor no longer transfers to receiver - we handle that below
-        address feeReceiver;
         bool hasFees;
-        (amountOut, feeReceiver, hasFees) = _takeFees(
+        (amountOut, hasFees) = _takeFees(
             amountOut, tokenOut, unwrapEth, receiver, solverFeeBps, solverFeeReceiver
         );
 
@@ -609,7 +611,7 @@ contract TychoRouter is
         address settlementToken = unwrapEth ? address(_weth) : tokenOut;
 
         // Finalize all transient deltas to persistent storage
-        _finalizeBalances(msg.sender, tokenIn, amountIn, settlementToken, amountOut, feeReceiver, receiver);
+        _finalizeBalances(msg.sender, tokenIn, amountIn, settlementToken, amountOut);
 
         // Transfer the amount from router to receiver
         if (unwrapEth) {
@@ -672,9 +674,8 @@ contract TychoRouter is
 
         // Deduct fees (both solution and router fees)
         // Note: FeeExecutor no longer transfers to receiver - we handle that below
-        address feeReceiver;
         bool hasFees;
-        (amountOut, feeReceiver, hasFees) = _takeFees(
+        (amountOut, hasFees) = _takeFees(
             amountOut, tokenOut, unwrapEth, receiver, solverFeeBps, solverFeeReceiver
         );
 
@@ -707,7 +708,7 @@ contract TychoRouter is
         address settlementToken = unwrapEth ? address(_weth) : tokenOut;
 
         // Finalize all transient deltas to persistent storage
-        _finalizeBalances(msg.sender, tokenIn, amountIn, settlementToken, amountOut, feeReceiver, receiver);
+        _finalizeBalances(msg.sender, tokenIn, amountIn, settlementToken, amountOut);
 
         // Transfer the amount from router to receiver
         if (unwrapEth) {
@@ -767,9 +768,8 @@ contract TychoRouter is
 
         // Deduct fees (both solution and router fees)
         // Note: FeeExecutor no longer transfers to receiver - we handle that below
-        address feeReceiver;
         bool hasFees;
-        (amountOut, feeReceiver, hasFees) = _takeFees(
+        (amountOut, hasFees) = _takeFees(
             amountOut, tokenOut, unwrapEth, receiver, solverFeeBps, solverFeeReceiver
         );
 
@@ -802,7 +802,7 @@ contract TychoRouter is
         address settlementToken = unwrapEth ? address(_weth) : tokenOut;
 
         // Finalize all transient deltas to persistent storage
-        _finalizeBalances(msg.sender, tokenIn, amountIn, settlementToken, amountOut, feeReceiver, receiver);
+        _finalizeBalances(msg.sender, tokenIn, amountIn, settlementToken, amountOut);
 
         // Transfer the amount from router to receiver
         if (unwrapEth) {
@@ -1128,6 +1128,29 @@ contract TychoRouter is
     }
 
     /**
+     * @dev Sets the address that receives router fees
+     * @param routerFeeReceiver The address to receive router fees in their vault
+     */
+    function setRouterFeeReceiver(address routerFeeReceiver)
+        external
+        onlyRole(ROUTER_FEE_SETTER_ROLE)
+    {
+        if (routerFeeReceiver == address(0)) {
+            revert TychoRouter__AddressZero();
+        }
+        address oldReceiver = _routerFeeReceiver;
+        _routerFeeReceiver = routerFeeReceiver;
+        emit RouterFeeReceiverUpdated(oldReceiver, routerFeeReceiver);
+    }
+
+    /**
+     * @dev Returns the current router fee receiver address
+     */
+    function getRouterFeeReceiver() external view returns (address) {
+        return _routerFeeReceiver;
+    }
+
+    /**
      * @dev Allows withdrawing any ERC20 funds if funds get stuck in case of a bug.
      */
     function withdraw(IERC20[] memory tokens, address receiver)
@@ -1200,7 +1223,6 @@ contract TychoRouter is
      * @param solverFeeBps Solution fee in basis points
      * @param solverFeeReceiver Address to receive the solution fee
      * @return amountAfterFees The amount after fee deductions
-     * @return feeReceiver The solution fee receiver (address(0) if no solution fee)
      * @return hasFees Whether any fees were taken
      */
     function _takeFees(
@@ -1210,7 +1232,7 @@ contract TychoRouter is
         address receiver,
         uint16 solverFeeBps,
         address solverFeeReceiver
-    ) private returns (uint256 amountAfterFees, address feeReceiver, bool hasFees) {
+    ) private returns (uint256 amountAfterFees, bool hasFees) {
         // Get the effective router fees for this user (custom or default)
         uint16 effectiveRouterFeeOnOutputBps = _hasCustomRouterFeeOnOutput[msg.sender]
             ? _userRouterFeeOnOutput[msg.sender]
@@ -1233,23 +1255,20 @@ contract TychoRouter is
 
             // Encode fee data: solverFeeBps | solverFeeReceiver |
             // routerFeeOnOutputBps |
-            // routerFeeOnSolverFeeBps | routerFeeReceiver | token | receiver | unwrapEth
+            // routerFeeOnSolverFeeBps | routerFeeReceiver | token
             bytes memory feeData = abi.encodePacked(
                 solverFeeBps, // solverFeeBps
                 solverFeeReceiver, // solverFeeReceiver
                 effectiveRouterFeeOnOutputBps, // routerFeeOnOutputBps (custom or default)
                 effectiveRouterFeeOnSolverFeeBps, // routerFeeOnSolverFeeBps (custom or default)
-                address(this), // routerFeeReceiver = router
-                feeToken, // token
-                receiver, // receiver
-                unwrapEth // unwrapEth
+                _routerFeeReceiver, // routerFeeReceiver (configurable)
+                feeToken // token
             );
 
             amountOut = _callTakeFees(_feeExecutor, amountOut, feeData);
-            // Return the solution fee receiver if there's a solution fee
-            return (amountOut, solverFeeBps > 0 ? solverFeeReceiver : address(0), true);
+            return (amountOut, true);
         }
-        return (amountOut, address(0), false);
+        return (amountOut, false);
     }
 
     /**

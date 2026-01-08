@@ -49,8 +49,7 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
      * @param data Encoded fee parameters:
      *        solverFeeBps (uint16) | solverFeeReceiver (address) |
      *        routerFeeOnOutputBps (uint16) | routerFeeOnSolverFeeBps (uint16) |
-     *        routerFeeReceiver (address) | token (address) |
-     *        receiver (address) | unwrapEth (bool)
+     *        routerFeeReceiver (address) | token (address)
      * @return amountOut The output amount (after fee deductions)
      */
     function take_fee(uint256 amountIn, bytes calldata data)
@@ -63,9 +62,7 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
             uint16 routerFeeOnOutputBps,
             uint16 routerFeeOnSolverFeeBps,
             address routerFeeReceiver,
-            address token,
-            address receiver,
-            bool unwrapEth
+            address token
         ) = _decodeData(data);
 
         if (solverFeeBps > MAX_FEE_BPS || routerFeeOnOutputBps > MAX_FEE_BPS ||
@@ -102,7 +99,7 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
 
         if (totalRouterFeesTaken > 0) {
             _updateDeltaAccounting(address(this), token, -int256(totalRouterFeesTaken));
-            _creditPersistentVault(address(this), token, totalRouterFeesTaken);
+            _creditPersistentVault(routerFeeReceiver, token, totalRouterFeesTaken);
         }
 
         // Don't transfer to receiver here - the router needs to check if solver
@@ -120,8 +117,6 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
      * @return routerFeeOnSolverFeeBps Router fee on solver fee in basis points
      * @return routerFeeReceiver Address to receive the router fee
      * @return token Token address for the fees
-     * @return receiver Address to receive the remaining tokens
-     * @return unwrapEth Whether ETH needs to be unwrapped
      */
     function _decodeData(bytes calldata data)
         internal
@@ -132,9 +127,7 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
             uint16 routerFeeOnOutputBps,
             uint16 routerFeeOnSolverFeeBps,
             address routerFeeReceiver,
-            address token,
-            address receiver,
-            bool unwrapEth
+            address token
         )
     {
         // expected calldata layout
@@ -145,10 +138,8 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
         // 24 | routerFeeOnSolverFeeBps (uint16)
         // 26 | routerFeeReceiver (address)
         // 46 | token (address)
-        // 66 | receiver (address)
-        // 86 | unwrapEth (bool/uint8)
-        // 87 | EOF
-        if (data.length != 87) {
+        // 66 | EOF
+        if (data.length != 66) {
             revert FeeExecutor__InvalidDataLength();
         }
 
@@ -158,8 +149,6 @@ contract FeeExecutor is RestrictTransferFrom, TychoVault {
         routerFeeOnSolverFeeBps = uint16(bytes2(data[24:26]));
         routerFeeReceiver = address(bytes20(data[26:46]));
         token = address(bytes20(data[46:66]));
-        receiver = address(bytes20(data[66:86]));
-        unwrapEth = uint8(bytes1(data[86:87])) != 0;
     }
 }
 

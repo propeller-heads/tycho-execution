@@ -16,9 +16,7 @@ contract FeeExecutorExposed is FeeExecutor {
             uint16 routerFeeOnOutputBps,
             uint16 routerFeeOnSolverFeeBps,
             address routerFeeReceiver,
-            address token,
-            address receiver,
-            bool unwrapEth
+            address token
         )
     {
         return _decodeData(data);
@@ -39,8 +37,6 @@ contract FeeExecutorTest is Constants, TestUtils {
         uint16 expectedRouterFeeOnSolverFeeBps = 25; // 0.25%
         address expectedRouterFeeReceiver = address(0x456);
         address expectedToken = DAI_ADDR;
-        address expectedReceiver = address(0x789);
-        bool expectedUnwrapEth = true;
 
         bytes memory data = abi.encodePacked(
             expectedSolutionFeeBps,
@@ -48,9 +44,7 @@ contract FeeExecutorTest is Constants, TestUtils {
             expectedRouterFeeOnOutputBps,
             expectedRouterFeeOnSolverFeeBps,
             expectedRouterFeeReceiver,
-            expectedToken,
-            expectedReceiver,
-            expectedUnwrapEth
+            expectedToken
         );
 
         (
@@ -59,9 +53,7 @@ contract FeeExecutorTest is Constants, TestUtils {
             uint16 routerFeeOnOutputBps,
             uint16 routerFeeOnSolverFeeBps,
             address routerFeeReceiver,
-            address token,
-            address receiver,
-            bool unwrapEth
+            address token
         ) = feeExecutor.decodeData(data);
 
         assertEq(solutionFeeBps, expectedSolutionFeeBps);
@@ -70,8 +62,6 @@ contract FeeExecutorTest is Constants, TestUtils {
         assertEq(routerFeeOnSolverFeeBps, expectedRouterFeeOnSolverFeeBps);
         assertEq(routerFeeReceiver, expectedRouterFeeReceiver);
         assertEq(token, expectedToken);
-        assertEq(receiver, expectedReceiver);
-        assertEq(unwrapEth, expectedUnwrapEth);
     }
 
     function testDecodeDataInvalidLength() public {

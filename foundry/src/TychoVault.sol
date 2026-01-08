@@ -33,7 +33,6 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
     uint256 private constant _NEGATIVE_DELTA_COUNT_SLOT =
         0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b;
 
-    uint256 private constant DUST_THRESHOLD = 100;
 
     event VaultDeposit(
         address indexed user, address indexed token, uint256 amount
@@ -249,24 +248,20 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
 
     /**
      * @dev Finalize all transient deltas to persistent storage
-     * @dev Only finalizes fee-related balances (router fees and solution fees)
-     * @dev User output tokens go directly to receiver, not through vault
+     * @dev Settles router contract's remaining delta (e.g., from rounding)
+     * @dev Fee receivers are credited directly by FeeExecutor, not here
      * @param user The user whose deltas should be finalized
      * @param inputToken The expected input token
      * @param inputAmount The expected input amount
-     * @param outputToken The output token (fees are in this token)
-     * @param outputAmount The amount being sent to receiver (not surplus)
-     * @param feeReceiver The solution fee receiver (address(0) if no solution fee)
-     * @param receiver The address receiving the output tokens
+     * @param outputToken The output token
+     * @param outputAmount The amount being sent to receiver
      */
     function _finalizeBalances(
         address user,
         address inputToken,
         uint256 inputAmount,
         address outputToken,
-        uint256 outputAmount,
-        address feeReceiver,
-        address receiver
+        uint256 outputAmount
     ) internal {
         uint256 negativeCount = _getNegativeDeltaCount();
 
@@ -277,20 +272,12 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
             revert TychoVault__UnexpectedNegativeDelta(negativeCount);
         }
 
-        // Settle router's delta (from router fees) to persistent vault
+        // Settle router contract's delta to persistent vault (e.g., from rounding surplus)
+        // Note: Fee receivers (both router and solver) are credited directly by FeeExecutor
         int256 routerDelta = _getTDelta(address(this), outputToken);
-        if (routerDelta > 0 && uint256(routerDelta) > DUST_THRESHOLD) {
+        if (routerDelta > 0) {
             uint256 id = uint256(uint160(outputToken));
             _mint(address(this), id, uint256(routerDelta));
-        }
-
-        // Settle solution fee receiver's delta to persistent vault
-        if (feeReceiver != address(0) && feeReceiver != address(this)) {
-            int256 feeReceiverDelta = _getTDelta(feeReceiver, outputToken);
-            if (feeReceiverDelta > 0 && uint256(feeReceiverDelta) > DUST_THRESHOLD) {
-                uint256 id = uint256(uint160(outputToken));
-                _mint(feeReceiver, id, uint256(feeReceiverDelta));
-            }
         }
     }
 
