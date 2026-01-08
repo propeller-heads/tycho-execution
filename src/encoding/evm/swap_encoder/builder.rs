@@ -4,11 +4,14 @@ use tycho_common::{models::Chain, Bytes};
 
 use crate::encoding::{
     errors::EncodingError,
-    evm::swap_encoder::swap_encoders::{
-        BalancerV2SwapEncoder, BalancerV3SwapEncoder, BebopSwapEncoder, CurveSwapEncoder,
-        ERC4626SwapEncoder, EkuboSwapEncoder, FluidV1SwapEncoder, HashflowSwapEncoder,
-        LidoSwapEncoder, MaverickV2SwapEncoder, RocketpoolSwapEncoder, SlipstreamsSwapEncoder,
-        UniswapV2SwapEncoder, UniswapV3SwapEncoder, UniswapV4SwapEncoder,
+    evm::swap_encoder::{
+        balancer_v2::BalancerV2SwapEncoder, balancer_v3::BalancerV3SwapEncoder,
+        bebop::BebopSwapEncoder, curve::CurveSwapEncoder, ekubo::EkuboSwapEncoder,
+        erc_4626::ERC4626SwapEncoder, fluid_v1::FluidV1SwapEncoder, hashflow::HashflowSwapEncoder,
+        lido::LidoSwapEncoder, maverick_v2::MaverickV2SwapEncoder,
+        rocketpool::RocketpoolSwapEncoder, slipstreams::SlipstreamsSwapEncoder,
+        uniswap_v2::UniswapV2SwapEncoder, uniswap_v3::UniswapV3SwapEncoder,
+        uniswap_v4::UniswapV4SwapEncoder,
     },
     swap_encoder::SwapEncoder,
 };
