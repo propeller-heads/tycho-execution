@@ -97,7 +97,6 @@ contract LidoExecutor is IExecutor, RestrictTransferFrom {
             pool == LidoPoolType.wstETH && direction == LidoPoolDirection.Wrap
         ) {
             // wstETH wrapping: stETH -> wstETH
-            //            _transfer(address(this), transferType, stETHAddress, givenAmount);
             tokenOut = wstETH;
 
             if (approvalNeeded) {
@@ -112,7 +111,6 @@ contract LidoExecutor is IExecutor, RestrictTransferFrom {
             pool == LidoPoolType.wstETH && direction == LidoPoolDirection.Unwrap
         ) {
             // wstETH unwrapping: wstETH -> stETH
-            //            _transfer(address(this), transferType, wstETH, givenAmount);
             tokenOut = stETHAddress;
             calculatedAmount = LidoWrappedPool(wstETH).unwrap(givenAmount);
             if (receiver != address(this)) {
@@ -148,7 +146,8 @@ contract LidoExecutor is IExecutor, RestrictTransferFrom {
         {
             // ETH -> stETH
             // Security: Hardcode TransferNativeInMsgValue for staking to prevent malicious encoding
-            transferType = RestrictTransferFrom.TransferType.TransferNativeInMsgValue;
+            transferType =
+            RestrictTransferFrom.TransferType.TransferNativeInMsgValue;
             tokenIn = address(0);
             tokenOut = stETHAddress;
         } else if (

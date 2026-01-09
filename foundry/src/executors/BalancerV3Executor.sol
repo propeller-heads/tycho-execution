@@ -40,7 +40,9 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
                 abi.encodePacked(givenAmount, data)
             )
         );
-        (calculatedAmount, tokenOut, receiver) = abi.decode(abi.decode(result, (bytes)), (uint256, address, address));
+        (calculatedAmount, tokenOut, receiver) = abi.decode(
+            abi.decode(result, (bytes)), (uint256, address, address)
+        );
     }
 
     function verifyCallback(
@@ -65,14 +67,8 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
         address poolId;
         TransferType transferType;
         address receiver;
-        (
-            amountGiven,
-            tokenIn,
-            tokenOut,
-            poolId,
-            transferType,
-            receiver
-        ) = _decodeData(data);
+        (amountGiven, tokenIn, tokenOut, poolId, transferType, receiver) =
+            _decodeData(data);
 
         uint256 amountCalculated;
         uint256 amountIn;
@@ -89,7 +85,6 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
             })
         );
 
-        //        _transfer(address(VAULT), transferType, address(tokenIn), amountIn);
         // slither-disable-next-line unused-return
         VAULT.settle(tokenIn, amountIn);
         VAULT.sendTo(tokenOut, receiver, amountOut);
@@ -130,13 +125,8 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
         bytes calldata callbackData = data[68:181];
         uint256 amountGiven;
         IERC20 tokenInIERC20;
-        (
-            amountGiven,
-            tokenInIERC20,
-            ,
-            ,
-            transferType,
-        ) = _decodeData(callbackData);
+        (amountGiven, tokenInIERC20,,, transferType,) =
+            _decodeData(callbackData);
         tokenIn = address(tokenInIERC20);
         receiver = address(VAULT);
         amount = amountGiven;

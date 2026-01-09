@@ -36,11 +36,8 @@ contract HashflowUtils is Test {
         pure
         returns (bytes memory)
     {
-        return encodeRfqtQuote(
-            quote,
-            true,
-            RestrictTransferFrom.TransferType.None
-        );
+        return
+            encodeRfqtQuote(quote, true, RestrictTransferFrom.TransferType.None);
     }
 }
 
@@ -135,7 +132,8 @@ contract HashflowExecutorECR20Test is Constants, TestUtils, HashflowUtils {
         uint256 balanceBefore = USDC.balanceOf(trader);
 
         vm.prank(trader);
-        (uint256 amountOut, address tokenOut, address receiver) = executor.swap(amountIn, encodedQuote);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            executor.swap(amountIn, encodedQuote);
 
         uint256 balanceAfter = USDC.balanceOf(trader);
         assertGt(balanceAfter, balanceBefore);
@@ -153,7 +151,8 @@ contract HashflowExecutorECR20Test is Constants, TestUtils, HashflowUtils {
         uint256 balanceBefore = USDC.balanceOf(trader);
 
         vm.prank(trader);
-        (uint256 amountOut, address tokenOut, address receiver) = executor.swap(amountIn, encodedQuote);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            executor.swap(amountIn, encodedQuote);
 
         uint256 balanceAfter = USDC.balanceOf(trader);
         assertGt(balanceAfter, balanceBefore);
@@ -171,7 +170,8 @@ contract HashflowExecutorECR20Test is Constants, TestUtils, HashflowUtils {
         uint256 balanceBefore = USDC.balanceOf(trader);
 
         vm.prank(trader);
-        (uint256 amountOut, address tokenOut, address receiver) = executor.swap(amountIn, encodedQuote);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            executor.swap(amountIn, encodedQuote);
 
         uint256 balanceAfter = USDC.balanceOf(trader);
         assertGt(balanceAfter, balanceBefore);
@@ -233,7 +233,8 @@ contract HashflowExecutorNativeTest is Constants, HashflowUtils {
         uint256 balanceBefore = USDC.balanceOf(trader);
 
         vm.prank(trader);
-        (uint256 amountOut, address tokenOut, address receiver) = executor.swap(amountIn, encodedQuote);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            executor.swap(amountIn, encodedQuote);
 
         uint256 balanceAfter = USDC.balanceOf(trader);
         assertGt(balanceAfter, balanceBefore);

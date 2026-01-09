@@ -61,8 +61,7 @@ contract LidoExecutorTest is Constants, Permit2TestHelper, TestUtils {
 
         assertEq(receiver, BOB);
         assertEq(
-            uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.None)
+            uint8(transferType), uint8(RestrictTransferFrom.TransferType.None)
         );
         assertEq(uint8(pool), uint8(LidoPoolType.stETH));
         assertEq(uint8(direction), uint8(LidoPoolDirection.Stake));
@@ -70,9 +69,7 @@ contract LidoExecutorTest is Constants, Permit2TestHelper, TestUtils {
 
     function testDecodeParamsInvalidDataLength() public {
         bytes memory invalidParams = abi.encodePacked(
-            BOB,
-            RestrictTransferFrom.TransferType.None,
-            LidoPoolType.stETH
+            BOB, RestrictTransferFrom.TransferType.None, LidoPoolType.stETH
         );
 
         vm.expectRevert(LidoExecutor__InvalidDataLength.selector);
@@ -121,7 +118,8 @@ contract LidoExecutorTest is Constants, Permit2TestHelper, TestUtils {
             true
         );
 
-        (uint256 amountOut, address tokenOut, address receiver) = LidoExposed.swap(stETHAmount, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            LidoExposed.swap(stETHAmount, protocolData);
 
         uint256 finalBalance = IERC20(WSTETH_ADDR).balanceOf(BOB);
         assertEq(amountOut, expectedAmountOut);
@@ -145,7 +143,8 @@ contract LidoExecutorTest is Constants, Permit2TestHelper, TestUtils {
             false
         );
         vm.startPrank(address(LidoExposed));
-        (uint256 amountOut, address tokenOut, address receiver) = LidoExposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            LidoExposed.swap(amountIn, protocolData);
 
         uint256 finalBalance = IERC20(STETH_ADDR).balanceOf(BOB);
         assertEq(amountOut, expectedAmountOut);

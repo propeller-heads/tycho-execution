@@ -58,8 +58,7 @@ contract ERC4626ExecutorTest is Constants, TestUtils {
         assertEq(address(target), address(spETH));
         assertEq(receiver, address(2));
         assertEq(
-            uint8(transferType),
-            uint8(RestrictTransferFrom.TransferType.None)
+            uint8(transferType), uint8(RestrictTransferFrom.TransferType.None)
         );
         assertEq(approvalNeeded, false);
     }
@@ -86,7 +85,8 @@ contract ERC4626ExecutorTest is Constants, TestUtils {
 
         uint256 balanceBefore = spETH.balanceOf(BOB);
 
-        (uint256 amountOut, address tokenOut, address receiver) = ERC4626Exposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            ERC4626Exposed.swap(amountIn, protocolData);
 
         uint256 balanceAfter = spETH.balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);
@@ -107,7 +107,8 @@ contract ERC4626ExecutorTest is Constants, TestUtils {
 
         uint256 balanceBefore = WETH.balanceOf(BOB);
 
-        (uint256 amountOut, address tokenOut, address receiver) = ERC4626Exposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            ERC4626Exposed.swap(amountIn, protocolData);
 
         uint256 balanceAfter = WETH.balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);

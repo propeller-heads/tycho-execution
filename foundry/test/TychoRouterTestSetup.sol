@@ -20,7 +20,7 @@ import {SlipstreamsExecutor} from "../src/executors/SlipstreamsExecutor.sol";
 import {RocketpoolExecutor} from "../src/executors/RocketpoolExecutor.sol";
 import {ERC4626Executor} from "../src/executors/ERC4626Executor.sol";
 import {LidoExecutor} from "../src/executors/LidoExecutor.sol";
-import {FeeExecutor} from "../src/executors/FeeExecutor.sol";
+import {FeeTaker} from "../src/executors/FeeTaker.sol";
 
 // Test utilities and mocks
 import "./Constants.sol";
@@ -32,7 +32,9 @@ import "@src/TychoRouter.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 
 contract TychoRouterExposed is TychoRouter {
-    constructor(address _permit2, address weth) TychoRouter(_permit2, weth, msg.sender) {}
+    constructor(address _permit2, address weth)
+        TychoRouter(_permit2, weth, msg.sender)
+    {}
 
     /**
      * @dev Override to resolve multiple inheritance
@@ -102,7 +104,7 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
 
     ERC4626Executor public erc4626Executor;
     LidoExecutor public lidoExecutor;
-    FeeExecutor public feeExecutor;
+    FeeTaker public feeTaker;
 
     function getChain() public view virtual returns (string memory) {
         return "mainnet";
@@ -125,7 +127,7 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
         address[] memory executors = deployExecutors();
         vm.startPrank(EXECUTOR_SETTER);
         tychoRouter.setExecutors(executors);
-        tychoRouter.setFeeExecutor(address(feeExecutor));
+        tychoRouter.setFeeTaker(address(feeTaker));
         vm.stopPrank();
     }
 
@@ -186,7 +188,7 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
         erc4626Executor = new ERC4626Executor(PERMIT2_ADDRESS);
         lidoExecutor =
             new LidoExecutor(STETH_ADDR, WSTETH_ADDR, PERMIT2_ADDRESS);
-        feeExecutor = new FeeExecutor(PERMIT2_ADDRESS);
+        feeTaker = new FeeTaker(PERMIT2_ADDRESS);
 
         address[] memory executors = new address[](17);
         executors[0] = address(usv2Executor);
@@ -205,7 +207,7 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
         executors[13] = address(rocketpoolExecutor);
         executors[14] = address(erc4626Executor);
         executors[15] = address(lidoExecutor);
-        executors[16] = address(feeExecutor);
+        executors[16] = address(feeTaker);
 
         return executors;
     }

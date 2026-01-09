@@ -67,7 +67,10 @@ contract Dispatcher is RestrictTransferFrom {
         address executor,
         uint256 amount,
         bytes calldata data
-    ) internal returns (uint256 calculatedAmount, address tokenOut, address receiver) {
+    )
+        internal
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
+    {
         if (!executors[executor]) {
             revert Dispatcher__UnapprovedExecutor(executor);
         }
@@ -126,30 +129,27 @@ contract Dispatcher is RestrictTransferFrom {
 
         // Credit delta accounting if tokens stayed in router
         if (receiver == address(this)) {
-            _updateDeltaAccounting(msg.sender, tokenOut, int256(calculatedAmount));
+            _updateDeltaAccounting(
+                msg.sender, tokenOut, int256(calculatedAmount)
+            );
         }
     }
 
     /**
-     * @dev Calls the fee executor to deduct fees from user's vault
-     * @dev Does not set transient storage since fee executors don't use callbacks
-     * @param feeExecutor Address of the fee executor contract
+     * @dev Calls the fee taker to deduct fees from user's vault
+     * @dev Does not set transient storage since fee takers don't use callbacks
+     * @param feeTaker Address of the fee taker contract
      * @param amount Amount before fee deduction
      * @param data Encoded fee parameters (solution fee + router fee)
      * @return amountAfterFee Amount remaining after fee deductions
      */
     // slither-disable-next-line delegatecall-loop
-    function _callTakeFees(
-        address feeExecutor,
-        uint256 amount,
-        bytes memory data
-    ) internal returns (uint256 amountAfterFee) {
-        if (!executors[feeExecutor]) {
-            revert Dispatcher__UnapprovedExecutor(feeExecutor);
-        }
-
+    function _callTakeFees(address feeTaker, uint256 amount, bytes memory data)
+        internal
+        returns (uint256 amountAfterFee)
+    {
         // slither-disable-next-line controlled-delegatecall,low-level-calls
-        (bool success, bytes memory result) = feeExecutor.delegatecall(
+        (bool success, bytes memory result) = feeTaker.delegatecall(
             abi.encodeWithSignature("take_fee(uint256,bytes)", amount, data)
         );
 

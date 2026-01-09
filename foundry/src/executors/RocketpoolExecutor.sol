@@ -45,7 +45,6 @@ contract RocketpoolExecutor is IExecutor, RestrictTransferFrom {
         } else {
             // rETH -> ETH: Burn rETH to receive ETH
             // Use _transfer to get rETH into this contract based on transferType
-            //            _transfer(address(this), transferType, address(RETH), givenAmount);
             tokenOut = address(0);
 
             uint256 ethBefore = address(this).balance;
@@ -74,7 +73,8 @@ contract RocketpoolExecutor is IExecutor, RestrictTransferFrom {
         if (isDeposit) {
             // ETH -> rETH
             // Security: Hardcode TransferNativeInMsgValue for deposits to prevent malicious encoding
-            transferType = RestrictTransferFrom.TransferType.TransferNativeInMsgValue;
+            transferType =
+            RestrictTransferFrom.TransferType.TransferNativeInMsgValue;
             tokenIn = address(0);
             tokenOut = address(RETH);
         } else {

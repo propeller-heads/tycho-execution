@@ -65,8 +65,6 @@ contract BebopExecutor is IExecutor, RestrictTransferFrom {
             bebopCalldata
         ) = _decodeData(data);
 
-        //        _transfer(address(this), transferType, address(tokenIn), givenAmount);
-
         // Execute the swap and get the calculated amount
         calculatedAmount = _executeSwap(
             tokenIn,

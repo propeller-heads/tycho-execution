@@ -49,8 +49,6 @@ contract MaverickV2Executor is IExecutor, RestrictTransferFrom {
             tickLimit: tickLimit
         });
 
-        //        _transfer(target, transferType, address(tokenIn), givenAmount);
-
         // slither-disable-next-line unused-return
         (, calculatedAmount) = pool.swap(receiver, swapParams, "");
     }

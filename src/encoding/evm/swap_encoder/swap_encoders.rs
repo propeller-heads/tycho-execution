@@ -1036,10 +1036,7 @@ impl SwapEncoder for HashflowSwapEncoder {
                 )))?;
             hashflow_calldata.extend_from_slice(value);
         }
-        let args = (
-            (encoding_context.transfer_type as u8).to_be_bytes(),
-            &hashflow_calldata[..],
-        );
+        let args = ((encoding_context.transfer_type as u8).to_be_bytes(), &hashflow_calldata[..]);
         Ok(args.abi_encode_packed())
     }
 

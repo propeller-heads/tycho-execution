@@ -43,8 +43,6 @@ contract BalancerV2Executor is IExecutor, RestrictTransferFrom {
 
         tokenOut = address(tokenOutIERC20);
 
-        //        _transfer(address(this), transferType, address(tokenIn), givenAmount);
-
         if (approvalNeeded) {
             // slither-disable-next-line unused-return
             tokenIn.forceApprove(VAULT, type(uint256).max);

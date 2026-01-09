@@ -113,7 +113,8 @@ contract SlipstreamsExecutorTest is
             zeroForOne
         );
 
-        (uint256 amountOut, address tokenOut, address receiver) = slipstreamsExposed.swap(amountIn, data);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            slipstreamsExposed.swap(amountIn, data);
 
         assertEq(IERC20(BASE_WETH).balanceOf(address(slipstreamsExposed)), 0);
         assertGe(IERC20(BASE_USDC).balanceOf(address(this)), amountOut);
@@ -135,7 +136,8 @@ contract SlipstreamsExecutorTest is
             zeroForOne
         );
 
-        (uint256 amountOut, address tokenOut, address receiver) = slipstreamsExposed.swap(amountIn, data);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            slipstreamsExposed.swap(amountIn, data);
 
         assertEq(IERC20(BASE_WETH).balanceOf(address(slipstreamsExposed)), 0);
         assertGe(IERC20(BASE_BMI).balanceOf(address(this)), amountOut);

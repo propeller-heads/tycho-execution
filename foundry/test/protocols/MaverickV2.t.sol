@@ -83,7 +83,8 @@ contract MaverickV2ExecutorTest is TestUtils, Constants {
         deal(GHO_ADDR, address(maverickV2Exposed), amountIn);
         uint256 balanceBefore = USDC.balanceOf(BOB);
 
-        (uint256 amountOut, address tokenOut, address receiver) = maverickV2Exposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            maverickV2Exposed.swap(amountIn, protocolData);
 
         uint256 balanceAfter = USDC.balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);
@@ -120,7 +121,8 @@ contract MaverickV2ExecutorTest is TestUtils, Constants {
         deal(GHO_ADDR, address(maverickV2Exposed), amountIn);
         uint256 balanceBefore = USDC.balanceOf(BOB);
 
-        (uint256 amountOut, address tokenOut, address receiver) = maverickV2Exposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            maverickV2Exposed.swap(amountIn, protocolData);
 
         uint256 balanceAfter = USDC.balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);

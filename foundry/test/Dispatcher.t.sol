@@ -11,7 +11,10 @@ contract DispatcherExposed is Dispatcher {
         address executor,
         uint256 amount,
         bytes calldata data
-    ) external returns (uint256 calculatedAmount, address tokenOut, address receiver) {
+    )
+        external
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
+    {
         return _callSwapOnExecutor(executor, amount, data);
     }
 

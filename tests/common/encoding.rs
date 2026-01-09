@@ -87,7 +87,7 @@ pub fn encode_tycho_router_call(
     }
 
     let given_amount = biguint_to_u256(&solution.given_amount);
-    let min_receiver_amount = biguint_to_u256(&solution.min_receiver_amount);
+    let min_amount_out = biguint_to_u256(&solution.min_amount_out);
     let max_solver_contribution = biguint_to_u256(&solution.max_solver_contribution);
     let given_token = bytes_to_address(&solution.given_token)?;
     let checked_token = bytes_to_address(&solution.checked_token)?;
@@ -114,7 +114,7 @@ pub fn encode_tycho_router_call(
             given_amount,
             given_token,
             checked_token,
-            min_receiver_amount,
+            min_amount_out,
             max_solver_contribution,
             wrap,
             unwrap,
@@ -136,7 +136,7 @@ pub fn encode_tycho_router_call(
             given_amount,
             given_token,
             checked_token,
-            min_receiver_amount,
+            min_amount_out,
             max_solver_contribution,
             wrap,
             unwrap,
@@ -155,7 +155,7 @@ pub fn encode_tycho_router_call(
             given_amount,
             given_token,
             checked_token,
-            min_receiver_amount,
+            min_amount_out,
             max_solver_contribution,
             wrap,
             unwrap,
@@ -177,7 +177,7 @@ pub fn encode_tycho_router_call(
             given_amount,
             given_token,
             checked_token,
-            min_receiver_amount,
+            min_amount_out,
             max_solver_contribution,
             wrap,
             unwrap,
@@ -196,7 +196,7 @@ pub fn encode_tycho_router_call(
             given_amount,
             given_token,
             checked_token,
-            min_receiver_amount,
+            min_amount_out,
             max_solver_contribution,
             wrap,
             unwrap,
@@ -219,7 +219,7 @@ pub fn encode_tycho_router_call(
             given_amount,
             given_token,
             checked_token,
-            min_receiver_amount,
+            min_amount_out,
             max_solver_contribution,
             wrap,
             unwrap,

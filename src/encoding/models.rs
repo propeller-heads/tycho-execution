@@ -53,13 +53,13 @@ pub struct Solution {
     #[serde(default)]
     pub exact_out: bool,
     /// Minimum amount that the receiver must receive at the end of the transaction.
-    /// If the swap output is between max_solver_contribution and min_receiver_amount,
+    /// If the swap output is between max_solver_contribution and min_amount_out,
     /// the solver will use their own funds to make up the difference.
     #[serde(with = "biguint_string")]
-    pub min_receiver_amount: BigUint,
+    pub min_amount_out: BigUint,
     /// Maximum amount the solver is willing to pay out of pocket to subsidize this trade.
     /// This represents the maximum slippage the solver will cover.
-    /// If (min_receiver_amount - actual_swap_output) > max_solver_contribution, the tx reverts.
+    /// If (min_amount_out - actual_swap_output) > max_solver_contribution, the tx reverts.
     #[serde(with = "biguint_string")]
     pub max_solver_contribution: BigUint,
     /// List of swaps to fulfill the solution.
@@ -305,7 +305,8 @@ pub struct EncodingContext {
 /// * `TransferFrom`: Transfer from user wallet to protocol.
 /// * `TransferFromAndProtocolWillDebit`: Transfer from user wallet to router, protocol takes it.
 /// * `Transfer`: Transfer from router balance to protocol (could be from vault or previous swap).
-/// * `TransferNativeInMsgValue`: Native ETH sent via msg.value (hardcoded in executor for security).
+/// * `TransferNativeInMsgValue`: Native ETH sent via msg.value (hardcoded in executor for
+///   security).
 /// * `ProtocolWillDebit`: Protocol takes from router/vault.
 /// * `None`: Funds already transferred from previous pool.
 #[repr(u8)]

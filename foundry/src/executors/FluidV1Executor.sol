@@ -85,18 +85,14 @@ contract FluidV1Executor is IExecutor, ICallback, RestrictTransferFrom {
 
         // Security: Hardcode TransferNativeInMsgValue for native sells to prevent malicious encoding
         if (isNativeSell) {
-            transferType = RestrictTransferFrom.TransferType.TransferNativeInMsgValue;
+            transferType =
+            RestrictTransferFrom.TransferType.TransferNativeInMsgValue;
         } else {
             // For non-native cases, decode transferType from data
             transferType = TransferType(uint8(data[41]));
         }
 
-        return (
-            transferType,
-            address(0),
-            address(0),
-            address(0)
-        );
+        return (transferType, address(0), address(0), address(0));
     }
 
     function getCallbackTransferData(bytes calldata data)
@@ -186,7 +182,6 @@ contract FluidV1Executor is IExecutor, ICallback, RestrictTransferFrom {
         uint256 amount;
         (token, amount) = abi.decode(data[4:68], (address, uint256));
         TransferType transferType = _getTransferType();
-        //        _transfer(liquidity, transferType, token, amount);
         result = "";
     }
 

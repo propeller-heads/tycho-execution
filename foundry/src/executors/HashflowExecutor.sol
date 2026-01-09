@@ -55,11 +55,7 @@ contract HashflowExecutor is IExecutor, RestrictTransferFrom {
         IHashflowRouter.RFQTQuote memory quote;
         bool approvalNeeded;
         TransferType transferType;
-        (
-            quote,
-            approvalNeeded,
-            transferType
-        ) = _decodeData(data);
+        (quote, approvalNeeded, transferType) = _decodeData(data);
 
         // Slippage checks
         if (givenAmount > quote.baseTokenAmount) {
@@ -78,9 +74,6 @@ contract HashflowExecutor is IExecutor, RestrictTransferFrom {
         if (quote.baseToken == NATIVE_TOKEN) {
             ethValue = quote.effectiveBaseTokenAmount;
         }
-        //        _transfer(
-        //            address(this), transferType, address(quote.baseToken), givenAmount
-        //        );
         tokenOut = quote.quoteToken;
         receiver = quote.trader;
         uint256 balanceBefore = _balanceOf(receiver, tokenOut);

@@ -54,16 +54,18 @@ contract RestrictTransferFrom {
      * @dev Virtual function to update delta accounting - overridden by TychoRouter
      * @param deltaChange Positive to credit, negative to debit
      */
-    function _updateDeltaAccounting(address user, address token, int256 deltaChange)
-        internal
-        virtual {
+    function _updateDeltaAccounting(
+        address user,
+        address token,
+        int256 deltaChange
+    ) internal virtual {
         // Empty implementation - only TychoRouter uses this
     }
 
     /**
      * @dev Virtual function to debit persistent vault balance - overridden by TychoRouter
      */
-    function _debitPersistentVault(address user, address token, uint256 amount)
+    function _debitVault(address user, address token, uint256 amount)
         internal
         virtual {
         // Empty implementation - only TychoRouter uses this
@@ -137,7 +139,9 @@ contract RestrictTransferFrom {
                 // slither-disable-next-line arbitrary-send-erc20
                 IERC20(tokenIn).safeTransferFrom(sender, receiver, amount);
             }
-        } else if (transferType == TransferType.TransferFromAndProtocolWillDebit) {
+        } else if (
+            transferType == TransferType.TransferFromAndProtocolWillDebit
+        ) {
             // Perform transferFrom the user's wallet to our router
             _restrictTransferFrom(sender, amount, tokenIn);
             bool isPermit2;
@@ -146,7 +150,9 @@ contract RestrictTransferFrom {
             }
             if (isPermit2) {
                 // Permit2.permit is already called from the TychoRouter
-                permit2.transferFrom(sender, address(this), uint160(amount), tokenIn);
+                permit2.transferFrom(
+                    sender, address(this), uint160(amount), tokenIn
+                );
             } else {
                 // slither-disable-next-line arbitrary-send-erc20
                 IERC20(tokenIn).safeTransferFrom(sender, address(this), amount);
@@ -181,9 +187,11 @@ contract RestrictTransferFrom {
         }
     }
 
-    function _restrictTransferFrom(address sender, uint256 amount, address tokenIn)
-        internal
-    {
+    function _restrictTransferFrom(
+        address sender,
+        uint256 amount,
+        address tokenIn
+    ) internal {
         //  This is important to prevent badly encoded split swaps from taking
         //  more than the input amount out of the user's wallet or vault balance.
         address tokenInStorage;

@@ -107,8 +107,6 @@ contract UniswapV3Executor is IExecutor, ICallback, RestrictTransferFrom {
         uint256 amountOwed =
             amount0Delta > 0 ? uint256(amount0Delta) : uint256(amount1Delta);
 
-        //        _transfer(msg.sender, transferType, tokenIn, amountOwed);
-
         return abi.encode(amountOwed, tokenIn);
     }
 

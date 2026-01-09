@@ -16,7 +16,8 @@ contract TychoVaultTest is TychoRouterTestSetup {
         tychoRouter.depositToVault(WETH_ADDR, depositAmount);
 
         // Check Bob's vault balance
-        uint256 vaultBalance = tychoRouter.balanceOf(BOB, uint256(uint160(WETH_ADDR)));
+        uint256 vaultBalance =
+            tychoRouter.balanceOf(BOB, uint256(uint160(WETH_ADDR)));
         assertEq(vaultBalance, depositAmount);
         assertEq(IERC20(WETH_ADDR).balanceOf(BOB), 0);
 
@@ -77,7 +78,8 @@ contract TychoVaultTest is TychoRouterTestSetup {
         vm.stopPrank();
 
         // Bob's vault balance should remain unchanged
-        uint256 bobVaultBalance = tychoRouter.balanceOf(BOB, uint256(uint160(WETH_ADDR)));
+        uint256 bobVaultBalance =
+            tychoRouter.balanceOf(BOB, uint256(uint160(WETH_ADDR)));
         assertEq(bobVaultBalance, bobDeposit, "Bob's vault funds were accessed");
 
         // Alice should have received DAI
@@ -100,7 +102,8 @@ contract TychoVaultTest is TychoRouterTestSetup {
         IERC20(WETH_ADDR).approve(tychoRouterAddr, depositAmount);
         tychoRouter.depositToVault(WETH_ADDR, depositAmount);
 
-        uint256 initialVaultBalance = tychoRouter.balanceOf(BOB, uint256(uint160(WETH_ADDR)));
+        uint256 initialVaultBalance =
+            tychoRouter.balanceOf(BOB, uint256(uint160(WETH_ADDR)));
         assertEq(initialVaultBalance, depositAmount);
 
         // Withdraw to get the tokens back out of the router
@@ -151,7 +154,8 @@ contract TychoVaultTest is TychoRouterTestSetup {
 
         // Check that leftovers (dust) were NOT credited to Bob's vault
         // Input token leftovers are ignored per design
-        uint256 vaultBalance = tychoRouter.balanceOf(BOB, uint256(uint160(WETH_ADDR)));
+        uint256 vaultBalance =
+            tychoRouter.balanceOf(BOB, uint256(uint160(WETH_ADDR)));
         assertEq(vaultBalance, 0);
 
         vm.stopPrank();
@@ -192,8 +196,13 @@ contract TychoVaultTest is TychoRouterTestSetup {
         vm.stopPrank();
 
         // Check balances
-        assertEq(tychoRouter.balanceOf(BOB, uint256(uint160(WETH_ADDR))), bobDeposit);
-        assertEq(tychoRouter.balanceOf(ALICE, uint256(uint160(DAI_ADDR))), aliceDeposit);
+        assertEq(
+            tychoRouter.balanceOf(BOB, uint256(uint160(WETH_ADDR))), bobDeposit
+        );
+        assertEq(
+            tychoRouter.balanceOf(ALICE, uint256(uint160(DAI_ADDR))),
+            aliceDeposit
+        );
 
         // Verify Alice cannot withdraw Bob's WETH
         vm.startPrank(ALICE);
@@ -228,7 +237,8 @@ contract TychoVaultTest is TychoRouterTestSetup {
         );
 
         // Check Bob's vault balance for native ETH
-        uint256 vaultBalance = tychoRouter.balanceOf(BOB, uint256(uint160(address(0))));
+        uint256 vaultBalance =
+            tychoRouter.balanceOf(BOB, uint256(uint160(address(0))));
         assertEq(vaultBalance, depositAmount);
         assertEq(BOB.balance, 0);
 

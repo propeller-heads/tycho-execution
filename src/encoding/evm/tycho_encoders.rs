@@ -531,7 +531,8 @@ mod tests {
                 receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
                 native_action: Some(NativeAction::Wrap),
                 fee_bps: 0,
-                fee_receiver: Bytes::from_str("0x0000000000000000000000000000000000000000").unwrap(),
+                fee_receiver: Bytes::from_str("0x0000000000000000000000000000000000000000")
+                    .unwrap(),
                 ..Default::default()
             };
 
@@ -565,7 +566,8 @@ mod tests {
                 receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
                 swaps: vec![swap_usdc_eth_univ4(), swap_eth_pepe_univ4()],
                 fee_bps: 0,
-                fee_receiver: Bytes::from_str("0x0000000000000000000000000000000000000000").unwrap(),
+                fee_receiver: Bytes::from_str("0x0000000000000000000000000000000000000000")
+                    .unwrap(),
                 ..Default::default()
             };
 
@@ -614,7 +616,8 @@ mod tests {
                 native_action: Some(NativeAction::Wrap),
                 checked_amount: BigUint::from(1000u32),
                 fee_bps: 0,
-                fee_receiver: Bytes::from_str("0x0000000000000000000000000000000000000000").unwrap(),
+                fee_receiver: Bytes::from_str("0x0000000000000000000000000000000000000000")
+                    .unwrap(),
                 ..Default::default()
             };
 

@@ -15,6 +15,7 @@ error TychoVault__UnexpectedNegativeDelta(uint256 negativeCount);
 error TychoVault__InvalidInputDelta(
     address token, int256 expected, int256 actual
 );
+error TychoVault__UnexpectedInputDelta(int256 inputDelta);
 
 /**
  * @title TychoVault - ERC6909-compliant multi-token vault
@@ -32,7 +33,6 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
     // keccak256("TychoVault#NEGATIVE_DELTA_COUNT")
     uint256 private constant _NEGATIVE_DELTA_COUNT_SLOT =
         0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b;
-
 
     event VaultDeposit(
         address indexed user, address indexed token, uint256 amount
@@ -196,10 +196,11 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
      * @param token The token to update
      * @param deltaChange The change to apply (positive to credit, negative to debit)
      */
-    function _updateDeltaAccounting(address user, address token, int256 deltaChange)
-        internal
-        virtual
-    {
+    function _updateDeltaAccounting(
+        address user,
+        address token,
+        int256 deltaChange
+    ) internal virtual {
         if (deltaChange == 0) return;
 
         int256 oldDelta = _getTDelta(user, token);
@@ -221,7 +222,7 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
      * @dev Internal helper to debit user's actual vault balance (persistent storage)
      * @notice This debits the persistent vault balance, not the transient delta
      */
-    function _debitPersistentVault(address user, address token, uint256 amount)
+    function _debitVault(address user, address token, uint256 amount)
         internal
         virtual
     {
@@ -230,14 +231,12 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
         uint256 id = uint256(uint160(token));
         uint256 balance = balanceOf(user, id);
         if (balance < amount) {
-            revert TychoVault__InsufficientBalance(
-                user, token, amount, balance
-            );
+            revert TychoVault__InsufficientBalance(user, token, amount, balance);
         }
         _burn(user, id, amount);
     }
 
-    function _creditPersistentVault(address user, address token, uint256 amount)
+    function _creditVault(address user, address token, uint256 amount)
         internal
         virtual
     {
@@ -248,36 +247,28 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
 
     /**
      * @dev Finalize all transient deltas to persistent storage
-     * @dev Settles router contract's remaining delta (e.g., from rounding)
-     * @dev Fee receivers are credited directly by FeeExecutor, not here
+     * @dev Verifies that only the input token has a negative delta and burns the vault balance
      * @param user The user whose deltas should be finalized
      * @param inputToken The expected input token
      * @param inputAmount The expected input amount
-     * @param outputToken The output token
-     * @param outputAmount The amount being sent to receiver
      */
     function _finalizeBalances(
         address user,
         address inputToken,
-        uint256 inputAmount,
-        address outputToken,
-        uint256 outputAmount
+        uint256 inputAmount
     ) internal {
         uint256 negativeCount = _getNegativeDeltaCount();
 
-        // Check that there are no negative deltas
-        if (negativeCount > 0) {
-            // We aren't sure exactly which token(s) caused the negative count, since
-            // we don't track this information for gas purposes.
+        // Check that there is only one negative delta: the input token
+        if (negativeCount > 1) {
             revert TychoVault__UnexpectedNegativeDelta(negativeCount);
-        }
-
-        // Settle router contract's delta to persistent vault (e.g., from rounding surplus)
-        // Note: Fee receivers (both router and solver) are credited directly by FeeExecutor
-        int256 routerDelta = _getTDelta(address(this), outputToken);
-        if (routerDelta > 0) {
-            uint256 id = uint256(uint160(outputToken));
-            _mint(address(this), id, uint256(routerDelta));
+        } else if (negativeCount == 1) {
+            int256 inputDelta = _getTDelta(user, inputToken);
+            if (inputDelta != -int256(inputAmount)) {
+                revert TychoVault__UnexpectedInputDelta(inputDelta);
+            }
+            uint256 id = uint256(uint160(inputToken));
+            _burn(user, id, uint256(-inputDelta));
         }
     }
 

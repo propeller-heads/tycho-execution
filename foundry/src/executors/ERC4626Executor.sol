@@ -32,7 +32,6 @@ contract ERC4626Executor is IExecutor, RestrictTransferFrom {
             // slither-disable-next-line unused-return
             tokenIn.forceApprove(target, type(uint256).max);
         }
-        //        _transfer(address(this), transferType, address(tokenIn), givenAmount);
 
         if (address(tokenIn) == target) {
             // shares --> asset

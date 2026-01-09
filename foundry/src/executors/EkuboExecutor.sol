@@ -59,7 +59,9 @@ contract EkuboExecutor is
         payable
         returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
-        if (data.length < 92) revert EkuboExecutor__InvalidDataLength();
+        if (data.length < 92) {
+            revert EkuboExecutor__InvalidDataLength();
+        }
 
         // amountIn must be at most type(int128).MAX
         calculatedAmount =
@@ -73,7 +75,8 @@ contract EkuboExecutor is
         uint256 hopsLength = (data.length - POOL_DATA_OFFSET) / HOP_BYTE_LEN;
         if (hopsLength > 0) {
             // TokenOut is at the start of the last hop
-            uint256 lastHopOffset = POOL_DATA_OFFSET + ((hopsLength - 1) * HOP_BYTE_LEN);
+            uint256 lastHopOffset =
+                POOL_DATA_OFFSET + ((hopsLength - 1) * HOP_BYTE_LEN);
             tokenOut = address(bytes20(data[lastHopOffset:lastHopOffset + 20]));
         } else {
             // No hops, tokenOut is tokenIn (shouldn't happen in practice)
@@ -332,7 +335,6 @@ contract EkuboExecutor is
         address token = address(bytes20(payData[12:32])); // This arg is abi-encoded
         uint128 amount = uint128(bytes16(payData[32:48]));
         TransferType transferType = TransferType(uint8(payData[48]));
-//        _transfer(address(core), transferType, token, amount);
     }
 
     // To receive withdrawals from Core

@@ -103,14 +103,8 @@ contract UniswapV4Executor is
         bool zeroForOne;
         TransferType transferType;
         UniswapV4Executor.UniswapV4Pool[] memory pools;
-        (
-            tokenIn,
-            tokenOut,
-            zeroForOne,
-            transferType,
-            receiver,
-            pools
-        ) = _decodeData(data);
+        (tokenIn, tokenOut, zeroForOne, transferType, receiver, pools) =
+            _decodeData(data);
         bytes memory swapData;
         if (pools.length == 1) {
             PoolKey memory key = PoolKey({
@@ -530,12 +524,6 @@ contract UniswapV4Executor is
             // slither-disable-next-line unused-return
             poolManager.settle{value: amount}();
         } else {
-            //            _transfer(
-            //                address(poolManager),
-            //                transferType,
-            //                Currency.unwrap(currency),
-            //                amount
-            //            );
             // slither-disable-next-line unused-return
             poolManager.settle();
         }
