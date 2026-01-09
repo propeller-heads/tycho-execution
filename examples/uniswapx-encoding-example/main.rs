@@ -6,11 +6,15 @@ use alloy::{
     sol_types::SolValue,
 };
 use num_bigint::{BigInt, BigUint};
-use tycho_common::{models::protocol::ProtocolComponent, Bytes};
+use tycho_common::{
+    models::{protocol::ProtocolComponent, Chain},
+    Bytes,
+};
 use tycho_execution::encoding::{
     evm::{
         approvals::protocol_approvals_manager::ProtocolApprovalsManager,
         encoder_builders::TychoRouterEncoderBuilder,
+        swap_encoder::swap_encoder_registry::SwapEncoderRegistry,
         utils::{biguint_to_u256, bytes_to_address},
     },
     models::{Solution, Swap, UserTransferType},
@@ -41,11 +45,16 @@ pub fn encode_input(selector: &str, mut encoded_args: Vec<u8>) -> Vec<u8> {
 fn main() {
     let router_address = Bytes::from_str("0xfD0b31d2E955fA55e3fa641Fe90e08b677188d35")
         .expect("Failed to create router address");
+    let chain = Chain::Ethereum;
 
     // Initialize the encoder
+    let swap_encoder_registry = SwapEncoderRegistry::new(chain)
+        .add_default_encoders(None)
+        .expect("Failed to get default SwapEncoderRegistry");
     let encoder = TychoRouterEncoderBuilder::new()
         .chain(tycho_common::models::Chain::Ethereum)
         .user_transfer_type(UserTransferType::TransferFrom)
+        .swap_encoder_registry(swap_encoder_registry)
         .router_address(router_address.clone())
         .build()
         .expect("Failed to build encoder");

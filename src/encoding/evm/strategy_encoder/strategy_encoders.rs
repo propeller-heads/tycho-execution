@@ -586,7 +586,10 @@ mod tests {
         let executors_addresses =
             fs::read_to_string("config/test_executor_addresses.json").unwrap();
         let eth_chain = eth_chain();
-        SwapEncoderRegistry::new(Some(executors_addresses), eth_chain).unwrap()
+        let registry = SwapEncoderRegistry::new(eth_chain);
+        registry
+            .add_default_encoders(Some(executors_addresses))
+            .unwrap()
     }
 
     fn router_address() -> Bytes {
