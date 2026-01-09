@@ -1,3 +1,15 @@
+## [0.151.0](https://github.com/propeller-heads/tycho-execution/compare/0.150.0...0.151.0) (2026-01-09)
+
+
+### Features
+
+* Add ability to register external encoders to SwapEncoderRegistry ([ccb8556](https://github.com/propeller-heads/tycho-execution/commit/ccb8556eb5fa9b4f188da95f647a9499d7a3344d))
+
+
+### Bug Fixes
+
+* Move SwapEncoderBuilder logic to SwapEncoderRegistry ([e701e02](https://github.com/propeller-heads/tycho-execution/commit/e701e02e1f1bb97bb8e050d5d151f7cd8ad3d10e))
+
 ## [0.150.0](https://github.com/propeller-heads/tycho-execution/compare/0.149.0...0.150.0) (2026-01-07)
 
 
