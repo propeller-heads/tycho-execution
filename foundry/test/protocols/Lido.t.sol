@@ -150,10 +150,6 @@ contract LidoExecutorTest is Constants, Permit2TestHelper, TestUtils {
         assertEq(IERC20(WSTETH_ADDR).balanceOf(address(LidoExposed)), 0);
         vm.stopPrank();
     }
-
-    function testExportContract() public {
-        exportRuntimeBytecode(address(LidoExposed), "Lido");
-    }
 }
 
 contract TychoRouterForLidoTest is TychoRouterTestSetup {
