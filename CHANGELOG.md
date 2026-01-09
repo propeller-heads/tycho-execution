@@ -1,3 +1,10 @@
+## [0.153.0](https://github.com/propeller-heads/tycho-execution/compare/0.152.0...0.153.0) (2026-01-09)
+
+
+### Features
+
+* Add a script to export run time bytecode ([9692bc3](https://github.com/propeller-heads/tycho-execution/commit/9692bc351411c0413567e67913175a8727e8d25b))
+
 ## [0.152.0](https://github.com/propeller-heads/tycho-execution/compare/0.151.0...0.152.0) (2026-01-09)
 
 
