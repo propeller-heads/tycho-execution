@@ -1,3 +1,10 @@
+## [0.152.0](https://github.com/propeller-heads/tycho-execution/compare/0.151.0...0.152.0) (2026-01-09)
+
+
+### Features
+
+* Use CREATE2 in deployment scripts ([56e1e0f](https://github.com/propeller-heads/tycho-execution/commit/56e1e0f397354b73a8d9854bcb65b95548c6fbe3))
+
 ## [0.151.0](https://github.com/propeller-heads/tycho-execution/compare/0.150.0...0.151.0) (2026-01-09)
 
 
