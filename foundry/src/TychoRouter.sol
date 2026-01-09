@@ -547,6 +547,8 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
      * splitSwap() and splitSwapPermit2() functions.
      *
      */
+    // Reentrancy protection is handled by nonReentrant modifier on public functions
+    // slither-disable-start reentrancy-eth,reentrancy-no-eth,reentrancy-benign,reentrancy-events
     function _splitSwapChecked(
         uint256 amountIn,
         address tokenIn,
@@ -640,6 +642,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
             amountIn
         );
     }
+    // slither-disable-end reentrancy-eth,reentrancy-no-eth,reentrancy-benign,reentrancy-events
 
     /**
      * @notice Internal implementation of the core swap logic shared between singleSwap() and singleSwapPermit2().
@@ -649,6 +652,8 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
      * singleSwap() and singleSwapPermit2() functions.
      *
      */
+    // Reentrancy protection is handled by nonReentrant modifier on public functions
+    // slither-disable-start reentrancy-eth,reentrancy-no-eth,reentrancy-benign,reentrancy-events
     function _singleSwap(
         uint256 amountIn,
         address tokenIn,
@@ -744,6 +749,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
             amountIn
         );
     }
+    // slither-disable-end reentrancy-eth,reentrancy-no-eth,reentrancy-benign,reentrancy-events
 
     /**
      * @notice Internal implementation of the core swap logic shared between sequentialSwap() and sequentialSwapPermit2().
@@ -753,6 +759,8 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
      * sequentialSwap() and sequentialSwapPermit2() functions.
      *
      */
+    // Reentrancy protection is handled by nonReentrant modifier on public functions
+    // slither-disable-start reentrancy-eth,reentrancy-no-eth,reentrancy-benign,reentrancy-events
     function _sequentialSwapChecked(
         uint256 amountIn,
         address tokenIn,
@@ -845,6 +853,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
             amountIn
         );
     }
+    // slither-disable-end reentrancy-eth,reentrancy-no-eth,reentrancy-benign,reentrancy-events
 
     /**
      * @dev Executes sequential swaps as defined by the provided swap graph.
@@ -1133,12 +1142,15 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
 
     /**
      * @notice Sets the fee executor contract address
-     * @param feeTaker The address of the fee executor contract (set to address(0) to disable)
+     * @param feeTaker The address of the fee executor contract
      */
     function setFeeTaker(address feeTaker)
         external
         onlyRole(EXECUTOR_SETTER_ROLE)
     {
+        if (feeTaker == address(0)) {
+            revert TychoRouter__AddressZero();
+        }
         address oldExecutor = _feeTaker;
         _feeTaker = feeTaker;
         emit FeeTakerUpdated(oldExecutor, feeTaker);

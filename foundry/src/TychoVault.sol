@@ -150,6 +150,8 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
     /**
      * @dev Get the current delta from transient storage
      */
+    // Assembly required for transient storage operations (tload)
+    // slither-disable-next-line assembly
     function _getTDelta(address user, address token)
         private
         view
@@ -164,6 +166,8 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
     /**
      * @dev Set the delta in transient storage
      */
+    // Assembly required for transient storage operations (tstore)
+    // slither-disable-next-line assembly
     function _setTDelta(address user, address token, int256 delta) private {
         uint256 slot = _getDeltaSlot(user, token);
         assembly {
@@ -174,6 +178,8 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
     /**
      * @dev Get negative delta count from transient storage
      */
+    // Assembly required for transient storage operations (tload)
+    // slither-disable-next-line assembly
     function _getNegativeDeltaCount() private view returns (uint256 count) {
         assembly {
             count := tload(_NEGATIVE_DELTA_COUNT_SLOT)
@@ -183,6 +189,8 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
     /**
      * @dev Set negative delta count in transient storage
      */
+    // Assembly required for transient storage operations (tstore)
+    // slither-disable-next-line assembly
     function _setNegativeDeltaCount(uint256 count) private {
         assembly {
             tstore(_NEGATIVE_DELTA_COUNT_SLOT, count)

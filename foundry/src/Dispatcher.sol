@@ -95,14 +95,14 @@ contract Dispatcher is RestrictTransferFrom {
 
         (
             RestrictTransferFrom.TransferType transferType,
-            address receiver,
+            address transferReceiver,
             address tokenIn,
-            address tokenOut
+            address transferTokenOut
         ) = abi.decode(
             transferData,
             (RestrictTransferFrom.TransferType, address, address, address)
         );
-        _transfer(receiver, transferType, tokenIn, amount);
+        _transfer(transferReceiver, transferType, tokenIn, amount);
 
         // slither-disable-next-line controlled-delegatecall,low-level-calls,calls-loop
         (bool success, bytes memory result) = executor.delegatecall(
@@ -150,7 +150,7 @@ contract Dispatcher is RestrictTransferFrom {
     {
         // slither-disable-next-line controlled-delegatecall,low-level-calls
         (bool success, bytes memory result) = feeTaker.delegatecall(
-            abi.encodeWithSignature("take_fee(uint256,bytes)", amount, data)
+            abi.encodeWithSignature("takeFee(uint256,bytes)", amount, data)
         );
 
         if (!success) {

@@ -54,6 +54,8 @@ contract RestrictTransferFrom {
      * @dev Virtual function to update delta accounting - overridden by TychoRouter
      * @param deltaChange Positive to credit, negative to debit
      */
+    // Required for inheritance - overridden by TychoRouter and FeeTaker
+    // slither-disable-next-line dead-code
     function _updateDeltaAccounting(
         address user,
         address token,
@@ -65,6 +67,8 @@ contract RestrictTransferFrom {
     /**
      * @dev Virtual function to debit persistent vault balance - overridden by TychoRouter
      */
+    // Required for inheritance - overridden by TychoRouter and FeeTaker
+    // slither-disable-next-line dead-code
     function _debitVault(address user, address token, uint256 amount)
         internal
         virtual {
@@ -187,6 +191,8 @@ contract RestrictTransferFrom {
         }
     }
 
+    // Assembly required for transient storage operations (tload/tstore)
+    // slither-disable-next-line assembly
     function _restrictTransferFrom(
         address sender,
         uint256 amount,
