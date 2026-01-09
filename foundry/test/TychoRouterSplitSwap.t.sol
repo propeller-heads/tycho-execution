@@ -108,6 +108,7 @@ contract TychoRouterSplitSwapTest is TychoRouterTestSetup {
             WETH_ADDR,
             USDC_ADDR,
             1, // min amount
+            0, // maxSolverContribution
             false,
             false,
             4,
@@ -139,6 +140,7 @@ contract TychoRouterSplitSwapTest is TychoRouterTestSetup {
             WETH_ADDR,
             USDC_ADDR,
             1000_000000, // min amount
+            0, // maxSolverContribution
             false,
             false,
             4,
@@ -164,12 +166,13 @@ contract TychoRouterSplitSwapTest is TychoRouterTestSetup {
 
         bytes[] memory swaps = _getSplitSwaps(true);
 
-        vm.expectRevert(TychoRouter__UndefinedMinReceiverAmount.selector);
+        vm.expectRevert(TychoRouter__UndefinedMinAmountOut.selector);
         tychoRouter.splitSwap(
             amountIn,
             WETH_ADDR,
             USDC_ADDR,
             0, // min amount
+            0, // maxSolverContribution
             false,
             false,
             4,
@@ -198,6 +201,7 @@ contract TychoRouterSplitSwapTest is TychoRouterTestSetup {
             WETH_ADDR,
             USDC_ADDR,
             1000_000000, // min amount
+            0, // maxSolverContribution
             false,
             false,
             2,
@@ -238,6 +242,7 @@ contract TychoRouterSplitSwapTest is TychoRouterTestSetup {
             WETH_ADDR,
             DAI_ADDR,
             minAmountOut,
+            0, // maxSolverContribution
             false,
             false,
             4,
@@ -286,6 +291,7 @@ contract TychoRouterSplitSwapTest is TychoRouterTestSetup {
             address(0),
             DAI_ADDR,
             2008817438608734439722,
+            0, // maxSolverContribution
             true,
             false,
             2,
@@ -337,6 +343,7 @@ contract TychoRouterSplitSwapTest is TychoRouterTestSetup {
             DAI_ADDR,
             address(0),
             1465644707225677606,
+            0, // maxSolverContribution
             false,
             true,
             2,
@@ -490,6 +497,7 @@ contract TychoRouterSplitSwapTest is TychoRouterTestSetup {
             USDC_ADDR,
             WETH_ADDR,
             1,
+            0, // maxSolverContribution
             false,
             false,
             2,

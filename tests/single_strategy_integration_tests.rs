@@ -41,7 +41,7 @@ fn test_single_swap_strategy_encoder() {
         given_token: weth,
         given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
         checked_token: dai,
-        checked_amount: checked_amount.clone(),
+        min_amount_out: checked_amount.clone(),
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         swaps: vec![swap],
@@ -64,14 +64,14 @@ fn test_single_swap_strategy_encoder() {
     .data;
     let expected_min_amount_encoded = encode(U256::abi_encode(&biguint_to_u256(&checked_amount)));
     let expected_input = [
-        "30ace1b1",                                                         // Function selector
+        "7b3e3982",                                                         // Function selector
         "0000000000000000000000000000000000000000000000000de0b6b3a7640000", // amount in
         "000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token in
         "0000000000000000000000006b175474e89094c44da98b954eedeac495271d0f", // token out
         &expected_min_amount_encoded,                                       // min amount out
+        "0000000000000000000000000000000000000000000000000000000000000000", // max solver contribution
         "0000000000000000000000000000000000000000000000000000000000000000", // wrap
         "0000000000000000000000000000000000000000000000000000000000000000", // unwrap
-        "000000000000000000000000cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
     ]
     .join("");
 
@@ -85,7 +85,7 @@ fn test_single_swap_strategy_encoder() {
         "5615deb798bb3e4dfa0139dfa1b3d433cc23b72f", // executor address
         "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token in
         "a478c2975ab1ea89e8196811f51a7b7ade33eb11", // component id
-        "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
+        "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver
         "00",                                       // zero2one
         "00",                                       // transfer type TransferFrom
         "0000000000000000000000000000",             // padding
@@ -93,7 +93,7 @@ fn test_single_swap_strategy_encoder() {
     let hex_calldata = encode(&calldata);
 
     assert_eq!(hex_calldata[..456], expected_input);
-    assert_eq!(hex_calldata[1224..], expected_swap);
+    assert_eq!(hex_calldata[1416..], expected_swap);
     write_calldata_to_file("test_single_swap_strategy_encoder", &hex_calldata.to_string());
 }
 
@@ -125,7 +125,8 @@ fn test_single_swap_strategy_encoder_no_permit2() {
         given_token: weth,
         given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
         checked_token: dai,
-        checked_amount,
+        min_amount_out: checked_amount,
+        max_solver_contribution: BigUint::from(0u64),
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         swaps: vec![swap],
@@ -148,16 +149,19 @@ fn test_single_swap_strategy_encoder_no_permit2() {
     .data;
     let expected_min_amount_encoded = encode(U256::abi_encode(&expected_min_amount));
     let expected_input = [
-        "5c4b639c",                                                         // Function selector
+        "176c0484",                                                         // Function selector
         "0000000000000000000000000000000000000000000000000de0b6b3a7640000", // amount in
         "000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token in
         "0000000000000000000000006b175474e89094c44da98b954eedeac495271d0f", // token out
         &expected_min_amount_encoded,                                       // min amount out
+        "0000000000000000000000000000000000000000000000000000000000000000", // max solver contribution
         "0000000000000000000000000000000000000000000000000000000000000000", // wrap
         "0000000000000000000000000000000000000000000000000000000000000000", // unwrap
         "000000000000000000000000cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
         "0000000000000000000000000000000000000000000000000000000000000001", // transfer from needed
-        "0000000000000000000000000000000000000000000000000000000000000120", // offset of swap bytes
+        "0000000000000000000000000000000000000000000000000000000000000000", // fee_bps
+        "0000000000000000000000000000000000000000000000000000000000000000", // fee_receiver
+        "0000000000000000000000000000000000000000000000000000000000000180", // offset of swap bytes
         "0000000000000000000000000000000000000000000000000000000000000052", /* length of swap
                                                                              * bytes without
                                                                              * padding */
@@ -165,7 +169,7 @@ fn test_single_swap_strategy_encoder_no_permit2() {
         "5615deb798bb3e4dfa0139dfa1b3d433cc23b72f", // executor address
         "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token in
         "a478c2975ab1ea89e8196811f51a7b7ade33eb11", // component id
-        "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
+        "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver
         "00",                                       // zero2one
         "00",                                       // transfer type TransferFrom
         "0000000000000000000000000000",             // padding
@@ -206,7 +210,8 @@ fn test_single_swap_strategy_encoder_no_transfer_in() {
         given_token: weth,
         given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
         checked_token: dai,
-        checked_amount,
+        min_amount_out: checked_amount,
+        max_solver_contribution: BigUint::from(0u64),
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         swaps: vec![swap],
@@ -229,17 +234,20 @@ fn test_single_swap_strategy_encoder_no_transfer_in() {
     .data;
     let expected_min_amount_encoded = encode(U256::abi_encode(&expected_min_amount));
     let expected_input = [
-        "5c4b639c",                                                         // Function selector
+        "176c0484",                                                         // Function selector
         "0000000000000000000000000000000000000000000000000de0b6b3a7640000", // amount in
         "000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token in
         "0000000000000000000000006b175474e89094c44da98b954eedeac495271d0f", // token out
         &expected_min_amount_encoded,                                       // min amount out
+        "0000000000000000000000000000000000000000000000000000000000000000", // max solver contribution
         "0000000000000000000000000000000000000000000000000000000000000000", // wrap
         "0000000000000000000000000000000000000000000000000000000000000000", // unwrap
         "000000000000000000000000cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
         "0000000000000000000000000000000000000000000000000000000000000000", /* transfer from not
                                                                              * needed */
-        "0000000000000000000000000000000000000000000000000000000000000120", // offset of swap bytes
+        "0000000000000000000000000000000000000000000000000000000000000000", // fee_bps
+        "0000000000000000000000000000000000000000000000000000000000000000", // fee_receiver
+        "0000000000000000000000000000000000000000000000000000000000000180", // offset of swap bytes
         "0000000000000000000000000000000000000000000000000000000000000052", /* length of swap
                                                                              * bytes without
                                                                              * padding */
@@ -247,9 +255,9 @@ fn test_single_swap_strategy_encoder_no_transfer_in() {
         "5615deb798bb3e4dfa0139dfa1b3d433cc23b72f", // executor address
         "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token in
         "a478c2975ab1ea89e8196811f51a7b7ade33eb11", // component id
-        "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
+        "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver
         "00",                                       // zero2one
-        "01",                                       // transfer type TransferFromVault
+        "02",                                       // transfer type
         "0000000000000000000000000000",             // padding
     ]
     .join("");
@@ -288,11 +296,14 @@ fn test_single_swap_strategy_encoder_wrap() {
         given_token: eth(),
         given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
         checked_token: dai,
-        checked_amount: BigUint::from_str("1659881924818443699787").unwrap(),
+        min_amount_out: BigUint::from_str("1659881924818443699787").unwrap(),
+        max_solver_contribution: BigUint::from(0u64),
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         swaps: vec![swap],
         native_action: Some(NativeAction::Wrap),
+        fee_bps: 0,
+        fee_receiver: Bytes::from_str("0x0000000000000000000000000000000000000000").unwrap(),
     };
 
     let encoded_solution = encoder
@@ -339,11 +350,14 @@ fn test_single_swap_strategy_encoder_unwrap() {
         given_token: dai,
         given_amount: BigUint::from_str("3_000_000000000000000000").unwrap(),
         checked_token: eth(),
-        checked_amount: BigUint::from_str("1_000000000000000000").unwrap(),
+        min_amount_out: BigUint::from_str("1_000000000000000000").unwrap(),
+        max_solver_contribution: BigUint::from(0u64),
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         swaps: vec![swap],
         native_action: Some(NativeAction::Unwrap),
+        fee_bps: 0,
+        fee_receiver: Bytes::from_str("0x0000000000000000000000000000000000000000").unwrap(),
     };
 
     let encoded_solution = encoder

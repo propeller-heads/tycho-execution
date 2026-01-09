@@ -4982,29 +4982,6 @@ dependencies = [
  "thiserror 1.0.69",
  "tokio",
  "tycho-common",
- "tycho-execution 0.148.1",
-]
-
-[[package]]
-name = "tycho-execution"
-version = "0.148.1"
-dependencies = [
- "alloy",
- "async-trait",
- "chrono",
- "clap",
- "dotenv",
- "hex",
- "lazy_static",
- "num-bigint",
- "num-traits",
- "once_cell",
- "reqwest",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "tokio",
- "tycho-common",
 ]
 
 [[package]]

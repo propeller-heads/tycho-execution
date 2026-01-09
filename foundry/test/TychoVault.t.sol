@@ -67,6 +67,7 @@ contract TychoVaultTest is TychoRouterTestSetup {
             WETH_ADDR,
             DAI_ADDR,
             minAmountOut,
+            0, // maxSolverContribution
             false,
             false,
             ALICE,
@@ -143,6 +144,7 @@ contract TychoVaultTest is TychoRouterTestSetup {
             WETH_ADDR,
             DAI_ADDR,
             minAmountOut,
+            0, // maxSolverContribution
             false,
             false,
             BOB,

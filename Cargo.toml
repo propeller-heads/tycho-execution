@@ -45,7 +45,6 @@ async-trait = { version = "0.1.88", optional = true }
 
 [dev-dependencies]
 rstest = "0.24.0"
-tycho-execution = { path = "../tycho-execution", features = ["test-utils"] }
 
 [features]
 default = ["evm"]

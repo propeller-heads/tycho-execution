@@ -625,7 +625,7 @@ mod tests {
                 given_token: weth,
                 given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
                 checked_token: dai,
-                checked_amount: checked_amount.clone(),
+                min_amount_out: checked_amount.clone(),
                 sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
                 receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
                 swaps: vec![swap],
@@ -686,7 +686,8 @@ mod tests {
                 given_token: weth,
                 given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
                 checked_token: dai,
-                checked_amount,
+                min_amount_out: checked_amount,
+                max_solver_contribution: BigUint::from(0u64),
                 sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
                 receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
                 swaps: vec![swap],
@@ -768,7 +769,7 @@ mod tests {
                 given_token: weth,
                 given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
                 checked_token: usdc,
-                checked_amount: BigUint::from_str("26173932").unwrap(),
+                min_amount_out: BigUint::from_str("26173932").unwrap(),
                 sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
                 receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
                 swaps: vec![swap_weth_wbtc, swap_wbtc_usdc],
@@ -905,7 +906,7 @@ mod tests {
                 given_token: usdc.clone(),
                 given_amount: BigUint::from_str("100000000").unwrap(), // 100 USDC (6 decimals)
                 checked_token: usdc.clone(),
-                checked_amount: BigUint::from_str("99574171").unwrap(), /* Expected output
+                min_amount_out: BigUint::from_str("99574171").unwrap(), /* Expected output
                                                                          * from
                                                                          * test */
                 sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
@@ -1054,7 +1055,7 @@ mod tests {
                 given_token: usdc.clone(),
                 given_amount: BigUint::from_str("100000000").unwrap(), // 100 USDC (6 decimals)
                 checked_token: usdc.clone(),
-                checked_amount: BigUint::from_str("99025908").unwrap(), /* Expected output
+                min_amount_out: BigUint::from_str("99025908").unwrap(), /* Expected output
                                                                          * from
                                                                          * test */
                 sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),

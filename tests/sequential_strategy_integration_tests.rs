@@ -54,7 +54,7 @@ fn test_sequential_swap_strategy_encoder() {
         given_token: weth,
         given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
         checked_token: usdc,
-        checked_amount: BigUint::from_str("26173932").unwrap(),
+        min_amount_out: BigUint::from_str("26173932").unwrap(),
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         swaps: vec![swap_weth_wbtc, swap_wbtc_usdc],
@@ -118,7 +118,7 @@ fn test_sequential_swap_strategy_encoder_no_permit2() {
         given_token: weth,
         given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
         checked_token: usdc,
-        checked_amount: BigUint::from_str("26173932").unwrap(),
+        min_amount_out: BigUint::from_str("26173932").unwrap(),
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         swaps: vec![swap_weth_wbtc, swap_wbtc_usdc],
@@ -144,19 +144,20 @@ fn test_sequential_swap_strategy_encoder_no_permit2() {
     let hex_calldata = encode(&calldata);
 
     let expected = String::from(concat!(
-        "e21dd0d3",                                                         /* function selector */
+        "c1a4ac98",                                                         /* function selector */
         "0000000000000000000000000000000000000000000000000de0b6b3a7640000", /* amount in */
         "000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token in
-        "000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // token ou
+        "000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // token out
         "00000000000000000000000000000000000000000000000000000000018f61ec", /* min amount out */
+        "0000000000000000000000000000000000000000000000000000000000000000", /* max solver contribution */
         "0000000000000000000000000000000000000000000000000000000000000000", // wrap
         "0000000000000000000000000000000000000000000000000000000000000000", // unwrap
         "000000000000000000000000cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
-        "0000000000000000000000000000000000000000000000000000000000000001", /* transfer from
-                                                                             * needed */
-        "0000000000000000000000000000000000000000000000000000000000000120", /* length ple
-                                                                             * encode */
-        "00000000000000000000000000000000000000000000000000000000000000a8",
+        "0000000000000000000000000000000000000000000000000000000000000001", /* transfer from needed */
+        "0000000000000000000000000000000000000000000000000000000000000000", /* fee_bps */
+        "0000000000000000000000000000000000000000000000000000000000000000", /* fee_receiver */
+        "0000000000000000000000000000000000000000000000000000000000000180", /* swaps offset */
+        "00000000000000000000000000000000000000000000000000000000000000a8", /* swaps length */
         // swap 1
         "0052",                                     // swap length
         "5615deb798bb3e4dfa0139dfa1b3d433cc23b72f", // executor address
@@ -170,9 +171,9 @@ fn test_sequential_swap_strategy_encoder_no_permit2() {
         "5615deb798bb3e4dfa0139dfa1b3d433cc23b72f",         // executor address
         "2260fac5e5542a773aa44fbcfedf7c193bc2c599",         // token in
         "004375dff511095cc5a197a54140a24efef3a416",         // component id
-        "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2",         // receiver (final user)
+        "3ede3eca2a72b3aecc820e955b36f38437d01395",         // receiver (final user)
         "01",                                               // zero to one
-        "02",                                               // transfer type FundsAlreadyInProtocol
+        "05",                                               // transfer type
         "000000000000000000000000000000000000000000000000", // padding
     ));
 
@@ -240,7 +241,7 @@ fn test_sequential_strategy_cyclic_swap() {
         given_token: usdc.clone(),
         given_amount: BigUint::from_str("100000000").unwrap(), // 100 USDC (6 decimals)
         checked_token: usdc.clone(),
-        checked_amount: BigUint::from_str("99389294").unwrap(), /* Expected output
+        min_amount_out: BigUint::from_str("99389294").unwrap(), /* Expected output
                                                                  * from test */
         swaps: vec![swap_usdc_weth, swap_weth_usdc],
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
@@ -265,14 +266,14 @@ fn test_sequential_strategy_cyclic_swap() {
     .data;
     let hex_calldata = alloy::hex::encode(&calldata);
     let expected_input = [
-        "51bcc7b6",                                                         // selector
+        "9dac8a4b",                                                         // selector
         "0000000000000000000000000000000000000000000000000000000005f5e100", // given amount
         "000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // given token
         "000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // checked token
         "0000000000000000000000000000000000000000000000000000000005ec8f6e", // min amount out
+        "0000000000000000000000000000000000000000000000000000000000000000", // max solver contribution
         "0000000000000000000000000000000000000000000000000000000000000000", // wrap action
         "0000000000000000000000000000000000000000000000000000000000000000", // unwrap action
-        "000000000000000000000000cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
     ]
     .join("");
 
@@ -292,16 +293,16 @@ fn test_sequential_strategy_cyclic_swap() {
         "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token in
         "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // token out
         "000bb8",                                   // pool fee
-        "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
+        "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver
         "8ad599c3a0ff1de082011efddc58f1908eb6e6d8", // component id
         "00",                                       // zero2one
-        "01",                                       // transfer type Transfer
+        "02",                                       // transfer type Transfer
         "00000000000000000000",                     // padding
     ]
         .join("");
 
     assert_eq!(hex_calldata[..456], expected_input);
-    assert_eq!(hex_calldata[1224..], expected_swaps);
+    assert_eq!(hex_calldata[1416..], expected_swaps);
     write_calldata_to_file("test_sequential_strategy_cyclic_swap", hex_calldata.as_str());
 }
 
@@ -346,11 +347,14 @@ fn test_sequential_swap_strategy_encoder_unwrap() {
         given_token: usdc,
         given_amount: BigUint::from_str("3_000_000_000").unwrap(),
         checked_token: eth(),
-        checked_amount: BigUint::from_str("26173932").unwrap(),
+        min_amount_out: BigUint::from_str("26173932").unwrap(),
+        max_solver_contribution: BigUint::from(0u64),
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         swaps: vec![swap_usdc_wbtc, swap_wbtc_weth],
         native_action: Some(NativeAction::Unwrap),
+        fee_bps: 0,
+        fee_receiver: Bytes::from_str("0x0000000000000000000000000000000000000000").unwrap(),
     };
 
     let encoded_solution = encoder

@@ -55,6 +55,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
             WETH_ADDR,
             USDC_ADDR,
             1000_000000, // min amount
+            0, // maxSolverContribution
             false,
             false,
             ALICE,
@@ -84,6 +85,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
             WETH_ADDR,
             USDC_ADDR,
             1000_000000, // min amount
+            0, // maxSolverContribution
             false,
             false,
             ALICE,
@@ -107,12 +109,13 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
         IERC20(WETH_ADDR).approve(tychoRouterAddr, amountIn);
 
         bytes[] memory swaps = _getSequentialSwaps();
-        vm.expectRevert(TychoRouter__UndefinedMinReceiverAmount.selector);
+        vm.expectRevert(TychoRouter__UndefinedMinAmountOut.selector);
         tychoRouter.sequentialSwap(
             amountIn,
             WETH_ADDR,
             USDC_ADDR,
             0, // min amount
+            0, // maxSolverContribution
             false,
             false,
             ALICE,
@@ -138,6 +141,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
             WETH_ADDR,
             USDC_ADDR,
             0, // min amount
+            0, // maxSolverContribution
             false,
             false,
             ALICE,
@@ -175,6 +179,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
             WETH_ADDR,
             DAI_ADDR,
             minAmountOut,
+            0, // maxSolverContribution
             false,
             false,
             ALICE,
@@ -231,6 +236,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
             address(0),
             USDC_ADDR,
             1000_000000,
+            0, // maxSolverContribution
             true,
             false,
             ALICE,
@@ -293,6 +299,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
             USDC_ADDR,
             address(0),
             1 * 10 ** 18, // min amount
+            0, // maxSolverContribution
             false,
             true,
             ALICE,

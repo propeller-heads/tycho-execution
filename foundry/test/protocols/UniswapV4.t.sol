@@ -493,6 +493,7 @@ contract TychoRouterForUniswapV4Test is TychoRouterTestSetup {
             USDE_ADDR,
             USDT_ADDR,
             99943850,
+            0, // maxSolverContribution
             false,
             false,
             ALICE,
@@ -549,6 +550,7 @@ contract TychoRouterForUniswapV4Test is TychoRouterTestSetup {
             USDE_ADDR,
             WBTC_ADDR,
             118280,
+            0, // maxSolverContribution
             false,
             false,
             ALICE,

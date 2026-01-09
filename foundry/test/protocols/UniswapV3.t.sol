@@ -254,6 +254,7 @@ contract TychoRouterForUniswapV3Test is TychoRouterTestSetup {
             WETH_ADDR,
             DAI_ADDR,
             expAmountOut - 1,
+            0, // maxSolverContribution
             false,
             false,
             ALICE,

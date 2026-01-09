@@ -92,6 +92,11 @@ pub fn encode_tycho_router_call(
     let given_token = bytes_to_address(&solution.given_token)?;
     let checked_token = bytes_to_address(&solution.checked_token)?;
     let receiver = bytes_to_address(&solution.receiver)?;
+    let fee_receiver = if solution.fee_receiver.0.is_empty() {
+        Address::ZERO
+    } else {
+        bytes_to_address(&solution.fee_receiver)?
+    };
     let n_tokens = U256::from(encoded_solution.n_tokens);
     let (permit, signature) = if let Some(p) = encoded_solution.permit {
         let permit = Some(
@@ -124,7 +129,7 @@ pub fn encode_tycho_router_call(
             ))?,
             signature,
             solution.fee_bps,
-            solution.fee_receiver.clone(),
+            fee_receiver,
             encoded_solution.swaps,
         )
             .abi_encode()
@@ -143,7 +148,7 @@ pub fn encode_tycho_router_call(
             receiver,
             *user_transfer_type == UserTransferType::TransferFrom,
             solution.fee_bps,
-            solution.fee_receiver.clone(),
+            fee_receiver,
             encoded_solution.swaps,
         )
             .abi_encode()
@@ -165,7 +170,7 @@ pub fn encode_tycho_router_call(
             ))?,
             signature,
             solution.fee_bps,
-            solution.fee_receiver.clone(),
+            fee_receiver,
             encoded_solution.swaps,
         )
             .abi_encode()
@@ -184,7 +189,7 @@ pub fn encode_tycho_router_call(
             receiver,
             *user_transfer_type == UserTransferType::TransferFrom,
             solution.fee_bps,
-            solution.fee_receiver.clone(),
+            fee_receiver,
             encoded_solution.swaps,
         )
             .abi_encode()
@@ -207,7 +212,7 @@ pub fn encode_tycho_router_call(
             ))?,
             signature,
             solution.fee_bps,
-            solution.fee_receiver.clone(),
+            fee_receiver,
             encoded_solution.swaps,
         )
             .abi_encode()
@@ -227,7 +232,7 @@ pub fn encode_tycho_router_call(
             receiver,
             *user_transfer_type == UserTransferType::TransferFrom,
             solution.fee_bps,
-            solution.fee_receiver.clone(),
+            fee_receiver,
             encoded_solution.swaps,
         )
             .abi_encode()

@@ -52,6 +52,7 @@ contract TychoRouterFeeTest is TychoRouterTestSetup {
             WETH_ADDR,
             DAI_ADDR,
             minAmountOut,
+            0, // maxSolverContribution
             false,
             false,
             ALICE,
@@ -110,6 +111,7 @@ contract TychoRouterFeeTest is TychoRouterTestSetup {
             WETH_ADDR,
             DAI_ADDR,
             minAmountOut,
+            0, // maxSolverContribution
             false,
             false,
             ALICE,
@@ -137,6 +139,7 @@ contract TychoRouterFeeTest is TychoRouterTestSetup {
             WETH_ADDR,
             DAI_ADDR,
             2010 * 1e18, // minAmountOut that's impossible with 5% fee
+            0, // maxSolverContribution
             false,
             false,
             ALICE,
@@ -179,6 +182,7 @@ contract TychoRouterFeeTest is TychoRouterTestSetup {
             DAI_ADDR,
             address(0), // ETH
             minAmountOut,
+            0, // maxSolverContribution
             false,
             true, // unwrapEth
             ALICE,
@@ -229,6 +233,7 @@ contract TychoRouterFeeTest is TychoRouterTestSetup {
             WETH_ADDR,
             DAI_ADDR,
             minAmountOut,
+            0, // maxSolverContribution
             false,
             false,
             ALICE,
@@ -296,6 +301,7 @@ contract TychoRouterFeeTest is TychoRouterTestSetup {
             WETH_ADDR,
             DAI_ADDR,
             minAmountOut,
+            0, // maxSolverContribution
             false,
             false,
             ALICE,
@@ -353,6 +359,7 @@ contract TychoRouterFeeTest is TychoRouterTestSetup {
             WETH_ADDR,
             DAI_ADDR,
             minAmountOut,
+            0, // maxSolverContribution
             false,
             false,
             ALICE,

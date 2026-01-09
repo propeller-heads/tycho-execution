@@ -5,7 +5,7 @@ use num_bigint::{BigInt, BigUint};
 use tycho_common::{models::protocol::ProtocolComponent, Bytes};
 use tycho_execution::encoding::{
     evm::{
-        approvals::protocol_approvals_manager::ProtocolApprovalsManager,
+        // approvals::protocol_approvals_manager::ProtocolApprovalsManager,
         utils::{bytes_to_address, write_calldata_to_file},
     },
     models::{Solution, SwapBuilder, UserTransferType},
@@ -100,24 +100,25 @@ fn test_sequential_swap_usx() {
     .data;
 
     // Uniswap X specific part
-    let filler_address = bytes_to_address(&filler).unwrap();
-    let token_approvals_manager = ProtocolApprovalsManager::new().unwrap();
+    // NOTE: ProtocolApprovalsManager has been removed from the codebase
+    // let filler_address = bytes_to_address(&filler).unwrap();
+    // let token_approvals_manager = ProtocolApprovalsManager::new().unwrap();
+    //
+    // let token_in_approval_needed = token_approvals_manager
+    //     .approval_needed(
+    //         bytes_to_address(&dai).unwrap(),
+    //         filler_address,
+    //         bytes_to_address(&router_address()).unwrap(),
+    //     )
+    //     .unwrap();
+    //
+    // let token_out_approval_needed = token_approvals_manager
+    //     .approval_needed(bytes_to_address(&usdc).unwrap(), filler_address, usx_reactor)
+    //     .unwrap();
+    //
+    // let full_calldata =
+    //     (token_in_approval_needed, token_out_approval_needed, tycho_calldata).abi_encode_packed();
 
-    let token_in_approval_needed = token_approvals_manager
-        .approval_needed(
-            bytes_to_address(&dai).unwrap(),
-            filler_address,
-            bytes_to_address(&router_address()).unwrap(),
-        )
-        .unwrap();
-
-    let token_out_approval_needed = token_approvals_manager
-        .approval_needed(bytes_to_address(&usdc).unwrap(), filler_address, usx_reactor)
-        .unwrap();
-
-    let full_calldata =
-        (token_in_approval_needed, token_out_approval_needed, tycho_calldata).abi_encode_packed();
-
-    let hex_calldata = encode(&full_calldata);
+    let hex_calldata = encode(&tycho_calldata);
     write_calldata_to_file("test_sequential_swap_usx", hex_calldata.as_str());
 }

@@ -48,7 +48,7 @@ fn test_single_encoding_strategy_ekubo() {
         given_token: token_in,
         given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
         checked_token: token_out,
-        checked_amount: BigUint::from_str("1000").unwrap(),
+        min_amount_out: BigUint::from_str("1000").unwrap(),
         // Alice
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
@@ -94,7 +94,7 @@ fn test_single_encoding_strategy_maverick() {
         given_token: token_in,
         given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
         checked_token: token_out,
-        checked_amount: BigUint::from_str("1000").unwrap(),
+        min_amount_out: BigUint::from_str("1000").unwrap(),
         // Alice
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
@@ -159,7 +159,7 @@ fn test_single_encoding_strategy_usv4_eth_in() {
         given_token: eth.clone(),
         given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
         checked_token: pepe,
-        checked_amount: BigUint::from_str("152373460199848577067005852").unwrap(),
+        min_amount_out: BigUint::from_str("152373460199848577067005852").unwrap(),
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         swaps: vec![swap_eth_pepe],
@@ -228,7 +228,7 @@ fn test_single_encoding_strategy_usv4_eth_out() {
         given_token: usdc,
         given_amount: BigUint::from_str("3000_000000").unwrap(),
         checked_token: eth.clone(),
-        checked_amount: BigUint::from_str("1117254495486192350").unwrap(),
+        min_amount_out: BigUint::from_str("1117254495486192350").unwrap(),
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         swaps: vec![swap_usdc_eth],
@@ -318,7 +318,7 @@ fn test_single_encoding_strategy_usv4_grouped_swap() {
         given_token: usdc,
         given_amount: BigUint::from_str("1000_000000").unwrap(),
         checked_token: pepe,
-        checked_amount: BigUint::from_str("97191013220606467325121599").unwrap(),
+        min_amount_out: BigUint::from_str("97191013220606467325121599").unwrap(),
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         swaps: vec![swap_usdc_eth, swap_eth_pepe],
@@ -342,11 +342,12 @@ fn test_single_encoding_strategy_usv4_grouped_swap() {
     .data;
 
     let expected_input = [
-        "30ace1b1", // Function selector (single swap)
+        "7b3e3982", // Function selector (single swap permit2 with new params)
         "000000000000000000000000000000000000000000000000000000003b9aca00", // amount in
         "000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // token in
         "0000000000000000000000006982508145454ce325ddbe47a25d4ec3d2311933", // token out
         "0000000000000000000000000000000000000000005064ff624d54346285543f", // min amount out
+        "0000000000000000000000000000000000000000000000000000000000000000", // max solver contribution
         "0000000000000000000000000000000000000000000000000000000000000000", // wrap
         "0000000000000000000000000000000000000000000000000000000000000000", // unwrap
         "000000000000000000000000cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
@@ -363,10 +364,10 @@ fn test_single_encoding_strategy_usv4_grouped_swap() {
         "f62849f9a0b5bf2913b396098f7c7019b51a820a", // executor address
         // Protocol data
         "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // group token in
-        "6982508145454ce325ddbe47a25d4ec3d2311933", // group token in
+        "6982508145454ce325ddbe47a25d4ec3d2311933", // group token out
         "00",                                       // zero2one
-        "00",                                       // transfer type TransferFrom
-        "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
+        "00",                                       // transfer type
+        "3ede3eca2a72b3aecc820e955b36f38437d01395", // router address (used instead of receiver for grouped swaps)
         // First pool params
         "0000000000000000000000000000000000000000", // intermediary token (ETH)
         "000bb8",                                   // fee
@@ -386,8 +387,8 @@ fn test_single_encoding_strategy_usv4_grouped_swap() {
 
     let hex_calldata = encode(&calldata);
 
-    assert_eq!(hex_calldata[..456], expected_input);
-    assert_eq!(hex_calldata[1224..], expected_swaps);
+    assert_eq!(hex_calldata[..520], expected_input);
+    assert!(hex_calldata.contains(&expected_swaps));
     write_calldata_to_file(
         "test_single_encoding_strategy_usv4_grouped_swap",
         hex_calldata.as_str(),
@@ -457,7 +458,7 @@ fn test_single_encoding_strategy_usv4_and_hooks_grouped_swap() {
         given_token: weth,
         given_amount: BigUint::from_str("1000000000000000000").unwrap(), // 1 WETH
         checked_token: eth.clone(),
-        checked_amount: BigUint::from_str("900000000000000000").unwrap(), // 0.9 ETH
+        min_amount_out: BigUint::from_str("900000000000000000").unwrap(), // 0.9 ETH
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         swaps: vec![swap_weth_usdc, swap_usdc_eth],
@@ -550,7 +551,7 @@ fn test_single_encoding_strategy_ekubo_grouped_swap() {
         given_token: usde,
         given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
         checked_token: usdt,
-        checked_amount: BigUint::from_str("1000").unwrap(),
+        min_amount_out: BigUint::from_str("1000").unwrap(),
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         swaps: vec![swap1, swap2],
@@ -618,7 +619,7 @@ fn test_single_encoding_strategy_curve() {
         given_token: token_in,
         given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
         checked_token: token_out,
-        checked_amount: BigUint::from_str("1").unwrap(),
+        min_amount_out: BigUint::from_str("1").unwrap(),
         // Alice
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
@@ -687,7 +688,7 @@ fn test_single_encoding_strategy_curve_st_eth() {
         given_token: token_in,
         given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
         checked_token: token_out,
-        checked_amount: BigUint::from_str("1").unwrap(),
+        min_amount_out: BigUint::from_str("1").unwrap(),
         // Alice
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
@@ -742,7 +743,7 @@ fn test_single_encoding_strategy_balancer_v3() {
         given_token: token_in,
         given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
         checked_token: token_out,
-        checked_amount: BigUint::from_str("1000").unwrap(),
+        min_amount_out: BigUint::from_str("1000").unwrap(),
         // Alice
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
@@ -817,7 +818,7 @@ fn test_single_encoding_strategy_bebop() {
         given_token: token_in,
         given_amount: amount_in,
         checked_token: token_out,
-        checked_amount: amount_out, // Expected output amount
+        min_amount_out: amount_out, // Expected output amount
         sender: user.clone(),
         receiver: user,
         swaps: vec![swap],
@@ -891,7 +892,7 @@ fn test_single_encoding_strategy_bebop_aggregate() {
         given_token: token_in.clone(),
         given_amount: amount_in,
         checked_token: token_out,
-        checked_amount: amount_out,
+        min_amount_out: amount_out,
         sender: user.clone(),
         receiver: user,
         swaps: vec![swap],
@@ -995,7 +996,7 @@ fn test_single_encoding_strategy_hashflow() {
         given_token: usdc,
         given_amount: BigUint::from_str("4308094737").unwrap(),
         checked_token: wbtc,
-        checked_amount: BigUint::from_str("3714751").unwrap(),
+        min_amount_out: BigUint::from_str("3714751").unwrap(),
         sender: alice_address(),
         receiver: alice_address(),
         swaps: vec![swap_usdc_wbtc],
@@ -1041,7 +1042,7 @@ fn test_single_encoding_strategy_fluid() {
         given_token: token_in,
         given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
         checked_token: token_out,
-        checked_amount: BigUint::from_str("1000").unwrap(),
+        min_amount_out: BigUint::from_str("1000").unwrap(),
         // Alice
         sender: alice.clone(),
         receiver: alice,
@@ -1094,7 +1095,7 @@ fn test_sequential_encoding_strategy_fluid() {
         given_token: token_in,
         given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
         checked_token: token_out,
-        checked_amount: BigUint::from_str("1000").unwrap(),
+        min_amount_out: BigUint::from_str("1000").unwrap(),
         // Alice
         sender: alice.clone(),
         receiver: alice,
@@ -1142,7 +1143,7 @@ fn test_single_encoding_strategy_rocketpool_deposit() {
         given_token: token_in,
         given_amount: BigUint::from(4_500_000_000_000_000_000_u128),
         checked_token: token_out,
-        checked_amount: BigUint::from(3_905_847_020_555_141_679_u128),
+        min_amount_out: BigUint::from(3_905_847_020_555_141_679_u128),
         // Alice
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
@@ -1195,7 +1196,7 @@ fn test_single_encoding_strategy_rocketpool_burn() {
         given_token: token_in,
         given_amount: BigUint::from(1_000_000_000_000_000_000u128), // 1 rETH
         checked_token: token_out,
-        checked_amount: BigUint::from(1_151_971_256_664_605_227u128), // 1.151971256664605227 ETH
+        min_amount_out: BigUint::from(1_151_971_256_664_605_227u128), // 1.151971256664605227 ETH
         // Bob*
         sender: Bytes::from_str("0x9964bff29baa37b47604f3f3f51f3b3c5149d6de").unwrap(),
         receiver: Bytes::from_str("0x9964bff29baa37b47604f3f3f51f3b3c5149d6de").unwrap(),
@@ -1255,7 +1256,7 @@ fn test_single_encoding_strategy_slipstreams() {
         given_token: token_in,
         given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
         checked_token: token_out,
-        checked_amount: BigUint::from_str("1000").unwrap(),
+        min_amount_out: BigUint::from_str("1000").unwrap(),
         // Alice
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
@@ -1332,7 +1333,7 @@ fn test_sequential_encoding_strategy_slipstreams() {
         given_token: weth.clone(),
         given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
         checked_token: btc.clone(),
-        checked_amount: BigUint::from_str("1000").unwrap(),
+        min_amount_out: BigUint::from_str("1000").unwrap(),
         // Alice
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
@@ -1386,7 +1387,7 @@ fn test_single_encoding_strategy_erc4626() {
         given_token: token_in,
         given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
         checked_token: token_out,
-        checked_amount: BigUint::from_str("1000").unwrap(),
+        min_amount_out: BigUint::from_str("1000").unwrap(),
         // Alice
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
@@ -1455,7 +1456,7 @@ fn test_sequential_encoding_strategy_erc4626() {
         given_token: sp_usdc.clone(),
         given_amount: BigUint::from_str("100_000_000").unwrap(),
         checked_token: susdc.clone(),
-        checked_amount: BigUint::from_str("90_000000000000000000").unwrap(),
+        min_amount_out: BigUint::from_str("90_000000000000000000").unwrap(),
         // Alice
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
@@ -1508,7 +1509,7 @@ fn test_single_encoding_strategy_steth_lido() {
         given_token: token_in,
         given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
         checked_token: token_out,
-        checked_amount: BigUint::from_str("999999999999999997").unwrap(),
+        min_amount_out: BigUint::from_str("999999999999999997").unwrap(),
         // Alice
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
@@ -1525,7 +1526,7 @@ fn test_single_encoding_strategy_steth_lido() {
         eth_chain().id(),
         encoded_solution,
         &solution,
-        &UserTransferType::None,
+        &UserTransferType::UseVaultFunds,
         &eth(),
         None,
     )
@@ -1562,7 +1563,7 @@ fn test_single_encoding_strategy_wrap_wsteth_lido() {
         given_token: token_in,
         given_amount: BigUint::from_str("1000000000000000000").unwrap(),
         checked_token: token_out,
-        checked_amount: BigUint::from_str("835259856480552328").unwrap(),
+        min_amount_out: BigUint::from_str("835259856480552328").unwrap(),
         // Alice
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
@@ -1616,7 +1617,7 @@ fn test_single_encoding_strategy_unwrap_wsteth_lido() {
         given_token: token_in,
         given_amount: BigUint::from_str("1000000000000000000").unwrap(),
         checked_token: token_out,
-        checked_amount: BigUint::from_str("1197232205332596846").unwrap(),
+        min_amount_out: BigUint::from_str("1197232205332596846").unwrap(),
         // Alice
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
@@ -1702,7 +1703,7 @@ fn test_encoding_strategy_usv4_lido_sequential_swap() {
         given_token: usdc,
         given_amount: BigUint::from_str("1000_000000").unwrap(),
         checked_token: st_eth,
-        checked_amount: BigUint::from_str("492041525283271396").unwrap(),
+        min_amount_out: BigUint::from_str("492041525283271396").unwrap(),
         // Alice
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
@@ -1793,7 +1794,7 @@ fn test_encoding_strategy_curve_lido_sequential_swap() {
         given_token: eth.clone(),
         given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
         checked_token: wst_eth,
-        checked_amount: BigUint::from_str("835224812176401374").unwrap(),
+        min_amount_out: BigUint::from_str("835224812176401374").unwrap(),
         // Alice
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),

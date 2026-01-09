@@ -35,6 +35,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             WETH_ADDR,
             DAI_ADDR,
             2008817438608734439722,
+            0, // maxSolverContribution
             false,
             false,
             ALICE,
@@ -79,6 +80,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             WETH_ADDR,
             DAI_ADDR,
             minAmountOut,
+            0, // maxSolverContribution
             false,
             false,
             ALICE,
@@ -117,12 +119,13 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
         bytes memory swap =
             encodeSingleSwap(address(usv2Executor), protocolData);
 
-        vm.expectRevert(TychoRouter__UndefinedMinReceiverAmount.selector);
+        vm.expectRevert(TychoRouter__UndefinedMinAmountOut.selector);
         tychoRouter.singleSwap(
             amountIn,
             WETH_ADDR,
             DAI_ADDR,
             0,
+            0, // maxSolverContribution
             false,
             false,
             ALICE,
@@ -160,6 +163,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             WETH_ADDR,
             DAI_ADDR,
             minAmountOut,
+            0, // maxSolverContribution
             false,
             false,
             ALICE,
@@ -195,9 +199,9 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                TychoRouter__NegativeSlippage.selector,
-                2018817438608734439722, // actual amountOut
-                minAmountOut
+                TychoRouter__ExcessiveSolverContributionNeeded.selector,
+                3581182561391265560278, // required solver contribution
+                0 // max solver contribution
             )
         );
         tychoRouter.singleSwap(
@@ -205,6 +209,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             WETH_ADDR,
             DAI_ADDR,
             minAmountOut,
+            0, // maxSolverContribution
             false,
             false,
             ALICE,
@@ -245,6 +250,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             address(0),
             DAI_ADDR,
             1000_000000,
+            0, // maxSolverContribution
             true,
             false,
             ALICE,
@@ -290,6 +296,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             DAI_ADDR,
             address(0),
             1000_000000,
+            0, // maxSolverContribution
             false,
             true,
             ALICE,
@@ -340,6 +347,7 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
             WETH_ADDR,
             DAI_ADDR,
             2000 * 1e18,
+            0, // maxSolverContribution
             false,
             false,
             ALICE,

@@ -80,7 +80,7 @@ fn test_split_swap_strategy_encoder() {
         given_token: weth,
         given_amount: BigUint::from_str("1_000000000000000000").unwrap(),
         checked_token: usdc,
-        checked_amount: BigUint::from_str("26173932").unwrap(),
+        min_amount_out: BigUint::from_str("26173932").unwrap(),
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         swaps: vec![swap_weth_dai, swap_weth_wbtc, swap_dai_usdc, swap_wbtc_usdc],
@@ -189,7 +189,7 @@ fn test_split_input_cyclic_swap() {
         given_token: usdc.clone(),
         given_amount: BigUint::from_str("100000000").unwrap(), // 100 USDC (6 decimals)
         checked_token: usdc.clone(),
-        checked_amount: BigUint::from_str("99574171").unwrap(), /* Expected output
+        min_amount_out: BigUint::from_str("99574171").unwrap(), /* Expected output
                                                                  * from
                                                                  * test */
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
@@ -216,15 +216,15 @@ fn test_split_input_cyclic_swap() {
 
     let hex_calldata = alloy::hex::encode(&calldata);
     let expected_input = [
-        "7c553846",                                                         // selector
+        "c78f654f",                                                         // selector
         "0000000000000000000000000000000000000000000000000000000005f5e100", // given amount
         "000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // given token
         "000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // checked token
         "0000000000000000000000000000000000000000000000000000000005ef619b", // min amount out
+        "0000000000000000000000000000000000000000000000000000000000000000", // max solver contribution
         "0000000000000000000000000000000000000000000000000000000000000000", // wrap action
         "0000000000000000000000000000000000000000000000000000000000000000", // unwrap action
         "0000000000000000000000000000000000000000000000000000000000000002", // tokens length
-        "000000000000000000000000cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
     ]
     .join("");
     let expected_swaps = [
@@ -260,14 +260,14 @@ fn test_split_input_cyclic_swap() {
         "5615deb798bb3e4dfa0139dfa1b3d433cc23b72f", // executor address,
         "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token in
         "b4e16d0168e52d35cacd2c6185b44281ec28c9dc", // component id,
-        "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
+        "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver
         "00", // zero2one
-        "01", // transfer type Transfer
+        "02", // transfer type
         "00000000000000" // padding
     ]
         .join("");
     assert_eq!(hex_calldata[..520], expected_input);
-    assert_eq!(hex_calldata[1288..], expected_swaps);
+    assert_eq!(hex_calldata[1480..], expected_swaps);
     write_calldata_to_file("test_split_input_cyclic_swap", hex_calldata.as_str());
 }
 
@@ -347,7 +347,7 @@ fn test_split_output_cyclic_swap() {
         given_token: usdc.clone(),
         given_amount: BigUint::from_str("100000000").unwrap(), // 100 USDC (6 decimals)
         checked_token: usdc.clone(),
-        checked_amount: BigUint::from_str("99025908").unwrap(), /* Expected output
+        min_amount_out: BigUint::from_str("99025908").unwrap(), /* Expected output
                                                                  * from
                                                                  * test */
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
@@ -374,15 +374,15 @@ fn test_split_output_cyclic_swap() {
 
     let hex_calldata = alloy::hex::encode(&calldata);
     let expected_input = [
-        "7c553846",                                                         // selector
+        "c78f654f",                                                         // selector
         "0000000000000000000000000000000000000000000000000000000005f5e100", // given amount
         "000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // given token
         "000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // checked token
         "0000000000000000000000000000000000000000000000000000000005e703f4", // min amount out
+        "0000000000000000000000000000000000000000000000000000000000000000", // max solver contribution
         "0000000000000000000000000000000000000000000000000000000000000000", // wrap action
         "0000000000000000000000000000000000000000000000000000000000000000", // unwrap action
         "0000000000000000000000000000000000000000000000000000000000000002", // tokens length
-        "000000000000000000000000cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
     ]
     .join("");
 
@@ -406,10 +406,10 @@ fn test_split_output_cyclic_swap() {
         "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token in
         "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // token out
         "0001f4", // pool fee
-        "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
+        "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver
         "88e6a0c2ddd26feeb64f039a2c41296fcb3f5640", // component id
         "00", // zero2one
-        "01", // transfer type Transfer
+        "02", // transfer type
         "006e", // ple encoded swaps
         "01", // token in index
         "00", // token out index
@@ -418,15 +418,15 @@ fn test_split_output_cyclic_swap() {
         "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token in
         "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // token out
         "000bb8", // pool fee
-        "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
+        "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver
         "8ad599c3a0ff1de082011efddc58f1908eb6e6d8", // component id
         "00", // zero2one
-        "01", // transfer type Transfer
+        "02", // transfer type
         "00000000000000" // padding
     ]
         .join("");
 
     assert_eq!(hex_calldata[..520], expected_input);
-    assert_eq!(hex_calldata[1288..], expected_swaps);
+    assert_eq!(hex_calldata[1480..], expected_swaps);
     write_calldata_to_file("test_split_output_cyclic_swap", hex_calldata.as_str());
 }

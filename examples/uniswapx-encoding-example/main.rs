@@ -9,7 +9,7 @@ use num_bigint::{BigInt, BigUint};
 use tycho_common::{models::protocol::ProtocolComponent, Bytes};
 use tycho_execution::encoding::{
     evm::{
-        approvals::protocol_approvals_manager::ProtocolApprovalsManager,
+        // approvals::protocol_approvals_manager::ProtocolApprovalsManager,
         encoder_builders::TychoRouterEncoderBuilder,
         utils::{biguint_to_u256, bytes_to_address},
     },
@@ -111,7 +111,7 @@ fn main() {
         given_token: dai.clone(),
         given_amount: BigUint::from_str("2_000_000000000000000000").unwrap(),
         checked_token: usdt.clone(),
-        checked_amount: BigUint::from_str("1_990_000000").unwrap(),
+        min_amount_out: BigUint::from_str("1_990_000000").unwrap(),
         sender: filler.clone(),
         receiver: filler.clone(),
         swaps: vec![swap_dai_usdc, swap_usdc_usdt],
@@ -125,7 +125,7 @@ fn main() {
         .clone();
 
     let given_amount = biguint_to_u256(&solution.given_amount);
-    let min_amount_out = biguint_to_u256(&solution.checked_amount);
+    let min_amount_out = biguint_to_u256(&solution.min_amount_out);
     let given_token = bytes_to_address(&solution.given_token).unwrap();
     let checked_token = bytes_to_address(&solution.checked_token).unwrap();
     let receiver = bytes_to_address(&solution.receiver).unwrap();
@@ -146,25 +146,26 @@ fn main() {
     let tycho_calldata = encode_input(&encoded_solution.function_signature, method_calldata);
 
     // Uniswap X specific part (check necessary approvals)
-    let filler_address = bytes_to_address(&filler).unwrap();
-    let token_approvals_manager = ProtocolApprovalsManager::new().unwrap();
+    // NOTE: ProtocolApprovalsManager has been removed from the codebase
+    // let filler_address = bytes_to_address(&filler).unwrap();
+    // let token_approvals_manager = ProtocolApprovalsManager::new().unwrap();
+    //
+    // let token_in_approval_needed = token_approvals_manager
+    //     .approval_needed(
+    //         bytes_to_address(&dai).unwrap(),
+    //         filler_address,
+    //         bytes_to_address(&router_address).unwrap(),
+    //     )
+    //     .unwrap();
+    //
+    // let token_out_approval_needed = token_approvals_manager
+    //     .approval_needed(bytes_to_address(&usdc).unwrap(), filler_address, usx_reactor)
+    //     .unwrap();
+    //
+    // let full_calldata =
+    //     (token_in_approval_needed, token_out_approval_needed, tycho_calldata).abi_encode_packed();
 
-    let token_in_approval_needed = token_approvals_manager
-        .approval_needed(
-            bytes_to_address(&dai).unwrap(),
-            filler_address,
-            bytes_to_address(&router_address).unwrap(),
-        )
-        .unwrap();
-
-    let token_out_approval_needed = token_approvals_manager
-        .approval_needed(bytes_to_address(&usdc).unwrap(), filler_address, usx_reactor)
-        .unwrap();
-
-    let full_calldata =
-        (token_in_approval_needed, token_out_approval_needed, tycho_calldata).abi_encode_packed();
-
-    let hex_calldata = encode(&full_calldata);
+    let hex_calldata = encode(&tycho_calldata);
 
     println!(" ====== Simple swap DAI -> USDT ======");
     println!(

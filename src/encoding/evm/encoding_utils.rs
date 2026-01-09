@@ -89,7 +89,7 @@ pub fn encode_tycho_router_call(
     }
 
     let given_amount = biguint_to_u256(&solution.given_amount);
-    let min_amount_out = biguint_to_u256(&solution.checked_amount);
+    let min_amount_out = biguint_to_u256(&solution.min_amount_out);
     let given_token = bytes_to_address(&solution.given_token)?;
     let checked_token = bytes_to_address(&solution.checked_token)?;
     let receiver = bytes_to_address(&solution.receiver)?;

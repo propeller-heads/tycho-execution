@@ -93,7 +93,7 @@ contract FeeTakerTest is Constants, TestUtils {
             unwrapEth
         );
 
-        uint256 amountOut = feeTaker.take_fee(amountIn, data);
+        uint256 amountOut = feeTaker.takeFee(amountIn, data);
 
         // Should return 99% of input (1% fee)
         uint256 expectedAmountOut = 990 ether;
@@ -122,7 +122,7 @@ contract FeeTakerTest is Constants, TestUtils {
             unwrapEth
         );
 
-        uint256 amountOut = feeTaker.take_fee(amountIn, data);
+        uint256 amountOut = feeTaker.takeFee(amountIn, data);
 
         // Should return full amount
         assertEq(amountOut, amountIn);
@@ -151,7 +151,7 @@ contract FeeTakerTest is Constants, TestUtils {
         );
 
         vm.expectRevert(FeeTaker__FeeTooHigh.selector);
-        feeTaker.take_fee(amountIn, data);
+        feeTaker.takeFee(amountIn, data);
     }
 
     function testSwapMaxFee() public {
@@ -176,7 +176,7 @@ contract FeeTakerTest is Constants, TestUtils {
             unwrapEth
         );
 
-        uint256 amountOut = feeTaker.take_fee(amountIn, data);
+        uint256 amountOut = feeTaker.takeFee(amountIn, data);
 
         // Should return 50% of input
         uint256 expectedAmountOut = 500 ether;
@@ -205,7 +205,7 @@ contract FeeTakerTest is Constants, TestUtils {
             unwrapEth
         );
 
-        uint256 amountOut = feeTaker.take_fee(amountIn, data);
+        uint256 amountOut = feeTaker.takeFee(amountIn, data);
 
         // Solution fee: 10% of 1000 = 100 ether
         // Router fee on solver fee: 10% of 100 = 10 ether
@@ -236,7 +236,7 @@ contract FeeTakerTest is Constants, TestUtils {
             unwrapEth
         );
 
-        uint256 amountOut = feeTaker.take_fee(amountIn, data);
+        uint256 amountOut = feeTaker.takeFee(amountIn, data);
 
         // Solution fee: 10% of 1000 = 100 ether
         // Remaining after solution fee: 900 ether
@@ -271,7 +271,7 @@ contract FeeTakerTest is Constants, TestUtils {
         );
 
         vm.expectRevert(FeeTaker__FeeTooHigh.selector);
-        feeTaker.take_fee(amountIn, data);
+        feeTaker.takeFee(amountIn, data);
     }
 
     function testExportContract() public {
