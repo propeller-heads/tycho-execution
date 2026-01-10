@@ -129,9 +129,7 @@ contract Dispatcher is RestrictTransferFrom {
 
         // Credit delta accounting if tokens stayed in router
         if (receiver == address(this)) {
-            _updateDeltaAccounting(
-                msg.sender, tokenOut, int256(calculatedAmount)
-            );
+            _updateDeltaAccounting(tokenOut, int256(calculatedAmount));
         }
     }
 

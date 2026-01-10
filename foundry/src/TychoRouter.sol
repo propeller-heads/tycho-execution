@@ -135,11 +135,10 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
      * Delegates to parent implementations (TychoVault)
      */
     function _updateDeltaAccounting(
-        address user,
         address token,
         int256 deltaChange
     ) internal override(RestrictTransferFrom, TychoVault) {
-        super._updateDeltaAccounting(user, token, deltaChange);
+        super._updateDeltaAccounting(token, deltaChange);
     }
 
     /**

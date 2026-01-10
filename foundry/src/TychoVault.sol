@@ -134,30 +134,32 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
     }
 
     /**
-     * @dev Internal helper to get transient storage slot for a user/token delta
+     * @dev Internal helper to get transient storage slot for a token delta
+     * @notice Only needs token since transient storage is scoped to current transaction's sender
      */
-    function _getDeltaSlot(address user, address token)
+    function _getDeltaSlot(address token)
         private
         pure
         returns (uint256 slot)
     {
-        // Generate unique slot: keccak256(user, token, "TychoVault#DELTA")
+        // Generate unique slot: keccak256(token, "TychoVault#DELTA")
         slot = uint256(
-            keccak256(abi.encodePacked(user, token, "TychoVault#DELTA"))
+            keccak256(abi.encodePacked(token, "TychoVault#DELTA"))
         );
     }
 
     /**
      * @dev Get the current delta from transient storage
+     * @notice Retrieves delta for current transaction's sender
      */
     // Assembly required for transient storage operations (tload)
     // slither-disable-next-line assembly
-    function _getTDelta(address user, address token)
+    function _getTDelta(address token)
         private
         view
         returns (int256 delta)
     {
-        uint256 slot = _getDeltaSlot(user, token);
+        uint256 slot = _getDeltaSlot(token);
         assembly {
             delta := tload(slot)
         }
@@ -165,11 +167,12 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
 
     /**
      * @dev Set the delta in transient storage
+     * @notice Sets delta for current transaction's sender
      */
     // Assembly required for transient storage operations (tstore)
     // slither-disable-next-line assembly
-    function _setTDelta(address user, address token, int256 delta) private {
-        uint256 slot = _getDeltaSlot(user, token);
+    function _setTDelta(address token, int256 delta) private {
+        uint256 slot = _getDeltaSlot(token);
         assembly {
             tstore(slot, delta)
         }
@@ -199,19 +202,17 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
 
     /**
      * @dev Update delta accounting (transient storage)
-     * @notice This updates the transient delta, not the persistent vault balance
-     * @param user The user whose delta to update
+     * @notice This updates the transient delta for the current sender, not the persistent vault balance
      * @param token The token to update
      * @param deltaChange The change to apply (positive to credit, negative to debit)
      */
     function _updateDeltaAccounting(
-        address user,
         address token,
         int256 deltaChange
     ) internal virtual {
         if (deltaChange == 0) return;
 
-        int256 oldDelta = _getTDelta(user, token);
+        int256 oldDelta = _getTDelta(token);
         int256 newDelta = oldDelta + deltaChange;
 
         // Update negative delta counter based on transitions
@@ -223,7 +224,7 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
             _setNegativeDeltaCount(_getNegativeDeltaCount() + 1);
         }
 
-        _setTDelta(user, token, newDelta);
+        _setTDelta(token, newDelta);
     }
 
     /**
@@ -271,7 +272,7 @@ abstract contract TychoVault is ERC6909, ReentrancyGuard {
         if (negativeCount > 1) {
             revert TychoVault__UnexpectedNegativeDelta(negativeCount);
         } else if (negativeCount == 1) {
-            int256 inputDelta = _getTDelta(user, inputToken);
+            int256 inputDelta = _getTDelta(inputToken);
             if (inputDelta != -int256(inputAmount)) {
                 revert TychoVault__UnexpectedInputDelta(inputDelta);
             }

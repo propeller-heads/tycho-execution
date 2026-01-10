@@ -57,7 +57,6 @@ contract RestrictTransferFrom {
     // Required for inheritance - overridden by TychoRouter and FeeTaker
     // slither-disable-next-line dead-code
     function _updateDeltaAccounting(
-        address user,
         address token,
         int256 deltaChange
     ) internal virtual {
@@ -166,7 +165,7 @@ contract RestrictTransferFrom {
             // Transfer using the user's router balance.
             // This could mean the funds come from the user's vault (first swap)
             // or funds are in the router from the previous swap.
-            _updateDeltaAccounting(sender, tokenIn, -int256(amount));
+            _updateDeltaAccounting(tokenIn, -int256(amount));
             if (tokenIn == address(0)) {
                 Address.sendValue(payable(receiver), amount);
             } else {
@@ -176,11 +175,11 @@ contract RestrictTransferFrom {
             // Protocols like Fluid or Lido require us to send the ETH as
             // msg.value when calling the swap function from inside the executor.
             // This transfer type must be encoded from the executor for security purposes
-            _updateDeltaAccounting(sender, tokenIn, -int256(amount));
+            _updateDeltaAccounting(tokenIn, -int256(amount));
         } else if (transferType == TransferType.ProtocolWillDebit) {
             // Funds are either in the router from the previous swap, or will
             // be taken from our vault (in the case of the first swap).
-            _updateDeltaAccounting(sender, tokenIn, -int256(amount));
+            _updateDeltaAccounting(tokenIn, -int256(amount));
             IERC20(tokenIn).forceApprove(receiver, amount);
         } else if (transferType == TransferType.None) {
             // Funds were sent directly from the previous pool without passing

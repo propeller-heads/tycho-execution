@@ -26,11 +26,10 @@ contract FeeTaker is RestrictTransferFrom, TychoVault {
      * @dev Override to resolve multiple inheritance
      */
     function _updateDeltaAccounting(
-        address user,
         address token,
         int256 deltaChange
     ) internal override(RestrictTransferFrom, TychoVault) {
-        super._updateDeltaAccounting(user, token, deltaChange);
+        super._updateDeltaAccounting(token, deltaChange);
     }
 
     /**
@@ -82,7 +81,7 @@ contract FeeTaker is RestrictTransferFrom, TychoVault {
         if (solverFeeBps > 0) {
             solverFee = (amountOut * solverFeeBps) / 10000;
             amountOut -= solverFee;
-            _updateDeltaAccounting(address(this), token, -int256(solverFee));
+            _updateDeltaAccounting(token, -int256(solverFee));
             _creditVault(solverFeeReceiver, token, solverFee);
         }
 
@@ -104,9 +103,7 @@ contract FeeTaker is RestrictTransferFrom, TychoVault {
         }
 
         if (totalRouterFeesTaken > 0) {
-            _updateDeltaAccounting(
-                address(this), token, -int256(totalRouterFeesTaken)
-            );
+            _updateDeltaAccounting(token, -int256(totalRouterFeesTaken));
             _creditVault(routerFeeReceiver, token, totalRouterFeesTaken);
         }
 
