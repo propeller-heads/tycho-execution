@@ -8,9 +8,7 @@ use tycho_common::{models::Chain, Bytes};
 
 use crate::encoding::{
     errors::EncodingError,
-    evm::{
-        approvals::protocol_approvals_manager::ProtocolApprovalsManager, utils::bytes_to_address,
-    },
+    evm::utils::bytes_to_address,
     models::{EncodingContext, Swap},
     swap_encoder::SwapEncoder,
 };
@@ -36,29 +34,12 @@ impl SwapEncoder for ERC4626SwapEncoder {
     ) -> Result<Vec<u8>, EncodingError> {
         let component_id = AlloyBytes::from_str(&swap.component().id)
             .map_err(|_| EncodingError::FatalError("Invalid component ID".to_string()))?;
-        let token_approvals_manager = ProtocolApprovalsManager::new()?;
-        let token = bytes_to_address(swap.token_in())?;
-        let token_out = bytes_to_address(swap.token_out())?;
-        let pool_address = Address::from_slice(&component_id);
-        let mut approval_needed: bool = false;
 
-        if let Some(router_address) = &encoding_context.router_address {
-            // only deposit requires approval
-            if !encoding_context.historical_trade && token_out.eq(&pool_address) {
-                let tycho_router_address = bytes_to_address(router_address)?;
-                approval_needed = token_approvals_manager.approval_needed(
-                    token,
-                    tycho_router_address,
-                    pool_address,
-                )?;
-            }
-        };
         let args = (
             bytes_to_address(swap.token_in())?,
             component_id,
             bytes_to_address(&encoding_context.receiver)?,
             (encoding_context.transfer_type as u8).to_be_bytes(),
-            approval_needed,
         );
         Ok(args.abi_encode_packed())
     }

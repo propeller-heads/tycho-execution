@@ -42,6 +42,7 @@ impl SwapEncoder for FluidV1SwapEncoder {
             ))
         })?;
 
+        let token_out_address = bytes_to_address(swap.token_out())?;
         let args = (
             dex_address,
             self.coerce_native_address(swap.token_in()) <
@@ -49,6 +50,7 @@ impl SwapEncoder for FluidV1SwapEncoder {
             bytes_to_address(&encoding_context.receiver)?,
             (encoding_context.transfer_type as u8).to_be_bytes(),
             *swap.token_in() == self.chain.native_token().address,
+            token_out_address,
         );
         Ok(args.abi_encode_packed())
     }
@@ -124,7 +126,9 @@ mod tests {
                 // transferFrom
                 "00",
                 // isNativeSell
-                "00"
+                "00",
+                // token_out
+                "dac17f958d2ee523a2206206994597c13d831ec7"
             ))
             .to_lowercase()
         );

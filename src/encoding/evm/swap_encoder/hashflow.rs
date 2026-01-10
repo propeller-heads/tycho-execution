@@ -1,6 +1,6 @@
 use std::{collections::HashMap, str::FromStr, sync::Arc};
 
-use alloy::{primitives::Address, sol_types::SolValue};
+use alloy::sol_types::SolValue;
 use tokio::{
     runtime::{Handle, Runtime},
     task::block_in_place,
@@ -12,10 +12,7 @@ use tycho_common::{
 
 use crate::encoding::{
     errors::EncodingError,
-    evm::{
-        approvals::protocol_approvals_manager::ProtocolApprovalsManager,
-        utils::{bytes_to_address, get_runtime},
-    },
+    evm::utils::get_runtime,
     models::{EncodingContext, Swap},
     swap_encoder::SwapEncoder,
 };
@@ -66,26 +63,12 @@ impl SwapEncoder for HashflowSwapEncoder {
         swap: &Swap,
         encoding_context: &EncodingContext,
     ) -> Result<Vec<u8>, EncodingError> {
-        // Native tokens doesn't need approval, only ERC20 tokens do
-        let sender = encoding_context
+        let _sender = encoding_context
             .router_address
             .clone()
             .ok_or(EncodingError::FatalError(
                 "The router address is needed to perform a Hashflow swap".to_string(),
             ))?;
-
-        // Native ETH doesn't need approval, only ERC20 tokens do
-        let approval_needed = if *swap.token_in() == self.native_token_address {
-            false
-        } else {
-            let tycho_router_address = bytes_to_address(&sender)?;
-            let hashflow_router_address = Address::from_slice(&self.hashflow_router_address);
-            ProtocolApprovalsManager::new()?.approval_needed(
-                bytes_to_address(swap.token_in())?,
-                tycho_router_address,
-                hashflow_router_address,
-            )?
-        };
 
         // Get quote
         let protocol_state = swap
@@ -123,7 +106,7 @@ impl SwapEncoder for HashflowSwapEncoder {
         })?;
 
         // Encode packed data for the executor
-        // Format: approval_needed | transfer_type | hashflow_calldata[..]
+        // Format: transfer_type | hashflow_calldata[..]
         let hashflow_fields = [
             "pool",
             "external_account",
@@ -149,7 +132,6 @@ impl SwapEncoder for HashflowSwapEncoder {
         }
         let args = (
             (encoding_context.transfer_type as u8).to_be_bytes(),
-            (approval_needed as u8).to_be_bytes(),
             &hashflow_calldata[..],
         );
         Ok(args.abi_encode_packed())

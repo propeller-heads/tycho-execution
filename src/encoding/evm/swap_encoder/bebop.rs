@@ -1,6 +1,6 @@
 use std::{collections::HashMap, str::FromStr, sync::Arc};
 
-use alloy::{primitives::Address, sol_types::SolValue};
+use alloy::sol_types::SolValue;
 use tokio::{
     runtime::{Handle, Runtime},
     task::block_in_place,
@@ -12,10 +12,7 @@ use tycho_common::{
 
 use crate::encoding::{
     errors::EncodingError,
-    evm::{
-        approvals::protocol_approvals_manager::ProtocolApprovalsManager,
-        utils::{biguint_to_u256, bytes_to_address, get_runtime},
-    },
+    evm::utils::{biguint_to_u256, bytes_to_address, get_runtime},
     models::{EncodingContext, Swap},
     swap_encoder::SwapEncoder,
 };
@@ -88,26 +85,12 @@ impl SwapEncoder for BebopSwapEncoder {
     ) -> Result<Vec<u8>, EncodingError> {
         let token_in = bytes_to_address(swap.token_in())?;
         let token_out = bytes_to_address(swap.token_out())?;
-        let sender = encoding_context
+        let _sender = encoding_context
             .router_address
             .clone()
             .ok_or(EncodingError::FatalError(
                 "The router address is needed to perform a Hashflow swap".to_string(),
             ))?;
-        let approval_needed = if *swap.token_in() == self.native_token_address {
-            false
-        } else {
-            let tycho_router_address = bytes_to_address(&sender)?;
-            let settlement_address = Address::from_str(&self.settlement_address.to_string())
-                .map_err(|_| {
-                    EncodingError::FatalError("Invalid bebop settlement address".to_string())
-                })?;
-            ProtocolApprovalsManager::new()?.approval_needed(
-                token_in,
-                tycho_router_address,
-                settlement_address,
-            )?
-        };
 
         let protocol_state = swap
             .get_protocol_state()
@@ -181,14 +164,13 @@ impl SwapEncoder for BebopSwapEncoder {
 
         // Encode packed data for the executor
         // Format: token_in | token_out | transfer_type | partial_fill_offset |
-        //         original_filled_taker_amount | approval_needed | receiver | bebop_calldata
+        //         original_filled_taker_amount | receiver | bebop_calldata
         let args = (
             token_in,
             token_out,
             (encoding_context.transfer_type as u8).to_be_bytes(),
             partial_fill_offset.to_be_bytes(),
             original_filled_taker_amount.to_be_bytes::<32>(),
-            (approval_needed as u8).to_be_bytes(),
             receiver,
             &bebop_calldata[..],
         );
