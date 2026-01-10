@@ -298,10 +298,7 @@ mod test {
             .unwrap();
         let hex_swap = encode(&encoded_swap);
 
-        let expected_swap = String::from(concat!(
-            "01", // transfer type
-            "01", // approval needed
-        ));
+        let expected_swap = String::from("02"); // transfer type Transfer
         assert_eq!(hex_swap, expected_swap + &hashflow_calldata.to_string()[2..]);
     }
 }

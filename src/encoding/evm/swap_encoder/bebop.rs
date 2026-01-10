@@ -273,15 +273,13 @@ mod tests {
             "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
             // token out
             "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-            // transfer type
-            "01",
-            // partiall filled offset
+            // transfer type Transfer
+            "02",
+            // partial fill offset
             "0c",
-            //  original taker amount
+            // original taker amount
             "0000000000000000000000000000000000000000000000000de0b6b3a7640000",
-            // approval needed
-            "01",
-            //receiver,
+            // receiver
             "c5564c13a157e6240659fb81882a28091add8670",
         ));
         assert_eq!(hex_swap, expected_swap + &bebop_calldata.to_string()[2..]);

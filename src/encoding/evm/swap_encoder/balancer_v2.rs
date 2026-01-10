@@ -129,7 +129,7 @@ mod tests {
                 // receiver
                 "9964bff29baa37b47604f3f3f51f3b3c5149d6de",
                 // transfer type None
-                "02"
+                "05"
             ))
         );
         write_calldata_to_file("test_encode_balancer_v2", hex_swap.as_str());

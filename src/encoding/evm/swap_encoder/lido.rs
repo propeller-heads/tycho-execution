@@ -145,7 +145,7 @@ mod tests {
             router_address: Some(Bytes::zero(20)),
             group_token_in: token_in.clone(),
             group_token_out: token_out.clone(),
-            transfer_type: TransferType::None,
+            transfer_type: TransferType::TransferFrom,
             historical_trade: false,
         };
         let encoder = LidoSwapEncoder::new(
@@ -163,8 +163,8 @@ mod tests {
             String::from(concat!(
                 // receiver
                 "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
-                // transfer type Transfer
-                "02",
+                // transfer type TransferFrom
+                "00",
                 // pool
                 "00",
                 // direction
@@ -189,7 +189,7 @@ mod tests {
             router_address: Some(Bytes::zero(20)),
             group_token_in: token_in.clone(),
             group_token_out: token_out.clone(),
-            transfer_type: TransferType::None,
+            transfer_type: TransferType::TransferFrom,
             historical_trade: false,
         };
         let encoder = LidoSwapEncoder::new(
@@ -207,8 +207,8 @@ mod tests {
             String::from(concat!(
                 // receiver
                 "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
-                // transfer type Transfer
-                "02",
+                // transfer type TransferFrom
+                "00",
                 // pool
                 "01",
                 // direction
@@ -233,7 +233,7 @@ mod tests {
             router_address: Some(Bytes::zero(20)),
             group_token_in: token_in.clone(),
             group_token_out: token_out.clone(),
-            transfer_type: TransferType::None,
+            transfer_type: TransferType::TransferFrom,
             historical_trade: false,
         };
         let encoder = LidoSwapEncoder::new(
@@ -251,8 +251,8 @@ mod tests {
             String::from(concat!(
                 // receiver
                 "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
-                // transfer type Transfer
-                "02",
+                // transfer type TransferFrom
+                "00",
                 // pool
                 "01",
                 // direction
@@ -277,7 +277,7 @@ mod tests {
             router_address: Some(Bytes::zero(20)),
             group_token_in: token_in.clone(),
             group_token_out: token_out.clone(),
-            transfer_type: TransferType::None,
+            transfer_type: TransferType::TransferFrom,
             historical_trade: false,
         };
         let encoder = LidoSwapEncoder::new(

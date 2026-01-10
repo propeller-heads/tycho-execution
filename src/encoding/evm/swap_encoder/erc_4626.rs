@@ -101,10 +101,8 @@ mod tests {
                 "fE6eb3b609a7C8352A241f7F3A21CEA4e9209B8f",
                 // receiver
                 "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
-                // transfer from
+                // transfer type TransferFrom
                 "00",
-                // approval needed
-                "01"
             ))
             .to_lowercase()
         );
@@ -152,10 +150,8 @@ mod tests {
                 "fE6eb3b609a7C8352A241f7F3A21CEA4e9209B8f",
                 // receiver
                 "1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
-                // transfer from
+                // transfer type TransferFrom
                 "00",
-                // no need to approve
-                "00"
             ))
             .to_lowercase()
         );
