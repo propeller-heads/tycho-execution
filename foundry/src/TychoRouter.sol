@@ -168,23 +168,18 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
 
     /**
      * @notice Executes a swap operation based on a predefined swap graph, supporting internal token amount splits.
-     *         This function enables multi-step swaps, optional ETH wrapping/unwrapping, and validates the output amount
-     *         against a user-specified minimum.
+     *         This function enables multi-step swaps and validates the output amount against a user-specified minimum.
      *
      * @dev
-     * - If `wrapEth` is true, the contract wraps the provided native ETH into WETH and uses it as the sell token.
-     * - If `unwrapEth` is true, the contract converts the resulting WETH back into native ETH before sending it to the receiver.
      * - Swaps are executed sequentially using the `_swap` function.
      * - If the swap output is less than minAmountOut, the solver must subsidize from their own funds.
      * - Reverts if the required solver contribution exceeds maxSolverContribution.
      *
      * @param amountIn The input token amount to be swapped.
-     * @param tokenIn The address of the input token. Use `address(0)` for native ETH
-     * @param tokenOut The address of the output token. Use `address(0)` for native ETH
+     * @param tokenIn The address of the input token.
+     * @param tokenOut The address of the output token.
      * @param minAmountOut The minimum amount that must be received by the receiver. Solver covers shortfall up to maxSolverContribution.
      * @param maxSolverContribution Maximum amount the solver will pay out of pocket to make the trade succeed.
-     * @param wrapEth If true, wraps the input token (native ETH) into WETH.
-     * @param unwrapEth If true, unwraps the resulting WETH into native ETH and sends it to the receiver.
      * @param nTokens The total number of tokens involved in the swap graph (used to initialize arrays for internal calculations).
      * @param receiver The address to receive the output tokens.
      * @param isTransferFromAllowed If false, the contract will assume that the input token is already transferred to the contract and don't allow any transferFroms
@@ -198,8 +193,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
         address tokenOut,
         uint256 minAmountOut,
         uint256 maxSolverContribution,
-        bool wrapEth,
-        bool unwrapEth,
         uint256 nTokens,
         address receiver,
         bool isTransferFromAllowed,
@@ -217,8 +210,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
             minAmountOut,
             maxSolverContribution,
             initialBalanceTokenOut,
-            wrapEth,
-            unwrapEth,
             nTokens,
             receiver,
             solverFeeBps,
@@ -229,28 +220,23 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
 
     /**
      * @notice Executes a swap operation based on a predefined swap graph, supporting internal token amount splits.
-     *         This function enables multi-step swaps, optional ETH wrapping/unwrapping, and validates the output amount
-     *         against a user-specified minimum.
+     *         This function enables multi-step swaps and validates the output amount against a user-specified minimum.
      *
      * @dev
-     * - If `wrapEth` is true, the contract wraps the provided native ETH into WETH and uses it as the sell token.
-     * - If `unwrapEth` is true, the contract converts the resulting WETH back into native ETH before sending it to the receiver.
      * - For ERC20 tokens, Permit2 is used to approve and transfer tokens from the caller to the router.
      * - Swaps are executed sequentially using the `_swap` function.
      * - If the swap output is less than minAmountOut, the solver must subsidize from their own funds.
      * - Reverts if the required solver contribution exceeds maxSolverContribution.
      *
      * @param amountIn The input token amount to be swapped.
-     * @param tokenIn The address of the input token. Use `address(0)` for native ETH
-     * @param tokenOut The address of the output token. Use `address(0)` for native ETH
+     * @param tokenIn The address of the input token.
+     * @param tokenOut The address of the output token.
      * @param minAmountOut The minimum amount that must be received by the receiver. Solver covers shortfall up to maxSolverContribution.
      * @param maxSolverContribution Maximum amount the solver will pay out of pocket to make the trade succeed.
-     * @param wrapEth If true, wraps the input token (native ETH) into WETH.
-     * @param unwrapEth If true, unwraps the resulting WETH into native ETH and sends it to the receiver.
      * @param nTokens The total number of tokens involved in the swap graph (used to initialize arrays for internal calculations).
      * @param receiver The address to receive the output tokens.
-     * @param permitSingle A Permit2 structure containing token approval details for the input token. Ignored if `wrapEth` is true.
-     * @param signature A valid signature authorizing the Permit2 approval. Ignored if `wrapEth` is true.
+     * @param permitSingle A Permit2 structure containing token approval details for the input token.
+     * @param signature A valid signature authorizing the Permit2 approval.
      * @param swaps Encoded swap graph data containing details of each swap.
      *
      * @return amountOut The total amount of the output token received by the receiver.
@@ -261,8 +247,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
         address tokenOut,
         uint256 minAmountOut,
         uint256 maxSolverContribution,
-        bool wrapEth,
-        bool unwrapEth,
         uint256 nTokens,
         address receiver,
         IAllowanceTransfer.PermitSingle calldata permitSingle,
@@ -285,8 +269,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
             minAmountOut,
             maxSolverContribution,
             initialBalanceTokenOut,
-            wrapEth,
-            unwrapEth,
             nTokens,
             receiver,
             solverFeeBps,
@@ -297,23 +279,18 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
 
     /**
      * @notice Executes a swap operation based on a predefined swap graph with no split routes.
-     *         This function enables multi-step swaps, optional ETH wrapping/unwrapping, and validates the output amount
-     *         against a user-specified minimum.
+     *         This function enables multi-step swaps and validates the output amount against a user-specified minimum.
      *
      * @dev
-     * - If `wrapEth` is true, the contract wraps the provided native ETH into WETH and uses it as the sell token.
-     * - If `unwrapEth` is true, the contract converts the resulting WETH back into native ETH before sending it to the receiver.
      * - Swaps are executed sequentially using the `_swap` function.
      * - If the swap output is less than minAmountOut, the solver must subsidize from their own funds.
      * - Reverts if the required solver contribution exceeds maxSolverContribution.
      *
      * @param amountIn The input token amount to be swapped.
-     * @param tokenIn The address of the input token. Use `address(0)` for native ETH
-     * @param tokenOut The address of the output token. Use `address(0)` for native ETH
+     * @param tokenIn The address of the input token.
+     * @param tokenOut The address of the output token.
      * @param minAmountOut The minimum amount that must be received by the receiver. Solver covers shortfall up to maxSolverContribution.
      * @param maxSolverContribution Maximum amount the solver will pay out of pocket to make the trade succeed.
-     * @param wrapEth If true, wraps the input token (native ETH) into WETH.
-     * @param unwrapEth If true, unwraps the resulting WETH into native ETH and sends it to the receiver.
      * @param receiver The address to receive the output tokens.
      * @param isTransferFromAllowed If false, the contract will assume that the input token is already transferred to the contract and don't allow any transferFroms
      * @param swaps Encoded swap graph data containing details of each swap.
@@ -326,8 +303,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
         address tokenOut,
         uint256 minAmountOut,
         uint256 maxSolverContribution,
-        bool wrapEth,
-        bool unwrapEth,
         address receiver,
         bool isTransferFromAllowed,
         uint16 solverFeeBps,
@@ -344,8 +319,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
             minAmountOut,
             maxSolverContribution,
             initialBalanceTokenOut,
-            wrapEth,
-            unwrapEth,
             receiver,
             solverFeeBps,
             solverFeeReceiver,
@@ -355,26 +328,21 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
 
     /**
      * @notice Executes a swap operation based on a predefined swap graph with no split routes.
-     *         This function enables multi-step swaps, optional ETH wrapping/unwrapping, and validates the output amount
-     *         against a user-specified minimum.
+     *         This function enables multi-step swaps and validates the output amount against a user-specified minimum.
      *
      * @dev
-     * - If `wrapEth` is true, the contract wraps the provided native ETH into WETH and uses it as the sell token.
-     * - If `unwrapEth` is true, the contract converts the resulting WETH back into native ETH before sending it to the receiver.
      * - For ERC20 tokens, Permit2 is used to approve and transfer tokens from the caller to the router.
      * - If the swap output is less than minAmountOut, the solver must subsidize from their own funds.
      * - Reverts if the required solver contribution exceeds maxSolverContribution.
      *
      * @param amountIn The input token amount to be swapped.
-     * @param tokenIn The address of the input token. Use `address(0)` for native ETH
-     * @param tokenOut The address of the output token. Use `address(0)` for native ETH
+     * @param tokenIn The address of the input token.
+     * @param tokenOut The address of the output token.
      * @param minAmountOut The minimum amount that must be received by the receiver. Solver covers shortfall up to maxSolverContribution.
      * @param maxSolverContribution Maximum amount the solver will pay out of pocket to make the trade succeed.
-     * @param wrapEth If true, wraps the input token (native ETH) into WETH.
-     * @param unwrapEth If true, unwraps the resulting WETH into native ETH and sends it to the receiver.
      * @param receiver The address to receive the output tokens.
-     * @param permitSingle A Permit2 structure containing token approval details for the input token. Ignored if `wrapEth` is true.
-     * @param signature A valid signature authorizing the Permit2 approval. Ignored if `wrapEth` is true.
+     * @param permitSingle A Permit2 structure containing token approval details for the input token.
+     * @param signature A valid signature authorizing the Permit2 approval.
      * @param swaps Encoded swap graph data containing details of each swap.
      *
      * @return amountOut The total amount of the output token received by the receiver.
@@ -385,8 +353,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
         address tokenOut,
         uint256 minAmountOut,
         uint256 maxSolverContribution,
-        bool wrapEth,
-        bool unwrapEth,
         address receiver,
         IAllowanceTransfer.PermitSingle calldata permitSingle,
         bytes calldata signature,
@@ -409,8 +375,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
             minAmountOut,
             maxSolverContribution,
             initialBalanceTokenOut,
-            wrapEth,
-            unwrapEth,
             receiver,
             solverFeeBps,
             solverFeeReceiver,
@@ -419,22 +383,17 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
     }
 
     /**
-     * @notice Executes a single swap operation.
-     *         This function enables optional ETH wrapping/unwrapping, and validates the output amount against a user-specified minimum.
+     * @notice Executes a single swap operation and validates the output amount against a user-specified minimum.
      *
      * @dev
-     * - If `wrapEth` is true, the contract wraps the provided native ETH into WETH and uses it as the sell token.
-     * - If `unwrapEth` is true, the contract converts the resulting WETH back into native ETH before sending it to the receiver.
      * - If the swap output is less than minAmountOut, the solver must subsidize from their own funds.
      * - Reverts if the required solver contribution exceeds maxSolverContribution.
      *
      * @param amountIn The input token amount to be swapped.
-     * @param tokenIn The address of the input token. Use `address(0)` for native ETH
-     * @param tokenOut The address of the output token. Use `address(0)` for native ETH
+     * @param tokenIn The address of the input token.
+     * @param tokenOut The address of the output token.
      * @param minAmountOut The minimum amount that must be received by the receiver. Solver covers shortfall up to maxSolverContribution.
      * @param maxSolverContribution Maximum amount the solver will pay out of pocket to make the trade succeed.
-     * @param wrapEth If true, wraps the input token (native ETH) into WETH.
-     * @param unwrapEth If true, unwraps the resulting WETH into native ETH and sends it to the receiver.
      * @param receiver The address to receive the output tokens.
      * @param isTransferFromAllowed If false, the contract will assume that the input token is already transferred to the contract and don't allow any transferFroms
      * @param swapData Encoded swap details.
@@ -447,8 +406,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
         address tokenOut,
         uint256 minAmountOut,
         uint256 maxSolverContribution,
-        bool wrapEth,
-        bool unwrapEth,
         address receiver,
         bool isTransferFromAllowed,
         uint16 solverFeeBps,
@@ -465,8 +422,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
             minAmountOut,
             maxSolverContribution,
             initialBalanceTokenOut,
-            wrapEth,
-            unwrapEth,
             receiver,
             solverFeeBps,
             solverFeeReceiver,
@@ -475,27 +430,21 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
     }
 
     /**
-     * @notice Executes a single swap operation.
-     *         This function enables optional ETH wrapping/unwrapping, and validates the output amount
-     *         against a user-specified minimum.
+     * @notice Executes a single swap operation and validates the output amount against a user-specified minimum.
      *
      * @dev
-     * - If `wrapEth` is true, the contract wraps the provided native ETH into WETH and uses it as the sell token.
-     * - If `unwrapEth` is true, the contract converts the resulting WETH back into native ETH before sending it to the receiver.
      * - For ERC20 tokens, Permit2 is used to approve and transfer tokens from the caller to the router.
      * - If the swap output is less than minAmountOut, the solver must subsidize from their own funds.
      * - Reverts if the required solver contribution exceeds maxSolverContribution.
      *
      * @param amountIn The input token amount to be swapped.
-     * @param tokenIn The address of the input token. Use `address(0)` for native ETH
-     * @param tokenOut The address of the output token. Use `address(0)` for native ETH
+     * @param tokenIn The address of the input token.
+     * @param tokenOut The address of the output token.
      * @param minAmountOut The minimum amount that must be received by the receiver. Solver covers shortfall up to maxSolverContribution.
      * @param maxSolverContribution Maximum amount the solver will pay out of pocket to make the trade succeed.
-     * @param wrapEth If true, wraps the input token (native ETH) into WETH.
-     * @param unwrapEth If true, unwraps the resulting WETH into native ETH and sends it to the receiver.
      * @param receiver The address to receive the output tokens.
-     * @param permitSingle A Permit2 structure containing token approval details for the input token. Ignored if `wrapEth` is true.
-     * @param signature A valid signature authorizing the Permit2 approval. Ignored if `wrapEth` is true.
+     * @param permitSingle A Permit2 structure containing token approval details for the input token.
+     * @param signature A valid signature authorizing the Permit2 approval.
      * @param swapData Encoded swap details.
      *
      * @return amountOut The total amount of the output token received by the receiver.
@@ -506,8 +455,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
         address tokenOut,
         uint256 minAmountOut,
         uint256 maxSolverContribution,
-        bool wrapEth,
-        bool unwrapEth,
         address receiver,
         IAllowanceTransfer.PermitSingle calldata permitSingle,
         bytes calldata signature,
@@ -529,8 +476,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
             minAmountOut,
             maxSolverContribution,
             initialBalanceTokenOut,
-            wrapEth,
-            unwrapEth,
             receiver,
             solverFeeBps,
             solverFeeReceiver,
@@ -555,8 +500,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
         uint256 minAmountOut,
         uint256 maxSolverContribution,
         uint256 initialBalanceTokenOut,
-        bool wrapEth,
-        bool unwrapEth,
         uint256 nTokens,
         address receiver,
         uint16 solverFeeBps,
@@ -570,13 +513,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
             revert TychoRouter__UndefinedMinAmountOut();
         }
 
-        // Assume funds are already in the router.
-        if (wrapEth) {
-            _wrapETH(amountIn);
-            tokenIn = address(_weth);
-            // TODO credit the transient storage accounting
-        }
-
         amountOut = _splitSwap(amountIn, nTokens, swaps);
 
         // Deduct fees (both solution and router fees)
@@ -584,7 +520,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
         (amountOut, hasFees) = _takeFees(
             amountOut,
             tokenOut,
-            unwrapEth,
             receiver,
             solverFeeBps,
             solverFeeReceiver
@@ -602,31 +537,23 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
                 );
             }
             // Debit the solver's vault balance and transfer contribution to receiver
-            address contributionToken = unwrapEth ? address(_weth) : tokenOut;
-            _debitVault(msg.sender, contributionToken, requiredContribution);
+            _debitVault(msg.sender, tokenOut, requiredContribution);
 
-            if (unwrapEth) {
-                // If unwrapping, withdraw WETH and send as ETH
-                _weth.withdraw(requiredContribution);
+            if (tokenOut == address(0)) {
                 Address.sendValue(payable(receiver), requiredContribution);
             } else {
-                // Transfer ERC20 directly to receiver
-                IERC20(contributionToken)
-                    .safeTransfer(receiver, requiredContribution);
+                IERC20(tokenOut).safeTransfer(receiver, requiredContribution);
             }
 
             // Update amountOut to reflect total received by receiver
             amountOut = minAmountOut;
         }
 
-        address settlementToken = unwrapEth ? address(_weth) : tokenOut;
-
         // Finalize all transient deltas to persistent storage
         _finalizeBalances(msg.sender, tokenIn, amountIn);
 
         // Transfer the amount from router to receiver
-        if (unwrapEth) {
-            _unwrapETH(amountInRouter);
+        if (tokenOut == address(0)) {
             Address.sendValue(payable(receiver), amountInRouter);
         } else {
             IERC20(tokenOut).safeTransfer(receiver, amountInRouter);
@@ -660,8 +587,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
         uint256 minAmountOut,
         uint256 maxSolverContribution,
         uint256 initialBalanceTokenOut,
-        bool wrapEth,
-        bool unwrapEth,
         address receiver,
         uint16 solverFeeBps,
         address solverFeeReceiver,
@@ -674,13 +599,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
             revert TychoRouter__UndefinedMinAmountOut();
         }
 
-        // Assume funds are already in the router.
-        if (wrapEth) {
-            _wrapETH(amountIn);
-            tokenIn = address(_weth);
-            // TODO credit the transient storage accounting
-        }
-
         (address executor, bytes calldata protocolData) =
             swap_.decodeSingleSwap();
 
@@ -691,7 +609,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
         (amountOut, hasFees) = _takeFees(
             amountOut,
             tokenOut,
-            unwrapEth,
             receiver,
             solverFeeBps,
             solverFeeReceiver
@@ -709,31 +626,23 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
                 );
             }
             // Debit the solver's vault balance and transfer contribution to receiver
-            address contributionToken = unwrapEth ? address(_weth) : tokenOut;
-            _debitVault(msg.sender, contributionToken, requiredContribution);
+            _debitVault(msg.sender, tokenOut, requiredContribution);
 
-            if (unwrapEth) {
-                // If unwrapping, withdraw WETH and send as ETH
-                _weth.withdraw(requiredContribution);
+            if (tokenOut == address(0)) {
                 Address.sendValue(payable(receiver), requiredContribution);
             } else {
-                // Transfer ERC20 directly to receiver
-                IERC20(contributionToken)
-                    .safeTransfer(receiver, requiredContribution);
+                IERC20(tokenOut).safeTransfer(receiver, requiredContribution);
             }
 
             // Update amountOut to reflect total received by receiver
             amountOut = minAmountOut;
         }
 
-        address settlementToken = unwrapEth ? address(_weth) : tokenOut;
-
         // Finalize all transient deltas to persistent storage
         _finalizeBalances(msg.sender, tokenIn, amountIn);
 
         // Transfer the amount from router to receiver
-        if (unwrapEth) {
-            _unwrapETH(amountInRouter);
+        if (tokenOut == address(0)) {
             Address.sendValue(payable(receiver), amountInRouter);
         } else {
             IERC20(tokenOut).safeTransfer(receiver, amountInRouter);
@@ -767,8 +676,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
         uint256 minAmountOut,
         uint256 maxSolverContribution,
         uint256 initialBalanceTokenOut,
-        bool wrapEth,
-        bool unwrapEth,
         address receiver,
         uint16 solverFeeBps,
         address solverFeeReceiver,
@@ -781,13 +688,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
             revert TychoRouter__UndefinedMinAmountOut();
         }
 
-        // Assume funds are already in the router.
-        if (wrapEth) {
-            _wrapETH(amountIn);
-            tokenIn = address(_weth);
-            // TODO credit the transient storage accounting
-        }
-
         amountOut = _sequentialSwap(amountIn, swaps);
 
         // Deduct fees (both solution and router fees)
@@ -795,7 +695,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
         (amountOut, hasFees) = _takeFees(
             amountOut,
             tokenOut,
-            unwrapEth,
             receiver,
             solverFeeBps,
             solverFeeReceiver
@@ -813,31 +712,23 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
                 );
             }
             // Debit the solver's vault balance and transfer contribution to receiver
-            address contributionToken = unwrapEth ? address(_weth) : tokenOut;
-            _debitVault(msg.sender, contributionToken, requiredContribution);
+            _debitVault(msg.sender, tokenOut, requiredContribution);
 
-            if (unwrapEth) {
-                // If unwrapping, withdraw WETH and send as ETH
-                _weth.withdraw(requiredContribution);
+            if (tokenOut == address(0)) {
                 Address.sendValue(payable(receiver), requiredContribution);
             } else {
-                // Transfer ERC20 directly to receiver
-                IERC20(contributionToken)
-                    .safeTransfer(receiver, requiredContribution);
+                IERC20(tokenOut).safeTransfer(receiver, requiredContribution);
             }
 
             // Update amountOut to reflect total received by receiver
             amountOut = minAmountOut;
         }
 
-        address settlementToken = unwrapEth ? address(_weth) : tokenOut;
-
         // Finalize all transient deltas to persistent storage
         _finalizeBalances(msg.sender, tokenIn, amountIn);
 
         // Transfer the amount from router to receiver
-        if (unwrapEth) {
-            _unwrapETH(amountInRouter);
+        if (tokenOut == address(0)) {
             Address.sendValue(payable(receiver), amountInRouter);
         } else {
             IERC20(tokenOut).safeTransfer(receiver, amountInRouter);
@@ -1253,7 +1144,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
      * @dev Note: FeeTaker only calculates and credits fees, does NOT transfer to receiver
      * @param amountOut The amount before fee deduction
      * @param tokenOut The output token address
-     * @param unwrapEth Whether ETH will be unwrapped (fee is in WETH if true)
      * @param receiver The address to receive the output tokens
      * @param solverFeeBps Solution fee in basis points
      * @param solverFeeReceiver Address to receive the solution fee
@@ -1263,7 +1153,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
     function _takeFees(
         uint256 amountOut,
         address tokenOut,
-        bool unwrapEth,
         address receiver,
         uint16 solverFeeBps,
         address solverFeeReceiver
@@ -1290,8 +1179,6 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
         // (like check the reciever of the final swap somehow, and if it's not the
         // receiver we need to send it ourselves here?.
         if (_feeTaker != address(0) && hasFees) {
-            address feeToken = unwrapEth ? address(_weth) : tokenOut;
-
             // Encode fee data: solverFeeBps | solverFeeReceiver |
             // routerFeeOnOutputBps |
             // routerFeeOnSolverFeeBps | routerFeeReceiver | token
@@ -1301,7 +1188,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable, TychoVault {
                 effectiveRouterFeeOnOutputBps, // routerFeeOnOutputBps (custom or default)
                 effectiveRouterFeeOnSolverFeeBps, // routerFeeOnSolverFeeBps (custom or default)
                 _routerFeeReceiver, // routerFeeReceiver (configurable)
-                feeToken // token
+                tokenOut // token
             );
 
             amountOut = _callTakeFees(_feeTaker, amountOut, feeData);

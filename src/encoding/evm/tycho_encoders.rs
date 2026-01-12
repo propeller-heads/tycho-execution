@@ -17,7 +17,7 @@ use crate::encoding::{
         utils::ple_encode,
     },
     models::{
-        EncodedSolution, EncodingContext, NativeAction, Solution, Transaction, TransferType,
+        EncodedSolution, EncodingContext, Solution, Transaction, TransferType,
         UserTransferType,
     },
     strategy_encoder::StrategyEncoder,
@@ -176,10 +176,6 @@ impl TychoEncoder for TychoRouterEncoder {
     /// A solution is considered valid if all the following conditions are met:
     /// * The solution is not exact out.
     /// * The solution has at least one swap.
-    /// * If the solution is wrapping, the given token is the chain's native token and the first
-    ///   swap's input is the chain's wrapped token.
-    /// * If the solution is unwrapping, the checked token is the chain's native token and the last
-    ///   swap's output is the chain's wrapped token.
     /// * The token cannot appear more than once in the solution unless it is the first and last
     ///   token (i.e. a true cyclical swap).
     fn validate_solution(&self, solution: &Solution) -> Result<(), EncodingError> {
@@ -190,42 +186,6 @@ impl TychoEncoder for TychoRouterEncoder {
         }
         if solution.swaps.is_empty() {
             return Err(EncodingError::FatalError("No swaps found in solution".to_string()));
-        }
-        let native_address = self.chain.native_token().address;
-        let wrapped_address = self
-            .chain
-            .wrapped_native_token()
-            .address;
-        if let Some(native_action) = &solution.native_action {
-            if native_action == &NativeAction::Wrap {
-                if solution.given_token != native_address {
-                    return Err(EncodingError::FatalError(
-                        "Native token must be the input token in order to wrap".to_string(),
-                    ));
-                }
-                if let Some(first_swap) = solution.swaps.first() {
-                    if *first_swap.token_in() != wrapped_address {
-                        return Err(EncodingError::FatalError(
-                            "Wrapped token must be the first swap's input in order to wrap"
-                                .to_string(),
-                        ));
-                    }
-                }
-            } else if native_action == &NativeAction::Unwrap {
-                if solution.checked_token != native_address {
-                    return Err(EncodingError::FatalError(
-                        "Native token must be the output token in order to unwrap".to_string(),
-                    ));
-                }
-                if let Some(last_swap) = solution.swaps.last() {
-                    if *last_swap.token_out() != wrapped_address {
-                        return Err(EncodingError::FatalError(
-                            "Wrapped token must be the last swap's output in order to unwrap"
-                                .to_string(),
-                        ));
-                    }
-                }
-            }
         }
 
         let mut solution_tokens = vec![];
@@ -260,14 +220,6 @@ impl TychoEncoder for TychoRouterEncoder {
                     return Err(EncodingError::FatalError(
                         "Cyclical swaps are only allowed if they are the first and last token of a solution".to_string(),
                     ));
-                } else {
-                    // it is a valid cyclical swap
-                    // we don't support any wrapping or unwrapping in this case
-                    if let Some(_native_action) = &solution.native_action {
-                        return Err(EncodingError::FatalError(
-                            "Wrapping/Unwrapping is not available in cyclical swaps".to_string(),
-                        ));
-                    }
                 }
             }
         }
