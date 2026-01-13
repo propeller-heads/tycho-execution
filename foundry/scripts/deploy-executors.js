@@ -69,7 +69,7 @@ const executors_to_deploy = {
         // Args: Permit2
         {
             exchange: "EkuboV3Executor", args: [
-                "0x00000000000014aA86C5d3c41765bb24e11bd701"
+                "0x000000000022D473030F116dDEE9F6B43aC78BA3"
             ]
         },
         // Args: ETH address in curve pools, Permit2
