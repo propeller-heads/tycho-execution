@@ -23,8 +23,8 @@ interface MetaRegistry {
 }
 
 contract CurveExecutorExposed is CurveExecutor {
-    constructor(address _nativeToken, address _permit2)
-        CurveExecutor(_nativeToken, _permit2)
+    constructor(address _nativeToken, address _permit2, address _stEthAddress)
+        CurveExecutor(_nativeToken, _permit2, _stEthAddress)
     {}
 
     function decodeData(bytes calldata data)
@@ -55,8 +55,9 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
     function setUp() public {
         uint256 forkBlock = 22031795;
         vm.createSelectFork(vm.rpcUrl("mainnet"), forkBlock);
-        curveExecutorExposed =
-            new CurveExecutorExposed(ETH_ADDR_FOR_CURVE, PERMIT2_ADDRESS);
+        curveExecutorExposed = new CurveExecutorExposed(
+            ETH_ADDR_FOR_CURVE, PERMIT2_ADDRESS, STETH_ADDR
+        );
         metaRegistry = MetaRegistry(CURVE_META_REGISTRY);
     }
 

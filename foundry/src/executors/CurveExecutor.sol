@@ -9,9 +9,6 @@ import {RestrictTransferFrom} from "../RestrictTransferFrom.sol";
 error CurveExecutor__AddressZero();
 error CurveExecutor__InvalidDataLength();
 
-address constant STETH_ADDR =
-    address(0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84);
-
 interface CryptoPool {
     // slither-disable-next-line naming-convention
     function exchange(uint256 i, uint256 j, uint256 dx, uint256 min_dy)
@@ -42,15 +39,16 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
     using SafeERC20 for IERC20;
 
     address public immutable nativeToken;
+    address public immutable stEthAddress;
 
-    constructor(address _nativeToken, address _permit2)
+    constructor(address _nativeToken, address _permit2, address _stEthAddress)
         RestrictTransferFrom(_permit2)
     {
         if (_nativeToken == address(0)) {
             revert CurveExecutor__AddressZero();
         }
         nativeToken = _nativeToken;
-        
+        stEthAddress = _stEthAddress;
     }
 
     // slither-disable-next-line locked-ether
@@ -121,8 +119,8 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
             } else {
                 IERC20(tokenOut).safeTransfer(receiver, amountOut);
             }
-            if (tokenOut == STETH_ADDR) {
-                castRemainderWei = IERC20(STETH_ADDR).balanceOf(address(this));
+            if (tokenOut == stEthAddress) {
+                castRemainderWei = IERC20(stEthAddress).balanceOf(address(this));
             }
         }
 
