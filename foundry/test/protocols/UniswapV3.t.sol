@@ -117,11 +117,14 @@ contract UniswapV3ExecutorTest is
             RestrictTransferFrom.TransferType.Transfer
         );
 
-        uint256 amountOut = uniswapV3Exposed.swap(amountIn, data);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            uniswapV3Exposed.swap(amountIn, data);
 
         assertGe(amountOut, expAmountOut);
         assertEq(IERC20(WETH_ADDR).balanceOf(address(uniswapV3Exposed)), 0);
         assertGe(IERC20(DAI_ADDR).balanceOf(address(this)), expAmountOut);
+        assertEq(tokenOut, DAI_ADDR);
+        assertEq(receiver, address(this));
     }
 
     function testDecodeParamsInvalidDataLength() public {
@@ -287,9 +290,13 @@ contract TychoRouterForUniswapV3Test is TychoRouterTestSetup {
 
         deal(BASE_USDC, address(basePancakeV3Exposed), amountIn);
 
-        basePancakeV3Exposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            basePancakeV3Exposed.swap(amountIn, protocolData);
 
         // 1000 USDC ~= 0.0095 BTC -> 1 BTC ~= 105k USDC ✅
-        assertEq(IERC20(BASE_cbBTC).balanceOf(BOB), 950567);
+        assertEq(amountOut, 950567);
+        assertEq(IERC20(BASE_cbBTC).balanceOf(BOB), amountOut);
+        assertEq(tokenOut, BASE_cbBTC);
+        assertEq(receiver, BOB);
     }
 }

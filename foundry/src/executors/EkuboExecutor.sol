@@ -57,13 +57,14 @@ contract EkuboExecutor is
     function swap(uint256 amountIn, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
-        if (data.length < 92) revert EkuboExecutor__InvalidDataLength();
+        if (data.length < 92) {
+            revert EkuboExecutor__InvalidDataLength();
+        }
 
         // amountIn must be at most type(int128).MAX
-        address tokenOut;
-        (calculatedAmount, tokenOut) =
+        (calculatedAmount, tokenOut, receiver) =
             _lock(bytes.concat(bytes16(uint128(amountIn)), data));
     }
 
@@ -81,8 +82,9 @@ contract EkuboExecutor is
         bytes memory result = "";
         // Lido performs two callbacks: One on locked and one on pay
         if (selector == LOCKED_SELECTOR) {
-            (int128 calculatedAmount, address tokenOut) = _locked(stripped);
-            result = abi.encodePacked(calculatedAmount, tokenOut);
+            (int128 calculatedAmount, address tokenOut, address receiver) =
+                _locked(stripped);
+            result = abi.encodePacked(calculatedAmount, tokenOut, receiver);
         } else if (selector == PAY_CALLBACK_SELECTOR) {
             _payCallback(stripped);
         } else {
@@ -96,13 +98,15 @@ contract EkuboExecutor is
 
     function locked(uint256) external coreOnly {
         // Without selector and locker id
-        (int128 calculatedAmount, address tokenOut) = _locked(msg.data[36:]);
+        (int128 calculatedAmount, address tokenOut, address receiver) =
+            _locked(msg.data[36:]);
         // slither-disable-next-line assembly
         assembly ("memory-safe") {
-            // Pack: 16 bytes int128 + 20 bytes address = 36 bytes total
+            // Pack: 16 bytes int128 + 20 bytes tokenOut + 20 bytes receiver = 56 bytes total
             mstore(0, shl(128, calculatedAmount)) // Store int128 in upper 16 bytes
             mstore(16, shl(96, tokenOut)) // Store address in upper 20 bytes (of next word)
-            return(0, 36)
+            mstore(36, shl(96, receiver)) // Store receiver address in upper 20 bytes (of third word)
+            return(0, 56)
         }
     }
 
@@ -119,7 +123,7 @@ contract EkuboExecutor is
 
     function _lock(bytes memory data)
         internal
-        returns (uint128 swappedAmount, address tokenOut)
+        returns (uint128 swappedAmount, address tokenOut, address receiver)
     {
         address target = address(core);
 
@@ -140,16 +144,17 @@ contract EkuboExecutor is
                 revert(0, returndatasize())
             }
 
-            // Copy 36 bytes: 16 bytes for amount + 20 bytes for address
-            returndatacopy(0, 0, 36)
+            // Copy 56 bytes: 16 bytes for amount + 20 bytes for tokenOut + 20 bytes for receiver
+            returndatacopy(0, 0, 56)
             swappedAmount := shr(128, mload(0))
             tokenOut := shr(96, mload(16))
+            receiver := shr(96, mload(36))
         }
     }
 
     function _locked(bytes calldata swapData)
         internal
-        returns (int128, address)
+        returns (int128, address, address)
     {
         int128 nextAmountIn = int128(uint128(bytes16(swapData[0:16])));
         uint128 tokenInDebtAmount = uint128(nextAmountIn);
@@ -216,7 +221,7 @@ contract EkuboExecutor is
 
         _pay(tokenIn, tokenInDebtAmount, transferType);
         core.withdraw(nextTokenIn, receiver, uint128(nextAmountIn));
-        return (nextAmountIn, tokenOut);
+        return (nextAmountIn, tokenOut, receiver);
     }
 
     function _forward(address to, bytes memory data)

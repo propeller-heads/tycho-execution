@@ -42,17 +42,16 @@ contract UniswapV3Executor is IExecutor, ICallback, RestrictTransferFrom {
     function swap(uint256 amountIn, bytes calldata data)
         external
         payable
-        returns (uint256 amountOut)
+        returns (uint256 amountOut, address tokenOut, address receiver)
     {
-        (
-            address tokenIn,
-            address tokenOut,
-            uint24 fee,
-            address receiver,
-            address target,
-            bool zeroForOne,
-            TransferType transferType
-        ) = _decodeData(data);
+        address tokenIn;
+        uint24 fee;
+        address target;
+        bool zeroForOne;
+        TransferType transferType;
+
+        (tokenIn, tokenOut, fee, receiver, target, zeroForOne, transferType) =
+            _decodeData(data);
 
         _verifyPairAddress(tokenIn, tokenOut, fee, target);
 

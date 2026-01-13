@@ -50,15 +50,22 @@ contract SlipstreamsExecutor is IExecutor, ICallback, RestrictTransferFrom {
     function swap(uint256 amountIn, bytes calldata data)
         external
         payable
-        returns (uint256 amountOut)
+        returns (uint256 amountOut, address tokenOut, address receiver)
     {
+        address tokenIn;
+        int24 tick_spacing;
+        TransferType transferType;
+        address target;
+        bool zeroForOne;
+
         (
-            address tokenIn,
-            address tokenOut,
-            int24 tick_spacing,,
-            address receiver,
-            address target,
-            bool zeroForOne
+            tokenIn,
+            tokenOut,
+            tick_spacing,
+            transferType,
+            receiver,
+            target,
+            zeroForOne
         ) = _decodeData(data);
 
         _verifyPairAddress(tokenIn, tokenOut, tick_spacing, target);

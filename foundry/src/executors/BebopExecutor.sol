@@ -39,34 +39,34 @@ contract BebopExecutor is IExecutor, RestrictTransferFrom {
     /// @param givenAmount The amount of input token to swap
     /// @param data Encoded swap data containing tokens and bebop calldata
     /// @return calculatedAmount The amount of output token received
+    /// @return tokenOut The address of the output token
+    /// @return receiver The address that received the output tokens
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
         virtual
         override
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
+        address tokenIn;
+        TransferType transferType;
+        uint8 partialFillOffset;
+        uint256 originalFilledTakerAmount;
+        bool approvalNeeded;
+        bytes memory bebopCalldata;
+
         (
-            address tokenIn,
-            address tokenOut,
-            TransferType transferType,
-            uint8 partialFillOffset,
-            uint256 originalFilledTakerAmount,
-            bool approvalNeeded,
-            address receiver,
-            bytes memory bebopCalldata
+            tokenIn,
+            tokenOut,
+            transferType,
+            partialFillOffset,
+            originalFilledTakerAmount,
+            approvalNeeded,
+            receiver,
+            bebopCalldata
         ) = _decodeData(data);
 
         _transfer(address(this), transferType, address(tokenIn), givenAmount);
-
-        // Modify the filledTakerAmount in the calldata
-        // If the filledTakerAmount is the same as the original, the original calldata is returned
-        bytes memory finalCalldata = _modifyFilledTakerAmount(
-            bebopCalldata,
-            givenAmount,
-            originalFilledTakerAmount,
-            partialFillOffset
-        );
 
         // Approve Bebop settlement to spend tokens if needed
         if (approvalNeeded) {
@@ -74,16 +74,27 @@ contract BebopExecutor is IExecutor, RestrictTransferFrom {
             IERC20(tokenIn).forceApprove(bebopSettlement, type(uint256).max);
         }
 
-        uint256 balanceBefore = _balanceOf(tokenOut, receiver);
-        uint256 ethValue = tokenIn == address(0) ? givenAmount : 0;
+        // Avoid "Stack Too Deep" Solidity errors
+        {
+            uint256 balanceBefore = _balanceOf(tokenOut, receiver);
 
-        // Use OpenZeppelin's Address library for safe call with value
-        // This will revert if the call fails
-        // slither-disable-next-line unused-return
-        bebopSettlement.functionCallWithValue(finalCalldata, ethValue);
+            // Modify the filledTakerAmount in the calldata
+            // If the filledTakerAmount is the same as the original, the original calldata is returned
+            // Use OpenZeppelin's Address library for safe call with value
+            // This will revert if the call fails
+            // slither-disable-next-line unused-return
+            bebopSettlement.functionCallWithValue(
+                _modifyFilledTakerAmount(
+                    bebopCalldata,
+                    givenAmount,
+                    originalFilledTakerAmount,
+                    partialFillOffset
+                ),
+                tokenIn == address(0) ? givenAmount : 0
+            );
 
-        uint256 balanceAfter = _balanceOf(tokenOut, receiver);
-        calculatedAmount = balanceAfter - balanceBefore;
+            calculatedAmount = _balanceOf(tokenOut, receiver) - balanceBefore;
+        }
     }
 
     /// @dev Decodes the packed calldata

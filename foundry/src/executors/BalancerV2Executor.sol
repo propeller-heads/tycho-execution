@@ -25,16 +25,15 @@ contract BalancerV2Executor is IExecutor, RestrictTransferFrom {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
-        (
-            IERC20 tokenIn,
-            IERC20 tokenOut,
-            bytes32 poolId,
-            address receiver,
-            bool approvalNeeded,
-            TransferType transferType
-        ) = _decodeData(data);
+        IERC20 tokenIn;
+        bytes32 poolId;
+        bool approvalNeeded;
+        TransferType transferType;
+
+        (tokenIn, tokenOut, poolId, receiver, approvalNeeded, transferType) =
+            _decodeData(data);
 
         _transfer(address(this), transferType, address(tokenIn), givenAmount);
 
@@ -47,7 +46,7 @@ contract BalancerV2Executor is IExecutor, RestrictTransferFrom {
             poolId: poolId,
             kind: IVault.SwapKind.GIVEN_IN,
             assetIn: IAsset(address(tokenIn)),
-            assetOut: IAsset(address(tokenOut)),
+            assetOut: IAsset(tokenOut),
             amount: givenAmount,
             userData: ""
         });
@@ -70,7 +69,7 @@ contract BalancerV2Executor is IExecutor, RestrictTransferFrom {
         pure
         returns (
             IERC20 tokenIn,
-            IERC20 tokenOut,
+            address tokenOut,
             bytes32 poolId,
             address receiver,
             bool approvalNeeded,
@@ -82,7 +81,7 @@ contract BalancerV2Executor is IExecutor, RestrictTransferFrom {
         }
 
         tokenIn = IERC20(address(bytes20(data[0:20])));
-        tokenOut = IERC20(address(bytes20(data[20:40])));
+        tokenOut = address(bytes20(data[20:40]));
         poolId = bytes32(data[40:72]);
         receiver = address(bytes20(data[72:92]));
         approvalNeeded = data[92] != 0;

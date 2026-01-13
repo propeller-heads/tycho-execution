@@ -56,9 +56,8 @@ contract LidoExecutor is IExecutor, RestrictTransferFrom {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
-        address receiver;
         TransferType transferType;
         LidoPoolType pool;
         LidoPoolDirection direction;
@@ -66,8 +65,6 @@ contract LidoExecutor is IExecutor, RestrictTransferFrom {
 
         (receiver, transferType, pool, direction, approvalNeeded) =
             _decodeData(data);
-
-        address tokenOut;
 
         if (pool == LidoPoolType.stETH && direction == LidoPoolDirection.Stake)
         {
@@ -77,10 +74,8 @@ contract LidoExecutor is IExecutor, RestrictTransferFrom {
             // Measure actual balance changes to account for rounding in share conversions
             uint256 balanceBefore = stETH.balanceOf(address(this));
 
-            // slither-disable-next-line arbitrary-send-eth
-            uint256 _shares = LidoPool(stETHAddress).submit{value: givenAmount}(
-                address(this)
-            );
+            // slither-disable-next-line arbitrary-send-eth,unused-return
+            LidoPool(stETHAddress).submit{value: givenAmount}(address(this));
 
             uint256 balanceAfter = stETH.balanceOf(address(this));
             calculatedAmount = balanceAfter - balanceBefore;

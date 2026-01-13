@@ -65,6 +65,7 @@ contract LidoExecutorTest is Constants, Permit2TestHelper, TestUtils {
         );
         assertEq(uint8(pool), uint8(LidoPoolType.stETH));
         assertEq(uint8(direction), uint8(LidoPoolDirection.Stake));
+        assertEq(approvalNeeded, false);
     }
 
     function testDecodeParamsInvalidDataLength() public {
@@ -90,13 +91,15 @@ contract LidoExecutorTest is Constants, Permit2TestHelper, TestUtils {
 
         deal(BOB, amountIn);
         vm.prank(BOB);
-        uint256 calculatedAmount =
+        (uint256 calculatedAmount, address tokenOut, address receiver) =
             LidoExposed.swap{value: amountIn}(amountIn, protocolData);
 
         uint256 finalBalance = IERC20(STETH_ADDR).balanceOf(BOB);
         assertEq(calculatedAmount, finalBalance);
         assertEq(finalBalance, expectedAmountOut);
         assertEq(BOB.balance, 0);
+        assertEq(tokenOut, STETH_ADDR);
+        assertEq(receiver, BOB);
     }
 
     function testWrapping() public {
@@ -118,13 +121,16 @@ contract LidoExecutorTest is Constants, Permit2TestHelper, TestUtils {
             true
         );
 
-        uint256 amountOut = LidoExposed.swap(stETHAmount, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            LidoExposed.swap(stETHAmount, protocolData);
 
         uint256 finalBalance = IERC20(WSTETH_ADDR).balanceOf(BOB);
         assertEq(amountOut, expectedAmountOut);
         assertEq(finalBalance, expectedAmountOut);
         // there is 1 wei left in the contract
         assertEq(IERC20(STETH_ADDR).balanceOf(address(LidoExposed)), 1);
+        assertEq(tokenOut, WSTETH_ADDR);
+        assertEq(receiver, BOB);
 
         vm.stopPrank();
     }
@@ -142,12 +148,15 @@ contract LidoExecutorTest is Constants, Permit2TestHelper, TestUtils {
             false
         );
         vm.startPrank(address(LidoExposed));
-        uint256 amountOut = LidoExposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            LidoExposed.swap(amountIn, protocolData);
 
         uint256 finalBalance = IERC20(STETH_ADDR).balanceOf(BOB);
         assertEq(amountOut, expectedAmountOut);
         assertEq(finalBalance, expectedAmountOut);
         assertEq(IERC20(WSTETH_ADDR).balanceOf(address(LidoExposed)), 0);
+        assertEq(tokenOut, STETH_ADDR);
+        assertEq(receiver, BOB);
         vm.stopPrank();
     }
 }

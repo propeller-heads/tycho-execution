@@ -13,7 +13,7 @@ contract BalancerV2ExecutorExposed is BalancerV2Executor {
         pure
         returns (
             IERC20 tokenIn,
-            IERC20 tokenOut,
+            address tokenOut,
             bytes32 poolId,
             address receiver,
             bool needsApproval,
@@ -51,7 +51,7 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
 
         (
             IERC20 tokenIn,
-            IERC20 tokenOut,
+            address tokenOut,
             bytes32 poolId,
             address receiver,
             bool needsApproval,
@@ -59,7 +59,7 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
         ) = balancerV2Exposed.decodeParams(params);
 
         assertEq(address(tokenIn), WETH_ADDR);
-        assertEq(address(tokenOut), BAL_ADDR);
+        assertEq(tokenOut, BAL_ADDR);
         assertEq(poolId, WETH_BAL_POOL_ID);
         assertEq(receiver, address(2));
         assertEq(needsApproval, true);
@@ -90,11 +90,14 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
         deal(WETH_ADDR, address(balancerV2Exposed), amountIn);
         uint256 balanceBefore = BAL.balanceOf(BOB);
 
-        uint256 amountOut = balancerV2Exposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            balancerV2Exposed.swap(amountIn, protocolData);
 
         uint256 balanceAfter = BAL.balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);
         assertEq(balanceAfter - balanceBefore, amountOut);
+        assertEq(tokenOut, BAL_ADDR);
+        assertEq(receiver, BOB);
     }
 
     function testDecodeIntegration() public view {
@@ -102,7 +105,7 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
             loadCallDataFromFile("test_encode_balancer_v2");
         (
             IERC20 tokenIn,
-            IERC20 tokenOut,
+            address tokenOut,
             bytes32 poolId,
             address receiver,
             bool needsApproval,
@@ -110,7 +113,7 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
         ) = balancerV2Exposed.decodeParams(protocolData);
 
         assertEq(address(tokenIn), WETH_ADDR);
-        assertEq(address(tokenOut), BAL_ADDR);
+        assertEq(tokenOut, BAL_ADDR);
         assertEq(poolId, WETH_BAL_POOL_ID);
         assertEq(receiver, BOB);
         assertEq(needsApproval, true);
@@ -128,10 +131,13 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
         deal(WETH_ADDR, address(balancerV2Exposed), amountIn);
         uint256 balanceBefore = BAL.balanceOf(BOB);
 
-        uint256 amountOut = balancerV2Exposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            balancerV2Exposed.swap(amountIn, protocolData);
 
         uint256 balanceAfter = BAL.balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);
         assertEq(balanceAfter - balanceBefore, amountOut);
+        assertEq(tokenOut, BAL_ADDR);
+        assertEq(receiver, BOB);
     }
 }

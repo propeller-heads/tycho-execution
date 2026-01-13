@@ -47,12 +47,10 @@ contract FluidV1Executor is IExecutor, ICallback, RestrictTransferFrom {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
         IFluidV1Dex dex;
         bool zero2one;
-        address tokenOut;
-        address receiver;
         TransferType transferType;
         bool isNativeSell;
 

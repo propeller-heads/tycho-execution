@@ -96,11 +96,14 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
 
         uint256 balanceBefore = IERC20(waEthWETH_ADDR).balanceOf(BOB);
 
-        uint256 amountOut = balancerV3Exposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            balancerV3Exposed.swap(amountIn, protocolData);
 
         uint256 balanceAfter = IERC20(waEthWETH_ADDR).balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);
         assertEq(balanceAfter - balanceBefore, amountOut);
+        assertEq(tokenOut, waEthWETH_ADDR);
+        assertEq(receiver, BOB);
     }
 
     function testSwapIntegration() public {
@@ -115,11 +118,14 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
         deal(waEthUSDT_ADDR, address(balancerV3Exposed), amountIn);
         uint256 balanceBefore = IERC20(aaveGHO_ADDR).balanceOf(BOB);
 
-        uint256 amountOut = balancerV3Exposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            balancerV3Exposed.swap(amountIn, protocolData);
 
         uint256 balanceAfter = IERC20(aaveGHO_ADDR).balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);
         assertEq(balanceAfter - balanceBefore, amountOut);
+        assertEq(tokenOut, aaveGHO_ADDR);
+        assertEq(receiver, BOB);
     }
 }
 

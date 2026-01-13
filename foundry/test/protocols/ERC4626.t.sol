@@ -85,11 +85,14 @@ contract ERC4626ExecutorTest is Constants, TestUtils {
 
         uint256 balanceBefore = spETH.balanceOf(BOB);
 
-        uint256 amountOut = ERC4626Exposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            ERC4626Exposed.swap(amountIn, protocolData);
 
         uint256 balanceAfter = spETH.balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);
         assertEq(balanceAfter - balanceBefore, amountOut);
+        assertEq(tokenOut, address(spETH));
+        assertEq(receiver, BOB);
     }
 
     function testRedeem() public {
@@ -106,11 +109,14 @@ contract ERC4626ExecutorTest is Constants, TestUtils {
 
         uint256 balanceBefore = WETH.balanceOf(BOB);
 
-        uint256 amountOut = ERC4626Exposed.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            ERC4626Exposed.swap(amountIn, protocolData);
 
         uint256 balanceAfter = WETH.balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);
         assertEq(balanceAfter - balanceBefore, amountOut);
+        assertEq(tokenOut, WETH_ADDR);
+        assertEq(receiver, BOB);
     }
 }
 

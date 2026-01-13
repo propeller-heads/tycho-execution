@@ -113,10 +113,13 @@ contract SlipstreamsExecutorTest is
             zeroForOne
         );
 
-        uint256 amountOut = slipstreamsExposed.swap(amountIn, data);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            slipstreamsExposed.swap(amountIn, data);
 
         assertEq(IERC20(BASE_WETH).balanceOf(address(slipstreamsExposed)), 0);
         assertGe(IERC20(BASE_USDC).balanceOf(address(this)), amountOut);
+        assertEq(tokenOut, BASE_USDC);
+        assertEq(receiver, address(this));
     }
 
     function testSwapNewFactory() public {
@@ -135,10 +138,13 @@ contract SlipstreamsExecutorTest is
             zeroForOne
         );
 
-        uint256 amountOut = slipstreamsExposed.swap(amountIn, data);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            slipstreamsExposed.swap(amountIn, data);
 
         assertEq(IERC20(BASE_WETH).balanceOf(address(slipstreamsExposed)), 0);
         assertGe(IERC20(BASE_BMI).balanceOf(address(this)), amountOut);
+        assertEq(tokenOut, BASE_BMI);
+        assertEq(receiver, address(this));
     }
 
     function testDecodeParamsInvalidDataLength() public {

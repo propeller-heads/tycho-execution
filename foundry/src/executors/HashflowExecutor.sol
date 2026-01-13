@@ -50,13 +50,16 @@ contract HashflowExecutor is IExecutor, RestrictTransferFrom {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
-        (
-            IHashflowRouter.RFQTQuote memory quote,
-            bool approvalNeeded,
-            TransferType transferType
-        ) = _decodeData(data);
+        IHashflowRouter.RFQTQuote memory quote;
+        bool approvalNeeded;
+        TransferType transferType;
+
+        (quote, approvalNeeded, transferType) = _decodeData(data);
+
+        tokenOut = quote.quoteToken;
+        receiver = quote.trader;
 
         // Slippage checks
         if (givenAmount > quote.baseTokenAmount) {

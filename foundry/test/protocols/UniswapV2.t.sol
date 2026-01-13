@@ -170,10 +170,14 @@ contract UniswapV2ExecutorTest is Constants, Permit2TestHelper, TestUtils {
         );
 
         deal(WETH_ADDR, address(uniswapV2Exposed), amountIn);
-        uniswapV2Exposed.swap(amountIn, protocolData);
+        (uint256 actualAmountOut, address tokenOut, address receiver) =
+            uniswapV2Exposed.swap(amountIn, protocolData);
 
         uint256 finalBalance = DAI.balanceOf(BOB);
-        assertGe(finalBalance, amountOut);
+        assertGe(actualAmountOut, amountOut);
+        assertEq(finalBalance, actualAmountOut);
+        assertEq(tokenOut, DAI_ADDR);
+        assertEq(receiver, BOB);
     }
 
     function testSwapNoTransfer() public {
@@ -191,10 +195,14 @@ contract UniswapV2ExecutorTest is Constants, Permit2TestHelper, TestUtils {
 
         deal(WETH_ADDR, address(this), amountIn);
         IERC20(WETH_ADDR).transfer(address(WETH_DAI_POOL), amountIn);
-        uniswapV2Exposed.swap(amountIn, protocolData);
+        (uint256 actualAmountOut, address tokenOut, address receiver) =
+            uniswapV2Exposed.swap(amountIn, protocolData);
 
         uint256 finalBalance = DAI.balanceOf(BOB);
-        assertGe(finalBalance, amountOut);
+        assertGe(actualAmountOut, amountOut);
+        assertEq(finalBalance, actualAmountOut);
+        assertEq(tokenOut, DAI_ADDR);
+        assertEq(receiver, BOB);
     }
 
     function testDecodeIntegration() public view {
@@ -227,10 +235,14 @@ contract UniswapV2ExecutorTest is Constants, Permit2TestHelper, TestUtils {
         uint256 amountIn = 10 ** 18;
         uint256 amountOut = 1847751195973566072891;
         deal(WETH_ADDR, address(uniswapV2Exposed), amountIn);
-        uniswapV2Exposed.swap(amountIn, protocolData);
+        (uint256 actualAmountOut, address tokenOut, address receiver) =
+            uniswapV2Exposed.swap(amountIn, protocolData);
 
         uint256 finalBalance = DAI.balanceOf(BOB);
-        assertGe(finalBalance, amountOut);
+        assertGe(actualAmountOut, amountOut);
+        assertEq(finalBalance, actualAmountOut);
+        assertEq(tokenOut, DAI_ADDR);
+        assertEq(receiver, BOB);
     }
 
     function testSwapFailureInvalidTarget() public {
@@ -269,8 +281,12 @@ contract UniswapV2ExecutorTest is Constants, Permit2TestHelper, TestUtils {
 
         deal(BASE_USDC, address(uniswapV2Exposed), amountIn);
 
-        uniswapV2Exposed.swap(amountIn, protocolData);
+        (uint256 actualAmountOut, address tokenOut, address receiver) =
+            uniswapV2Exposed.swap(amountIn, protocolData);
 
-        assertEq(IERC20(BASE_MAG7).balanceOf(BOB), 1379830606);
+        assertEq(actualAmountOut, 1379830606);
+        assertEq(IERC20(BASE_MAG7).balanceOf(BOB), actualAmountOut);
+        assertEq(tokenOut, BASE_MAG7);
+        assertEq(receiver, BOB);
     }
 }

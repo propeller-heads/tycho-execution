@@ -28,11 +28,9 @@ contract MaverickV2Executor is IExecutor, RestrictTransferFrom {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
         address target;
-        address tokenOut;
-        address receiver;
         IERC20 tokenIn;
         TransferType transferType;
 

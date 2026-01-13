@@ -109,12 +109,15 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         vm.deal(address(rocketpoolExecutor), amountIn);
 
         uint256 rethBalanceBefore = RETH.balanceOf(BOB);
-        uint256 amountOut = rocketpoolExecutor.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            rocketpoolExecutor.swap(amountIn, protocolData);
         uint256 rethBalanceAfter = RETH.balanceOf(BOB);
 
         // Check balances
         assertEq(rethBalanceAfter - rethBalanceBefore, amountOut);
         assertEq(amountOut, 3_905_847_020_555_141_679);
+        assertEq(tokenOut, RETH_ADDR);
+        assertEq(receiver, BOB);
     }
 
     /// Test against real transaction burn on Rocketpool
@@ -133,12 +136,15 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         deal(RETH_ADDR, address(rocketpoolExecutor), amountIn);
 
         uint256 ethBalanceBefore = BOB.balance;
-        uint256 amountOut = rocketpoolExecutor.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            rocketpoolExecutor.swap(amountIn, protocolData);
         uint256 ethBalanceAfter = BOB.balance;
 
         // Check balances
         assertEq(ethBalanceAfter - ethBalanceBefore, amountOut);
         assertEq(amountOut, 1_151_971_256_664_605_227);
+        assertEq(tokenOut, address(0));
+        assertEq(receiver, BOB);
     }
 
     function testDecodeDepositIntegration() public view {
@@ -194,12 +200,15 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         vm.deal(address(rocketpoolExecutor), amountIn);
 
         uint256 rethBalanceBefore = RETH.balanceOf(BOB);
-        uint256 amountOut = rocketpoolExecutor.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            rocketpoolExecutor.swap(amountIn, protocolData);
         uint256 rethBalanceAfter = RETH.balanceOf(BOB);
 
         // Check balances
         assertEq(rethBalanceAfter - rethBalanceBefore, amountOut);
         assertEq(amountOut, 3_905_847_020_555_141_679);
+        assertEq(tokenOut, RETH_ADDR);
+        assertEq(receiver, BOB);
     }
 
     /// Test against real transaction burn on Rocketpool
@@ -216,12 +225,15 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         deal(RETH_ADDR, address(rocketpoolExecutor), amountIn);
 
         uint256 ethBalanceBefore = BOB.balance;
-        uint256 amountOut = rocketpoolExecutor.swap(amountIn, protocolData);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            rocketpoolExecutor.swap(amountIn, protocolData);
         uint256 ethBalanceAfter = BOB.balance;
 
         // Check balances
         assertEq(ethBalanceAfter - ethBalanceBefore, amountOut);
         assertEq(amountOut, 1_151_971_256_664_605_227);
+        assertEq(tokenOut, address(0));
+        assertEq(receiver, BOB);
     }
 }
 

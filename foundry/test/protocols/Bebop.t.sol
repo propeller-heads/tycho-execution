@@ -137,7 +137,9 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
         uint256 initialTokenOutBalance =
             IERC20(tokenOut).balanceOf(address(bebopExecutor));
 
-        uint256 amountOut = bebopExecutor.swap(amountIn, params);
+        uint256 amountOut;
+        address receiver;
+        (amountOut, tokenOut, receiver) = bebopExecutor.swap(amountIn, params);
 
         assertEq(amountOut, expectedAmountOut, "Incorrect amount out");
         assertEq(
@@ -188,7 +190,9 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
         uint256 initialTokenOutBalance =
             IERC20(tokenOut).balanceOf(address(bebopExecutor));
 
-        uint256 amountOut = bebopExecutor.swap(amountIn, params);
+        uint256 amountOut;
+        address receiver;
+        (amountOut, tokenOut, receiver) = bebopExecutor.swap(amountIn, params);
 
         assertEq(amountOut, expectedAmountOut, "Incorrect amount out");
         assertEq(
@@ -236,7 +240,11 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
         uint256 initialTokenOutBalance =
             IERC20(tokenOut).balanceOf(address(bebopExecutor));
 
-        uint256 amountOut = bebopExecutor.swap(amountIn, params);
+        uint256 amountOut;
+        address returnedTokenOut;
+        address receiver;
+        (amountOut, returnedTokenOut, receiver) =
+            bebopExecutor.swap(amountIn, params);
 
         assertEq(amountOut, expectedAmountOut, "Incorrect partial amount out");
         assertEq(
@@ -290,7 +298,11 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
         uint256 initialTokenOutBalance =
             IERC20(tokenOut).balanceOf(address(bebopExecutor));
 
-        uint256 amountOut = bebopExecutor.swap(amountIn, params);
+        uint256 amountOut;
+        address returnedTokenOut;
+        address receiver;
+        (amountOut, returnedTokenOut, receiver) =
+            bebopExecutor.swap(amountIn, params);
 
         assertEq(amountOut, expectedAmountOut, "Incorrect amount out");
 
@@ -344,7 +356,11 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
         uint256 initialTokenOutBalance =
             IERC20(tokenOut).balanceOf(address(bebopExecutor));
 
-        uint256 amountOut = bebopExecutor.swap(amountIn, params);
+        uint256 amountOut;
+        address returnedTokenOut;
+        address receiver;
+        (amountOut, returnedTokenOut, receiver) =
+            bebopExecutor.swap(amountIn, params);
 
         assertEq(amountOut, expectedAmountOut, "Incorrect amount out");
 

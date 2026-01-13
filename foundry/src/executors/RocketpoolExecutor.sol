@@ -25,12 +25,12 @@ contract RocketpoolExecutor is IExecutor, RestrictTransferFrom {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
-        (bool isDeposit, TransferType transferType, address receiver) =
-            _decodeData(data);
+        bool isDeposit;
+        TransferType transferType;
 
-        address tokenOut;
+        (isDeposit, transferType, receiver) = _decodeData(data);
 
         if (isDeposit) {
             tokenOut = address(RETH);

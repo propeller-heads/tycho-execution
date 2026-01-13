@@ -29,7 +29,7 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
         if (data.length != 81) {
             revert BalancerV3Executor__InvalidDataLength();
@@ -40,7 +40,9 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
                 abi.encodePacked(givenAmount, data)
             )
         );
-        calculatedAmount = abi.decode(abi.decode(result, (bytes)), (uint256));
+        (calculatedAmount, tokenOut, receiver) = abi.decode(
+            abi.decode(result, (bytes)), (uint256, address, address)
+        );
     }
 
     function verifyCallback(
@@ -87,7 +89,7 @@ contract BalancerV3Executor is IExecutor, RestrictTransferFrom, ICallback {
         // slither-disable-next-line unused-return
         VAULT.settle(tokenIn, amountIn);
         VAULT.sendTo(tokenOut, receiver, amountOut);
-        return abi.encode(amountCalculated);
+        return abi.encode(amountCalculated, address(tokenOut), receiver);
     }
 
     function handleCallback(bytes calldata data)

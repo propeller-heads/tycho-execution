@@ -160,10 +160,13 @@ contract FluidV1ExecutorTest is Test, Constants {
         deal(address(sUSDe), address(executor), amountIn);
         uint256 balanceBefore = USDT.balanceOf(BOB);
 
-        uint256 amountOut = executor.swap(amountIn, params);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            executor.swap(amountIn, params);
 
         uint256 balanceAfter = USDT.balanceOf(BOB);
         assertEq(balanceAfter - balanceBefore, amountOut);
+        assertEq(tokenOut, address(USDT));
+        assertEq(receiver, BOB);
     }
 
     function testSellNative() public {
@@ -181,10 +184,13 @@ contract FluidV1ExecutorTest is Test, Constants {
         deal(address(executor), amountIn);
         uint256 balanceBefore = ezETH.balanceOf(BOB);
 
-        uint256 amountOut = executor.swap(amountIn, params);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            executor.swap(amountIn, params);
 
         uint256 balanceAfter = ezETH.balanceOf(BOB);
         assertEq(balanceAfter - balanceBefore, amountOut);
+        assertEq(tokenOut, address(ezETH));
+        assertEq(receiver, BOB);
     }
 
     function testBuyNative() public {
@@ -202,10 +208,13 @@ contract FluidV1ExecutorTest is Test, Constants {
         deal(address(ezETH), address(executor), amountIn);
         uint256 balanceBefore = BOB.balance;
 
-        uint256 amountOut = executor.swap(amountIn, params);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            executor.swap(amountIn, params);
 
         uint256 balanceAfter = BOB.balance;
         assertEq(balanceAfter - balanceBefore, amountOut);
+        assertEq(tokenOut, address(0));
+        assertEq(receiver, BOB);
     }
 }
 

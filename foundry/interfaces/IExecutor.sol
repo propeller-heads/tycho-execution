@@ -19,11 +19,13 @@ interface IExecutor {
      * @param data Data that holds information necessary to perform the swap.
      * @return calculatedAmount The amount of the output token swapped, depending on
      * the givenAmount inputted.
+     * @return tokenOut The address of the output token.
+     * @return receiver The address that received the output tokens.
      */
     function swap(
         uint256 givenAmount,
         bytes calldata data
-    ) external payable returns (uint256 calculatedAmount);
+    ) external payable returns (uint256 calculatedAmount, address tokenOut, address receiver);
 }
 
 interface IExecutorErrors {

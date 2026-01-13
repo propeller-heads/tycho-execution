@@ -61,7 +61,8 @@ contract EkuboExecutorTest is Constants, TestUtils {
         );
 
         uint256 gasBefore = gasleft();
-        uint256 amountOut = executor.swap(amountIn, data);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            executor.swap(amountIn, data);
         console.log(gasBefore - gasleft());
 
         console.log(amountOut);
@@ -76,6 +77,8 @@ contract EkuboExecutorTest is Constants, TestUtils {
             USDC.balanceOf(address(executor)),
             usdcBalanceBeforeExecutor + amountOut
         );
+        assertEq(tokenOut, USDC_ADDR);
+        assertEq(receiver, address(executor));
     }
 
     function testSingleSwapERC20() public setUpFork(22722989) {
@@ -98,7 +101,8 @@ contract EkuboExecutorTest is Constants, TestUtils {
         );
 
         uint256 gasBefore = gasleft();
-        uint256 amountOut = executor.swap(amountIn, data);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            executor.swap(amountIn, data);
         console.log(gasBefore - gasleft());
 
         console.log(amountOut);
@@ -113,6 +117,8 @@ contract EkuboExecutorTest is Constants, TestUtils {
         assertEq(
             address(executor).balance, ethBalanceBeforeExecutor + amountOut
         );
+        assertEq(tokenOut, NATIVE_TOKEN_ADDRESS);
+        assertEq(receiver, address(executor));
     }
 
     function testMevResist() public setUpFork(22722989) {
@@ -135,7 +141,8 @@ contract EkuboExecutorTest is Constants, TestUtils {
         );
 
         uint256 gasBefore = gasleft();
-        uint256 amountOut = executor.swap(amountIn, data);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            executor.swap(amountIn, data);
         console.log(gasBefore - gasleft());
 
         console.log(amountOut);
@@ -150,6 +157,8 @@ contract EkuboExecutorTest is Constants, TestUtils {
         assertEq(
             address(executor).balance, ethBalanceBeforeExecutor + amountOut
         );
+        assertEq(tokenOut, NATIVE_TOKEN_ADDRESS);
+        assertEq(receiver, address(executor));
     }
 
     // Expects input that encodes the same test case as swap_encoder::tests::ekubo::test_encode_swap_multi
@@ -165,7 +174,8 @@ contract EkuboExecutorTest is Constants, TestUtils {
         uint256 usdtBalanceBeforeExecutor = USDT.balanceOf(address(executor));
 
         uint256 gasBefore = gasleft();
-        uint256 amountOut = executor.swap(amountIn, data);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            executor.swap(amountIn, data);
         console.log(gasBefore - gasleft());
 
         console.log(amountOut);
@@ -180,6 +190,8 @@ contract EkuboExecutorTest is Constants, TestUtils {
             USDT.balanceOf(address(executor)),
             usdtBalanceBeforeExecutor + amountOut
         );
+        assertEq(tokenOut, USDT_ADDR);
+        assertEq(receiver, address(executor));
     }
 
     // Same test case as in swap_encoder::tests::ekubo::test_encode_swap_multi

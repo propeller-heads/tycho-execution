@@ -132,12 +132,15 @@ contract HashflowExecutorECR20Test is Constants, TestUtils, HashflowUtils {
         uint256 balanceBefore = USDC.balanceOf(trader);
 
         vm.prank(trader);
-        uint256 amountOut = executor.swap(amountIn, encodedQuote);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            executor.swap(amountIn, encodedQuote);
 
         uint256 balanceAfter = USDC.balanceOf(trader);
         assertGt(balanceAfter, balanceBefore);
         assertEq(balanceAfter - balanceBefore, amountOut);
         assertEq(amountOut, quote.quoteTokenAmount);
+        assertEq(tokenOut, USDC_ADDR);
+        assertEq(receiver, trader);
     }
 
     function testSwapRouterAmountUnderQuoteAmount() public {
@@ -150,12 +153,15 @@ contract HashflowExecutorECR20Test is Constants, TestUtils, HashflowUtils {
         uint256 balanceBefore = USDC.balanceOf(trader);
 
         vm.prank(trader);
-        uint256 amountOut = executor.swap(amountIn, encodedQuote);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            executor.swap(amountIn, encodedQuote);
 
         uint256 balanceAfter = USDC.balanceOf(trader);
         assertGt(balanceAfter, balanceBefore);
         assertEq(balanceAfter - balanceBefore, amountOut);
         assertLt(amountOut, quote.quoteTokenAmount);
+        assertEq(tokenOut, USDC_ADDR);
+        assertEq(receiver, trader);
     }
 
     function testSwapRouterAmountOverQuoteAmount() public {
@@ -168,12 +174,15 @@ contract HashflowExecutorECR20Test is Constants, TestUtils, HashflowUtils {
         uint256 balanceBefore = USDC.balanceOf(trader);
 
         vm.prank(trader);
-        uint256 amountOut = executor.swap(amountIn, encodedQuote);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            executor.swap(amountIn, encodedQuote);
 
         uint256 balanceAfter = USDC.balanceOf(trader);
         assertGt(balanceAfter, balanceBefore);
         assertEq(balanceAfter - balanceBefore, amountOut);
         assertEq(amountOut, quote.quoteTokenAmount);
+        assertEq(tokenOut, USDC_ADDR);
+        assertEq(receiver, trader);
     }
 
     function rfqtQuote()
@@ -230,12 +239,15 @@ contract HashflowExecutorNativeTest is Constants, HashflowUtils {
         uint256 balanceBefore = USDC.balanceOf(trader);
 
         vm.prank(trader);
-        uint256 amountOut = executor.swap(amountIn, encodedQuote);
+        (uint256 amountOut, address tokenOut, address receiver) =
+            executor.swap(amountIn, encodedQuote);
 
         uint256 balanceAfter = USDC.balanceOf(trader);
         assertGt(balanceAfter, balanceBefore);
         assertEq(balanceAfter - balanceBefore, amountOut);
         assertEq(amountOut, quote.quoteTokenAmount);
+        assertEq(tokenOut, USDC_ADDR);
+        assertEq(receiver, trader);
     }
 
     function rfqtQuote()

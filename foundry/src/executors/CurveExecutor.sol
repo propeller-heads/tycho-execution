@@ -53,22 +53,30 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
     function swap(uint256 amountIn, bytes calldata data)
         external
         payable
-        returns (uint256)
+        returns (uint256 amountOut, address tokenOut, address receiver)
     {
         if (data.length != 85) {
             revert CurveExecutor__InvalidDataLength();
         }
 
+        address tokenIn;
+        address pool;
+        uint8 poolType;
+        int128 i;
+        int128 j;
+        bool approvalNeeded;
+        TransferType transferType;
+
         (
-            address tokenIn,
-            address tokenOut,
-            address pool,
-            uint8 poolType,
-            int128 i,
-            int128 j,
-            bool approvalNeeded,
-            TransferType transferType,
-            address receiver
+            tokenIn,
+            tokenOut,
+            pool,
+            poolType,
+            i,
+            j,
+            approvalNeeded,
+            transferType,
+            receiver
         ) = _decodeData(data);
 
         if (approvalNeeded && tokenIn != nativeToken) {
@@ -105,7 +113,7 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
         }
 
         uint256 balanceAfter = _balanceOf(tokenOut);
-        uint256 amountOut = balanceAfter - balanceBefore;
+        amountOut = balanceAfter - balanceBefore;
 
         if (receiver != address(this)) {
             if (tokenOut == nativeToken) {
@@ -114,7 +122,6 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
                 IERC20(tokenOut).safeTransfer(receiver, amountOut);
             }
         }
-        return amountOut;
     }
 
     function _decodeData(bytes calldata data)

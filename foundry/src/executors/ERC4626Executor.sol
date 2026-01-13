@@ -19,14 +19,12 @@ contract ERC4626Executor is IExecutor, RestrictTransferFrom {
     function swap(uint256 givenAmount, bytes calldata data)
         external
         payable
-        returns (uint256 calculatedAmount)
+        returns (uint256 calculatedAmount, address tokenOut, address receiver)
     {
         address target;
-        address receiver;
         IERC20 tokenIn;
         TransferType transferType;
         bool approvalNeeded;
-        address tokenOut;
 
         (tokenIn, target, receiver, transferType, approvalNeeded) =
             _decodeData(data);
