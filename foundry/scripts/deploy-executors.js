@@ -226,18 +226,41 @@ async function main() {
     console.log(`Deploying with account: ${deployer.address}`);
     console.log(`Account balance: ${ethers.utils.formatEther(await deployer.getBalance())} ETH`);
 
+    // Deterministic Deployment Proxy
+    // More info: https://getfoundry.sh/guides/deterministic-deployments-using-create2/
+    const create2FactoryAddress = "0x4e59b44847b379578588920cA78FbF26c0B4956C";
+    console.log(`Using CREATE2 factory at: ${create2FactoryAddress}`);
+
     for (const executor of executors_to_deploy[network]) {
         const {exchange, args} = executor;
         const Executor = await ethers.getContractFactory(exchange);
-        const deployedExecutor = await Executor.deploy(...args);
-        await deployedExecutor.deployed();
-        console.log(`${exchange} deployed to: ${deployedExecutor.address}`);
+
+        // Get bytecode with constructor arguments
+        const deployTx = Executor.getDeployTransaction(...args);
+        const bytecode = deployTx.data;
+
+        // Use a salt that includes network and executor name
+        const salt = ethers.utils.id(`${exchange}-${network}`);
+
+        // Compute the address where the contract will be deployed
+        // CREATE2 address = keccak256(0xff ++ factory_address ++ salt ++ keccak256(bytecode))[12:]
+        const bytecodeHash = ethers.utils.keccak256(bytecode);
+        const computedAddress = ethers.utils.getCreate2Address(create2FactoryAddress, salt, bytecodeHash);
+        console.log(`${exchange} will be deployed to: ${computedAddress}`);
+
+        const deploymentData = ethers.utils.concat([salt, bytecode]);
+        const tx = await deployer.sendTransaction({
+            to: create2FactoryAddress,
+            data: deploymentData,
+        });
+        await tx.wait();
+        console.log(`${exchange} deployed to: ${computedAddress}`);
 
         // Verify on Tenderly
         try {
             await hre.tenderly.verify({
                 name: exchange,
-                address: deployedExecutor.address,
+                address: computedAddress,
             });
             console.log("Contract verified successfully on Tenderly");
         } catch (error) {
@@ -249,7 +272,7 @@ async function main() {
         // Verify on Etherscan
         try {
             await hre.run("verify:verify", {
-                address: deployedExecutor.address,
+                address: computedAddress,
                 constructorArguments: args,
             });
             console.log(`${exchange} verified successfully on blockchain explorer!`);

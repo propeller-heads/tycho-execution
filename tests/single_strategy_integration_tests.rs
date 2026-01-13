@@ -7,7 +7,7 @@ use num_bigint::BigUint;
 use tycho_common::{models::protocol::ProtocolComponent, Bytes};
 use tycho_execution::encoding::{
     evm::utils::{biguint_to_u256, write_calldata_to_file},
-    models::{NativeAction, Solution, SwapBuilder, UserTransferType},
+    models::{NativeAction, Solution, Swap, UserTransferType},
 };
 
 use crate::common::{
@@ -23,7 +23,7 @@ fn test_single_swap_strategy_encoder() {
     let weth = weth();
     let dai = dai();
 
-    let swap = SwapBuilder::new(
+    let swap = Swap::new(
         ProtocolComponent {
             id: "0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11".to_string(),
             protocol_system: "uniswap_v2".to_string(),
@@ -31,8 +31,7 @@ fn test_single_swap_strategy_encoder() {
         },
         weth.clone(),
         dai.clone(),
-    )
-    .build();
+    );
 
     let encoder = get_tycho_router_encoder(UserTransferType::TransferFromPermit2);
 
@@ -108,7 +107,7 @@ fn test_single_swap_strategy_encoder_no_permit2() {
     let checked_amount = BigUint::from_str("1_640_000000000000000000").unwrap();
     let expected_min_amount = U256::from_str("1_640_000000000000000000").unwrap();
 
-    let swap = SwapBuilder::new(
+    let swap = Swap::new(
         ProtocolComponent {
             id: "0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11".to_string(),
             protocol_system: "uniswap_v2".to_string(),
@@ -116,8 +115,7 @@ fn test_single_swap_strategy_encoder_no_permit2() {
         },
         weth.clone(),
         dai.clone(),
-    )
-    .build();
+    );
     let encoder = get_tycho_router_encoder(UserTransferType::TransferFrom);
 
     let solution = Solution {
@@ -189,7 +187,7 @@ fn test_single_swap_strategy_encoder_no_transfer_in() {
     let checked_amount = BigUint::from_str("1_640_000000000000000000").unwrap();
     let expected_min_amount = U256::from_str("1_640_000000000000000000").unwrap();
 
-    let swap = SwapBuilder::new(
+    let swap = Swap::new(
         ProtocolComponent {
             id: "0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11".to_string(),
             protocol_system: "uniswap_v2".to_string(),
@@ -197,8 +195,7 @@ fn test_single_swap_strategy_encoder_no_transfer_in() {
         },
         weth.clone(),
         dai.clone(),
-    )
-    .build();
+    );
     let encoder = get_tycho_router_encoder(UserTransferType::None);
 
     let solution = Solution {
@@ -271,7 +268,7 @@ fn test_single_swap_strategy_encoder_wrap() {
 
     let dai = dai();
 
-    let swap = SwapBuilder::new(
+    let swap = Swap::new(
         ProtocolComponent {
             id: "0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11".to_string(),
             protocol_system: "uniswap_v2".to_string(),
@@ -279,8 +276,7 @@ fn test_single_swap_strategy_encoder_wrap() {
         },
         weth(),
         dai.clone(),
-    )
-    .build();
+    );
     let encoder = get_tycho_router_encoder(UserTransferType::TransferFromPermit2);
 
     let solution = Solution {
@@ -322,7 +318,7 @@ fn test_single_swap_strategy_encoder_unwrap() {
 
     let dai = dai();
 
-    let swap = SwapBuilder::new(
+    let swap = Swap::new(
         ProtocolComponent {
             id: "0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11".to_string(),
             protocol_system: "uniswap_v2".to_string(),
@@ -330,8 +326,7 @@ fn test_single_swap_strategy_encoder_unwrap() {
         },
         dai.clone(),
         weth(),
-    )
-    .build();
+    );
     let encoder = get_tycho_router_encoder(UserTransferType::TransferFromPermit2);
 
     let solution = Solution {
