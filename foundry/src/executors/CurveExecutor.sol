@@ -48,6 +48,9 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
             revert CurveExecutor__AddressZero();
         }
         nativeToken = _nativeToken;
+
+        // Optional: stETH is not deployed on Unichain, so zero address is allowed
+        // slither-disable-next-line missing-zero-address-validation
         stEthAddress = _stEthAddress;
     }
 
