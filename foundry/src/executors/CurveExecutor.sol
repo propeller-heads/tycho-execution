@@ -119,7 +119,8 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
             } else {
                 IERC20(tokenOut).safeTransfer(receiver, amountOut);
             }
-            if (tokenOut == stEthAddress) {
+            // stETH is not deployed on Unichain, so stEthAddress may be address(0)
+            if (stEthAddress != address(0) && tokenOut == stEthAddress) {
                 castRemainderWei = IERC20(stEthAddress).balanceOf(address(this));
             }
         }
