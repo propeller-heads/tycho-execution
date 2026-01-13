@@ -40,6 +40,7 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
 
     address public immutable nativeToken;
     address public immutable stEthAddress;
+    bool public immutable hasStETH;
 
     constructor(address _nativeToken, address _permit2, address _stEthAddress)
         RestrictTransferFrom(_permit2)
@@ -50,7 +51,11 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
         nativeToken = _nativeToken;
 
         // Optional: stETH is not deployed on Unichain, so zero address is allowed
-        // slither-disable-next-line missing-zero-address-validation
+        if (_stEthAddress != address(0)) {
+            hasStETH = true;
+        } else {
+            hasStETH = false;
+        }
         stEthAddress = _stEthAddress;
     }
 
@@ -123,7 +128,7 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
                 IERC20(tokenOut).safeTransfer(receiver, amountOut);
             }
             // stETH is not deployed on Unichain, so stEthAddress may be address(0)
-            if (stEthAddress != address(0) && tokenOut == stEthAddress) {
+            if (hasStETH && tokenOut == stEthAddress) {
                 castRemainderWei = IERC20(stEthAddress).balanceOf(address(this));
             }
         }
