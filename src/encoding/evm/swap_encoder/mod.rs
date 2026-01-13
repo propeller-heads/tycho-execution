@@ -4,6 +4,7 @@ mod bebop;
 mod curve;
 mod ekubo;
 mod erc_4626;
+mod etherfi;
 mod fluid_v1;
 mod hashflow;
 mod lido;
