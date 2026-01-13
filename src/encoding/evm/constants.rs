@@ -72,5 +72,6 @@ pub static CALLBACK_CONSTRAINED_PROTOCOLS: LazyLock<HashSet<&'static str>> = Laz
 pub static NON_PLE_ENCODED_PROTOCOLS: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
     let mut set = HashSet::new();
     set.insert("ekubo_v2");
+    set.insert("ekubo_v3");
     set
 });

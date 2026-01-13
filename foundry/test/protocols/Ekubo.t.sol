@@ -5,7 +5,6 @@ import "../TestUtils.sol";
 import "../TychoRouterTestSetup.sol";
 import "@src/executors/EkuboExecutor.sol";
 import {Constants} from "../Constants.sol";
-import {ICore} from "@ekubo/interfaces/ICore.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {NATIVE_TOKEN_ADDRESS} from "@ekubo/math/constants.sol";
 import {console} from "forge-std/Test.sol";

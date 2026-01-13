@@ -28,3 +28,6 @@
 [submodule "foundry/lib/ekubo-v3"]
 	path = foundry/lib/ekubo-v3
 	url = https://github.com/EkuboProtocol/evm-contracts
+[submodule "foundry/lib/forge-std"]
+	path = foundry/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std

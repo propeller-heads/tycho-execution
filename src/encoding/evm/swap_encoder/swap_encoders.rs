@@ -549,7 +549,7 @@ impl SwapEncoder for EkuboV3SwapEncoder {
                 .map_err(|_| EncodingError::FatalError("fee should be an u64".to_string()))?,
         );
 
-        let pool_type_config = B32::try_from(&get_static_attribute(swap, "tick_spacing")?[..])
+        let pool_type_config = B32::try_from(&get_static_attribute(swap, "pool_type_config")?[..])
             .map_err(|_| {
                 EncodingError::FatalError("pool_type_config should be 4 bytes long".to_string())
             })?;
@@ -2267,7 +2267,7 @@ mod tests {
     mod ekubo_v3 {
         use super::*;
 
-        const RECEIVER: &str = "ca4f73fe97d0b987a0d12b39bbd562c779bab6f6"; // Random address
+        const RECEIVER: &str = "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2"; // ALICE
 
         #[test]
         fn test_encode_swap_simple() {
@@ -2275,12 +2275,12 @@ mod tests {
             let token_out = Bytes::from("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"); // USDC
 
             let static_attributes = HashMap::from([
-                ("fee".to_string(), Bytes::from(0_u64)),
-                ("pool_type_config".to_string(), Bytes::from(0_u32)),
                 (
                     "extension".to_string(),
-                    Bytes::from("0x0000000000000000000000000000000000000000"), // TODO
+                    Bytes::from("0x517e506700271aea091b02f42756f5e174af5230"),
                 ), // Oracle
+                ("fee".to_string(), Bytes::from(0_u64)),
+                ("pool_type_config".to_string(), Bytes::from(0_u32)),
             ]);
 
             let component = ProtocolComponent { static_attributes, ..Default::default() };
@@ -2311,13 +2311,13 @@ mod tests {
                     // transfer type Transfer
                     "01",
                     // receiver
-                    "ca4f73fe97d0b987a0d12b39bbd562c779bab6f6",
+                    "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2",
                     // group token in
                     "0000000000000000000000000000000000000000",
                     // token out 1st swap
                     "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
                     // pool config 1st swap
-                    "0000000000000000000000000000000000000000000000000000000000000000", // TODO
+                    "517e506700271aea091b02f42756f5e174af5230000000000000000000000000",
                 ),
             );
         }
@@ -2343,12 +2343,12 @@ mod tests {
             let first_swap = SwapBuilder::new(
                 ProtocolComponent {
                     static_attributes: HashMap::from([
-                        ("fee".to_string(), Bytes::from(0_u64)),
-                        ("pool_type_config".to_string(), Bytes::from(0_u32)),
                         (
                             "extension".to_string(),
-                            Bytes::from("0x0000000000000000000000000000000000000000"), // TODO
+                            Bytes::from("517e506700271aea091b02f42756f5e174af5230"),
                         ), // Oracle
+                        ("fee".to_string(), Bytes::from(0_u64)),
+                        ("pool_type_config".to_string(), Bytes::zero(4)),
                     ]),
                     ..Default::default()
                 },
@@ -2357,20 +2357,23 @@ mod tests {
             )
             .build();
 
-            let second_swap = SwapBuilder::new(
-                ProtocolComponent {
-                    // 0.0025% fee & 0.005% base pool
-                    static_attributes: HashMap::from([
-                        ("fee".to_string(), Bytes::from(461168601842738_u64)),
-                        ("pool_type_config".to_string(), Bytes::from(50_u32)), // FIXME concentrated bit
-                        ("extension".to_string(), Bytes::zero(20)),
-                    ]),
-                    ..Default::default()
-                },
-                intermediary_token.clone(),
-                group_token_out.clone(),
-            )
-            .build();
+            let second_swap =
+                SwapBuilder::new(
+                    ProtocolComponent {
+                        static_attributes: HashMap::from([
+                            ("extension".to_string(), Bytes::zero(20)),
+                            ("fee".to_string(), Bytes::from(184467440737096_u64)),
+                            (
+                                "pool_type_config".to_string(),
+                                Bytes::from_str("0x80000032").unwrap(),
+                            ), /* tick spacing = 50 */
+                        ]),
+                        ..Default::default()
+                    },
+                    intermediary_token.clone(),
+                    group_token_out.clone(),
+                )
+                .build();
 
             let first_encoded_swap = encoder
                 .encode_swap(&first_swap, &encoding_context)
@@ -2390,17 +2393,17 @@ mod tests {
                     // transfer type Transfer
                     "01",
                     // receiver
-                    "ca4f73fe97d0b987a0d12b39bbd562c779bab6f6",
+                    "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2",
                     // group token in
                     "0000000000000000000000000000000000000000",
                     // token out 1st swap
                     "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
                     // pool config 1st swap
-                    "0000000000000000000000000000000000000000000000000000000000000000", // TODO
+                    "517e506700271aea091b02f42756f5e174af5230000000000000000000000000",
                     // token out 2nd swap
                     "dac17f958d2ee523a2206206994597c13d831ec7",
                     // pool config 2nd swap
-                    "0000000000000000000000000000000000000000000000000000000000000000", // TODO
+                    "00000000000000000000000000000000000000000000a7c5ac471b4880000032",
                 ),
             );
             write_calldata_to_file("test_ekubo_v3_encode_swap_multi", combined_hex.as_str());

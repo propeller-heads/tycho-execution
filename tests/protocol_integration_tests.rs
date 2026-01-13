@@ -14,8 +14,8 @@ use tycho_execution::encoding::{
 
 use crate::common::{
     alice_address, encoding::encode_tycho_router_call, eth, eth_chain,
-    get_base_tycho_router_encoder, get_signer, get_tycho_router_encoder, ondo, pepe, usdc, wbtc,
-    weth,
+    get_base_tycho_router_encoder, get_signer, get_tycho_router_encoder, ondo, pepe, usdc, usdt,
+    wbtc, weth,
 };
 
 #[test]
@@ -85,8 +85,7 @@ fn test_single_encoding_strategy_ekubo_v3() {
     let static_attributes = HashMap::from([
         ("fee".to_string(), Bytes::from(0_u64)),
         ("pool_type_config".to_string(), Bytes::from(0_u32)),
-        // TODO
-        ("extension".to_string(), Bytes::from("0x0000000000000000000000000000000000000000")), /* Oracle */
+        ("extension".to_string(), Bytes::from("0x517E506700271AEa091b02f42756F5E174Af5230")), /* Oracle */
     ]);
 
     let component = ProtocolComponent {
@@ -641,6 +640,92 @@ fn test_single_encoding_strategy_ekubo_grouped_swap() {
 
     let hex_calldata = encode(&calldata);
     write_calldata_to_file("test_single_ekubo_grouped_swap", hex_calldata.as_str());
+}
+
+#[test]
+fn test_single_encoding_strategy_ekubo_v3_grouped_swap() {
+    // Test multi-hop Ekubo swap (grouped swaps)
+    //
+    //   USDT ──(EKUBO)──> USDC ──(EKUBO)──> ETH
+
+    // First swap: USDT -> USDC
+    let swap1 = Swap {
+        component: ProtocolComponent {
+            id: "4a619b24ff31bbeae86503d0321898c9cb3f07bc32097749ee0622d5e9b78d6f".to_string(),
+            protocol_system: "ekubo_v3".to_string(),
+            static_attributes: HashMap::from([
+                (
+                    "extension".to_string(),
+                    Bytes::from_str("0x0000000000000000000000000000000000000000").unwrap(),
+                ),
+                ("fee".to_string(), Bytes::from(184467440737096_u64)),
+                ("pool_type_config".to_string(), Bytes::from_str("0x80000032").unwrap()), /* tick spacing = 50 */
+            ]),
+            ..Default::default()
+        },
+        token_in: usdt(),
+        token_out: usdc(),
+        split: 0f64,
+        user_data: None,
+        protocol_state: None,
+        estimated_amount_in: None,
+    };
+
+    // Second swap: USDC -> USDT
+    let swap2 = Swap {
+        component: ProtocolComponent {
+            id: "40f28acb8adc041aa51c8db8f21a9ccac0ee359075b01e1b432c238bb4e6c7eb".to_string(),
+            protocol_system: "ekubo_v3".to_string(),
+            static_attributes: HashMap::from([
+                (
+                    "extension".to_string(),
+                    Bytes::from_str("0x517e506700271aea091b02f42756f5e174af5230").unwrap(), /* Oracle */
+                ),
+                ("fee".to_string(), Bytes::from(0_u64)),
+                ("pool_type_config".to_string(), Bytes::from(0_u32)),
+            ]),
+            ..Default::default()
+        },
+        token_in: usdc(),
+        token_out: eth(),
+        split: 0f64,
+        user_data: None,
+        protocol_state: None,
+        estimated_amount_in: None,
+    };
+
+    let encoder = get_tycho_router_encoder(UserTransferType::TransferFrom);
+
+    let solution = Solution {
+        exact_out: false,
+        given_token: usdt(),
+        given_amount: BigUint::from_str("10000_000000").unwrap(),
+        checked_token: eth(),
+        checked_amount: BigUint::from_str("1_000000000000000000").unwrap(),
+        sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
+        receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
+        swaps: vec![swap1, swap2],
+        ..Default::default()
+    };
+
+    let encoded_solution = encoder
+        .encode_solutions(vec![solution.clone()])
+        .unwrap()[0]
+        .clone();
+
+    let calldata = encode_tycho_router_call(
+        eth_chain().id(),
+        encoded_solution,
+        &solution,
+        &UserTransferType::TransferFrom,
+        &eth(),
+        None,
+    )
+    .unwrap()
+    .data;
+
+    let hex_calldata = encode(&calldata);
+    write_calldata_to_file("test_single_ekubo_v3_grouped_swap", hex_calldata.as_str());
 }
 
 #[test]
