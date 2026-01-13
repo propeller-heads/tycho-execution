@@ -50,19 +50,7 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
             revert CurveExecutor__AddressZero();
         }
         nativeToken = _nativeToken;
-    }
-
-    function _getBalanceWithStEthHandling(address tokenOut)
-        internal
-        returns (uint256)
-    {
-        uint256 balance;
-        if (tokenOut == STETH_ADDR) {
-            balance = IERC20(STETH_ADDR).balanceOf(address(this));
-        } else {
-            balance = _balanceOf(tokenOut);
-        }
-        return balance;
+        
     }
 
     // slither-disable-next-line locked-ether
@@ -95,7 +83,7 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
 
         /// Inspired by Curve's router contract: https://github.com/curvefi/curve-router-ng/blob/9ab006ca848fc7f1995b6fbbecfecc1e0eb29e2a/contracts/Router.vy#L44
 
-        uint256 balanceBefore = _getBalanceWithStEthHandling(tokenOut);
+        uint256 balanceBefore = _balanceOf(tokenOut);
 
         uint256 ethAmount = 0;
         if (tokenIn == nativeToken) {
@@ -121,7 +109,7 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
             }
         }
 
-        uint256 balanceAfter = _getBalanceWithStEthHandling(tokenOut);
+        uint256 balanceAfter = _balanceOf(tokenOut);
 
         uint256 amountOut = balanceAfter - balanceBefore;
 
