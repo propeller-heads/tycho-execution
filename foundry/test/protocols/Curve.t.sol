@@ -139,6 +139,40 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
         assertEq(IERC20(STETH_ADDR).balanceOf(ALICE), amountOut);
     }
 
+    function testStEthPoolWithInitialstETH() public {
+        // Swapping ETH -> stETH on StEthPool 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022 twice
+        uint256 amountIn = 2 ether;
+        deal(address(curveExecutorExposed), amountIn);
+
+        uint256 amountInForTest = 1 ether;
+
+        bytes memory data1 = _getData(
+            ETH_ADDR_FOR_CURVE,
+            STETH_ADDR,
+            STETH_POOL,
+            1,
+            ALICE,
+            RestrictTransferFrom.TransferType.None
+        );
+
+        uint256 amountOut1 = curveExecutorExposed.swap(amountInForTest, data1);
+
+        bytes memory data2 = _getData(
+            ETH_ADDR_FOR_CURVE,
+            STETH_ADDR,
+            STETH_POOL,
+            1,
+            ALICE,
+            RestrictTransferFrom.TransferType.None
+        );
+
+        uint256 amountOut2 = curveExecutorExposed.swap(amountInForTest, data2);
+
+        assertEq(amountOut1, 1001072414418410896);
+        assertEq(amountOut2, 1001072213238226892);
+        assertEq(IERC20(STETH_ADDR).balanceOf(ALICE), amountOut1 + amountOut2);
+    }
+
     function testTricrypto2Pool() public {
         // Swapping WETH -> WBTC on Tricrypto2Pool 0xD51a44d3FaE010294C616388b506AcdA1bfAAE46
         uint256 amountIn = 1 ether;
