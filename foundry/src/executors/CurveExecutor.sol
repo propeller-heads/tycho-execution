@@ -50,7 +50,6 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
         }
         nativeToken = _nativeToken;
 
-        // Optional: stETH is not deployed on Unichain, so zero address is allowed
         if (_stEthAddress != address(0)) {
             hasStETH = true;
         } else {
@@ -125,9 +124,10 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
             if (tokenOut == nativeToken) {
                 Address.sendValue(payable(receiver), amountOut);
             } else {
+                // Due to rounding errors, 1 wei might get lost
                 IERC20(tokenOut).safeTransfer(receiver, amountOut);
             }
-            // stETH is not deployed on Unichain, so stEthAddress may be address(0)
+
             if (hasStETH && tokenOut == stEthAddress) {
                 castRemainderWei = IERC20(stEthAddress).balanceOf(address(this))
                     - balanceBefore;

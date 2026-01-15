@@ -139,6 +139,8 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
         assertEq(IERC20(STETH_ADDR).balanceOf(ALICE), amountOut);
     }
 
+    // This test verifies that amountOut for stETH is calculated correctly by
+    // accounting for an existing stETH balance in the executor prior to the swap
     function testStEthPoolWithInitialstETH() public {
         // Swapping ETH -> stETH on StEthPool 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022 twice
         uint256 amountIn = 2 ether;
