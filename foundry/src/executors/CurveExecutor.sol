@@ -131,12 +131,11 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
             if (hasStETH && tokenOut == stEthAddress) {
                 castRemainderWei = IERC20(stEthAddress).balanceOf(address(this))
                     - balanceBefore;
+                amountOut -= castRemainderWei;
             }
         }
 
-        uint256 amountOutFinal = amountOut - castRemainderWei;
-
-        return amountOutFinal;
+        return amountOut;
     }
 
     function _decodeData(bytes calldata data)
