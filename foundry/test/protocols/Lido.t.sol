@@ -241,6 +241,14 @@ contract TychoRouterForLidoTest is TychoRouterTestSetup {
     }
 }
 
+/**
+ *
+ *
+ * These tests demonstrate that the rounding issue causing 1–2 wei discrepancies
+ * in stETH transfers exists in LidoV3, as it did previously in LidoV2.
+ *
+ * Only tests relevant to this issue are included.
+ */
 contract LidoExecutorV3Test is Constants, Permit2TestHelper, TestUtils {
     using SafeERC20 for IERC20;
 
