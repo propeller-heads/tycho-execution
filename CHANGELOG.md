@@ -1,3 +1,25 @@
+## [0.154.0](https://github.com/propeller-heads/tycho-execution/compare/0.153.0...0.154.0) (2026-01-20)
+
+
+### Features
+
+* add tests for LidoV3 ([8666f7c](https://github.com/propeller-heads/tycho-execution/commit/8666f7c5a9aae53b422b8252c183b473e0432ca1))
+* track wei remainder from stETH share-to-ETH cast ([b51fc15](https://github.com/propeller-heads/tycho-execution/commit/b51fc15c0ae9d781b8bedf0e6537b66a16bc1022))
+
+
+### Bug Fixes
+
+* adjust stETH balance calculation in CurveExecutor to account for initial balance and add test for stETH pool ([85f320d](https://github.com/propeller-heads/tycho-execution/commit/85f320d341ac0e28e14e40fee4a1d01a1792e106))
+* change cast remainder value only on transfer ([f383461](https://github.com/propeller-heads/tycho-execution/commit/f383461c489c229f9ee3636e931cf046d64d5e9c))
+* clarify stETH address handling in constructor ([d5db5e0](https://github.com/propeller-heads/tycho-execution/commit/d5db5e05935b57d384e02a15fbe99f44e502c230))
+* create stETH locally instead of importing from test module ([ca2ab1e](https://github.com/propeller-heads/tycho-execution/commit/ca2ab1e1b43a1af2f2e578e96a790fdac2042601))
+* handle potential address(0) for stEthAddress ([34b7050](https://github.com/propeller-heads/tycho-execution/commit/34b7050776c50a74af32a9a582e7e76810a2d158))
+* remove unneeded check for balance ([1b7b137](https://github.com/propeller-heads/tycho-execution/commit/1b7b137909cba99d51f940323c0a2dceb1b63ce0))
+* update amountOut directly ([1d9672a](https://github.com/propeller-heads/tycho-execution/commit/1d9672add77041f6dc8c01fc17080c5966b384fc))
+* update comments ([75bad03](https://github.com/propeller-heads/tycho-execution/commit/75bad03b58b9a9aa07ce163c28a2f0bc445020b2))
+* update Slither analysis arguments to exclude unindexed event addresses ([db8e8a0](https://github.com/propeller-heads/tycho-execution/commit/db8e8a044a477f849be2e0c0dcf7091c51fe49e6))
+* update stETH handling in constructor ([0322c1a](https://github.com/propeller-heads/tycho-execution/commit/0322c1a5ff5062f249fb7d8f23da075fdb95f028))
+
 ## [0.153.0](https://github.com/propeller-heads/tycho-execution/compare/0.152.0...0.153.0) (2026-01-09)
 
 
