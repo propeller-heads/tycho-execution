@@ -39,14 +39,23 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
     using SafeERC20 for IERC20;
 
     address public immutable nativeToken;
+    address public immutable stEthAddress;
+    bool public immutable hasStETH;
 
-    constructor(address _nativeToken, address _permit2)
+    constructor(address _nativeToken, address _permit2, address _stEthAddress)
         RestrictTransferFrom(_permit2)
     {
         if (_nativeToken == address(0)) {
             revert CurveExecutor__AddressZero();
         }
         nativeToken = _nativeToken;
+
+        if (_stEthAddress != address(0)) {
+            hasStETH = true;
+        } else {
+            hasStETH = false;
+        }
+        stEthAddress = _stEthAddress;
     }
 
     // slither-disable-next-line locked-ether
@@ -78,6 +87,7 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
         _transfer(address(this), transferType, tokenIn, amountIn);
 
         /// Inspired by Curve's router contract: https://github.com/curvefi/curve-router-ng/blob/9ab006ca848fc7f1995b6fbbecfecc1e0eb29e2a/contracts/Router.vy#L44
+
         uint256 balanceBefore = _balanceOf(tokenOut);
 
         uint256 ethAmount = 0;
@@ -105,15 +115,26 @@ contract CurveExecutor is IExecutor, RestrictTransferFrom {
         }
 
         uint256 balanceAfter = _balanceOf(tokenOut);
+
         uint256 amountOut = balanceAfter - balanceBefore;
+
+        uint256 castRemainderWei = 0;
 
         if (receiver != address(this)) {
             if (tokenOut == nativeToken) {
                 Address.sendValue(payable(receiver), amountOut);
             } else {
+                // Due to rounding errors, 1 wei might get lost
                 IERC20(tokenOut).safeTransfer(receiver, amountOut);
             }
+
+            if (hasStETH && tokenOut == stEthAddress) {
+                castRemainderWei = IERC20(stEthAddress).balanceOf(address(this))
+                    - balanceBefore;
+                amountOut -= castRemainderWei;
+            }
         }
+
         return amountOut;
     }
 
