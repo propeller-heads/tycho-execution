@@ -1,3 +1,10 @@
+## [0.154.1](https://github.com/propeller-heads/tycho-execution/compare/0.154.0...0.154.1) (2026-01-22)
+
+
+### Bug Fixes
+
+* Admin wallet used in solidity tests ([a245e27](https://github.com/propeller-heads/tycho-execution/commit/a245e2744a2c1cb14665ba8a8465bdc477bcdb2e))
+
 ## [0.154.0](https://github.com/propeller-heads/tycho-execution/compare/0.153.0...0.154.0) (2026-01-20)
 
 
