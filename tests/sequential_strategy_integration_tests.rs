@@ -277,7 +277,7 @@ fn test_sequential_strategy_cyclic_swap() {
         "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // token in
         "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token out
         "0001f4",                                   // pool fee
-        "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver
+        "6bc529dc7b81a031828ddce2bc419d01ff268c66", // receiver
         "88e6a0c2ddd26feeb64f039a2c41296fcb3f5640", // component id
         "01",                                       // zero2one
         "00",                                       // transfer type TransferFrom

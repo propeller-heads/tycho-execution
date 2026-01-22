@@ -28,7 +28,7 @@ fn test_sequential_swap_usx() {
     //   DAI ───(USV3)──> USDC ───(USV2)──> USDT
     // Creates all the calldata needed for the uniswap X callbackData
 
-    let filler = Bytes::from_str("0x6D9da78B6A5BEdcA287AA5d49613bA36b90c15C4").unwrap();
+    let filler = Bytes::from_str("0x1b435D322a41287C2e5b3b2E1469709e3ab13867").unwrap();
     let usx_reactor = Address::from_str("0x00000011F84B9aa48e5f8aA8B9897600006289Be").unwrap();
 
     let dai = dai();
