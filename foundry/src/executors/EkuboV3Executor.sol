@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IExecutor} from "@interfaces/IExecutor.sol";
 import {ICallback} from "@interfaces/ICallback.sol";
 import {ICore} from "@ekubo-v3/interfaces/ICore.sol";
-import {ILocker} from "@ekubo-v3/interfaces/IFlashAccountant.sol";
+import {IFlashAccountant} from "@ekubo-v3/interfaces/IFlashAccountant.sol";
 import {CoreLib} from "@ekubo-v3/libraries/CoreLib.sol";
 import {FlashAccountantLib} from "@ekubo-v3/libraries/FlashAccountantLib.sol";
 import {SafeTransferLib} from "@solady/utils/SafeTransferLib.sol";
@@ -28,7 +28,6 @@ import {
     createSwapParameters,
     SwapParameters
 } from "@ekubo-v3/types/swapParameters.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
 
 using CoreLib for ICore;
 using FlashAccountantLib for ICore;
@@ -77,11 +76,13 @@ contract EkuboV3Executor is IExecutor, ICallback, RestrictTransferFrom {
         );
     }
 
-    function handleCallback(bytes calldata raw)
-        external
-        returns (bytes memory)
-    {
-        return _handleCallback(raw);
+    function handleCallback(bytes calldata raw) public returns (bytes memory) {
+        verifyCallback(raw);
+
+        // Without selector and locker id
+        bytes calldata stripped = raw[36:];
+
+        return abi.encode(_locked(stripped));
     }
 
     function verifyCallback(bytes calldata raw) public view coreOnly {
@@ -91,45 +92,16 @@ contract EkuboV3Executor is IExecutor, ICallback, RestrictTransferFrom {
         }
     }
 
-    function _handleCallback(bytes calldata raw)
-        internal
-        returns (bytes memory)
-    {
-        verifyCallback(raw);
-
-        // Without selector and locker id
-        bytes calldata stripped = raw[36:];
-
-        return abi.encode(_locked(stripped));
-    }
-
     function _lock(bytes memory data) private returns (uint128 swappedAmount) {
-        address target = CORE_ADDRESS;
-
-        // slither-disable-next-line assembly
-        assembly ("memory-safe") {
-            let args := mload(0x40)
-
-            // Selector of lock()
-            mstore(args, shl(224, 0xf83d08ba))
-
-            // We only copy the data, not the length, because the length is read from the calldata size
-            let len := mload(data)
-            mcopy(add(args, 4), add(data, 32), len)
-
-            // If the call failed, pass through the revert
-            if iszero(call(gas(), target, 0, args, add(len, 4), 0, 32)) {
-                returndatacopy(0, 0, returndatasize())
-                revert(0, returndatasize())
-            }
-
-            swappedAmount := mload(0)
-        }
+        bytes memory result = LibCall.callContract(
+            CORE_ADDRESS, abi.encodePacked(IFlashAccountant.lock.selector, data)
+        );
+        swappedAmount = abi.decode(result, (uint128));
     }
 
-    function _locked(bytes calldata swapData) private returns (uint256) {
-        uint128 tokenInDebtAmount = uint128(bytes16(swapData[0:16]));
-        int128 nextAmountIn = int128(tokenInDebtAmount);
+    function _locked(bytes calldata swapData) private returns (uint128) {
+        uint128 amountIn = uint128(bytes16(swapData[0:16]));
+        int128 nextAmountIn = int128(amountIn);
         TransferType transferType = TransferType(uint8(swapData[16]));
         address receiver = address(bytes20(swapData[17:37]));
         address tokenIn = address(bytes20(swapData[37:57]));
@@ -187,43 +159,37 @@ contract EkuboV3Executor is IExecutor, ICallback, RestrictTransferFrom {
             offset += HOP_BYTE_LEN;
         }
 
-        _pay(tokenIn, tokenInDebtAmount, transferType);
-        CORE.withdraw(nextTokenIn, receiver, uint128(nextAmountIn));
-
         // Only exact-in swaps are supported, so this is always non-negative
-        return uint256(uint128(nextAmountIn));
+        uint128 amountOut = uint128(nextAmountIn);
+
+        _pay(tokenIn, amountIn, transferType);
+        CORE.withdraw(nextTokenIn, receiver, amountOut);
+
+        return amountOut;
     }
 
     function _pay(address token, uint128 amount, TransferType transferType)
         private
     {
-        address target = CORE_ADDRESS;
-
         if (token == NATIVE_TOKEN_ADDRESS) {
             SafeTransferLib.safeTransferETH(CORE_ADDRESS, amount);
             return;
         }
 
-        // accountant.startPayments()
-        // slither-disable-next-line assembly
-        assembly ("memory-safe") {
-            mstore(0x00, 0xf9b6a796)
-            mstore(0x20, token)
-
-            // this is expected to never revert
-            pop(call(gas(), target, 0, 0x1c, 36, 0x00, 0x00))
-        }
+        LibCall.callContract(
+            CORE_ADDRESS,
+            abi.encodeWithSelector(
+                IFlashAccountant.startPayments.selector, token
+            )
+        );
 
         _transfer(CORE_ADDRESS, transferType, token, amount);
 
-        // accountant.completePayments()
-        // slither-disable-next-line assembly
-        assembly ("memory-safe") {
-            mstore(0x00, 0x12e103f1)
-            mstore(0x20, token)
-
-            // we ignore the potential reverts in this case because it will almost always result in nonzero debt when the lock returns
-            pop(call(gas(), target, 0, 0x1c, 36, 0x00, 0x00))
-        }
+        LibCall.callContract(
+            CORE_ADDRESS,
+            abi.encodeWithSelector(
+                IFlashAccountant.completePayments.selector, token
+            )
+        );
     }
 }

@@ -4,6 +4,7 @@ pragma solidity ^0.8.26;
 import "../TestUtils.sol";
 import "../TychoRouterTestSetup.sol";
 import "@src/executors/EkuboV3Executor.sol";
+import {ILocker} from "@ekubo-v3/interfaces/IFlashAccountant.sol";
 import {Constants} from "../Constants.sol";
 import {SafeTransferLib} from "@solady/utils/SafeTransferLib.sol";
 import {console} from "forge-std/Test.sol";
@@ -13,7 +14,7 @@ contract EkuboV3ExecutorStandalone is EkuboV3Executor, ILocker {
     constructor(address _permit2) EkuboV3Executor(_permit2) {}
 
     function locked_6416899205(uint256 id) external {
-        bytes memory res = _handleCallback(msg.data);
+        bytes memory res = handleCallback(msg.data);
         assembly ("memory-safe") {
             return(add(res, 32), mload(res))
         }
