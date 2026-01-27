@@ -1665,3 +1665,97 @@ fn test_encoding_strategy_curve_lido_sequential_swap() {
         hex_calldata.as_str(),
     );
 }
+
+#[test]
+#[ignore] // Performs real Angstrom API call
+fn test_single_swap_with_univ4_angstrom() {
+    //  USDC ─── (USV4-angstrom) ──> WETH
+
+    dotenv::dotenv().ok();
+
+    let weth = weth();
+    let usdc = usdc();
+
+    // USDC -> WETH (Uniswap v4 with Angstrom hook)
+    let angstrom_hook = Bytes::from("0x0000000aa232009084Bd71A5797d089AA4Edfad4");
+    let mut usdc_weth_attributes: HashMap<String, Bytes> = HashMap::new();
+    usdc_weth_attributes.insert("key_lp_fee".into(), Bytes::from("0x800000")); // 8388608
+    usdc_weth_attributes.insert("tick_spacing".into(), Bytes::from("0x0a")); // 10
+    usdc_weth_attributes.insert("hooks".into(), angstrom_hook.clone());
+    let swap = Swap::new(
+        ProtocolComponent {
+            id: "0x000000000004444c5dc75cB358380D2e3dE08A90".to_string(),
+            protocol_system: "uniswap_v4_hooks".to_string(),
+            static_attributes: usdc_weth_attributes,
+            ..Default::default()
+        },
+        usdc.clone(),
+        weth.clone(),
+    );
+
+    let encoder = get_tycho_router_encoder(UserTransferType::TransferFrom);
+
+    let solution = Solution {
+        exact_out: false,
+        given_token: usdc.clone(),
+        given_amount: BigUint::from_str("100000000").unwrap(), // 100 USDC (6 decimals)
+        checked_token: weth.clone(),
+        checked_amount: BigUint::from_str("99574171").unwrap(),
+        sender: alice_address(),
+        receiver: alice_address(),
+        swaps: vec![swap],
+        ..Default::default()
+    };
+
+    let encoded_solution = encoder
+        .encode_solutions(vec![solution.clone()])
+        .unwrap()[0]
+        .clone();
+
+    let calldata = encode_tycho_router_call(
+        eth_chain().id(),
+        encoded_solution,
+        &solution,
+        &UserTransferType::TransferFrom,
+        &eth(),
+        Some(get_signer()),
+    )
+    .unwrap()
+    .data;
+
+    let expected_input = [
+        "5c4b639c",                                                         // Function selector
+        "0000000000000000000000000000000000000000000000000000000005f5e100", // amount in
+        "000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // token in
+        "000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token out
+        "0000000000000000000000000000000000000000000000000000000005ef619b", // min amount out
+        "0000000000000000000000000000000000000000000000000000000000000000", // wrap
+        "0000000000000000000000000000000000000000000000000000000000000000", // unwrap
+        "000000000000000000000000cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
+        "0000000000000000000000000000000000000000000000000000000000000001", // transfer from needed
+        "0000000000000000000000000000000000000000000000000000000000000120", // offset of swap bytes
+        "00000000000000000000000000000000000000000000000000000000000002b0", /* length of swap
+                                                                             * bytes without
+                                                                             * padding */
+        // Swap data
+        "f62849f9a0b5bf2913b396098f7c7019b51a820a", // executor address
+        "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // token in
+        "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token out
+        "01",                                       // zero for one
+        "00",                                       // transfer type TransferFrom
+        "cd09f75e2bf2a4d11f3ab23f1389fcc1621c0cc2", // receiver
+        // pool params:
+        "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // intermediary token WETH
+        "800000",                                   // fee
+        "00000a",                                   // tick spacing
+        "0000000aa232009084bd71a5797d089aa4edfad4", // hook address
+    ]
+    .join("");
+
+    let hex_calldata = encode(&calldata);
+
+    assert_eq!(hex_calldata[..904], expected_input);
+    // The angstrom attestation adds calldata at the end. If they are not being encoded the
+    // following assert would fail
+    assert_eq!(hex_calldata[904..].len(), 1152);
+}
