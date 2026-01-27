@@ -1,3 +1,10 @@
+## [0.154.3](https://github.com/propeller-heads/tycho-execution/compare/0.154.2...0.154.3) (2026-01-27)
+
+
+### Bug Fixes
+
+* Remove uniswap_v4_hooks from base and unichain as well ([3e4d992](https://github.com/propeller-heads/tycho-execution/commit/3e4d992ac496fa764a39ccbdf38cc25eb93af4d6))
+
 ## [0.154.2](https://github.com/propeller-heads/tycho-execution/compare/0.154.1...0.154.2) (2026-01-27)
 
 
