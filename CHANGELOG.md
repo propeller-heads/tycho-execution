@@ -1,3 +1,10 @@
+## [0.154.2](https://github.com/propeller-heads/tycho-execution/compare/0.154.1...0.154.2) (2026-01-27)
+
+
+### Bug Fixes
+
+* Remove option for uniswap_v4_hooks encoder entirely ([0f28d2b](https://github.com/propeller-heads/tycho-execution/commit/0f28d2b108f476708852d007922c3bdd881d4a6d))
+
 ## [0.154.1](https://github.com/propeller-heads/tycho-execution/compare/0.154.0...0.154.1) (2026-01-22)
 
 
