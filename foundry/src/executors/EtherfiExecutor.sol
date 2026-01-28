@@ -84,6 +84,8 @@ contract EtherfiExecutor is IExecutor, RestrictTransferFrom {
         } else if (direction == EtherfiDirection.EthToEeth) {
             uint256 balanceBefore =
                 IERC20(EETH_ADDRESS).balanceOf(address(this));
+            // deposit() returns shares, not the eETH amount; use balance delta for amount-out.
+            // slither-disable-next-line unused-return
             IEtherfiLiquidityPool(LIQUIDITY_POOL_ADDRESS)
             .deposit{value: givenAmount}();
             uint256 balanceAfter = IERC20(EETH_ADDRESS).balanceOf(address(this));
