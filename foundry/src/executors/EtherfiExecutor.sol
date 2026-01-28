@@ -72,8 +72,14 @@ contract EtherfiExecutor is IExecutor, RestrictTransferFrom {
             }
 
             uint256 balanceBefore = receiver.balance;
+            // eETH is share-based and rounds down on amount conversions;
+            // cap redeem amount to current balance to avoid 1-wei dust reverts.
+            uint256 redeemAmount = IERC20(EETH_ADDRESS).balanceOf(address(this));
+            if (redeemAmount > givenAmount) {
+                redeemAmount = givenAmount;
+            }
             IEtherfiRedemptionManager(REDEMPTION_MANAGER_ADDRESS)
-                .redeemEEth(givenAmount, receiver, ETH_ADDRESS);
+                .redeemEEth(redeemAmount, receiver, ETH_ADDRESS);
             calculatedAmount = receiver.balance - balanceBefore;
         } else if (direction == EtherfiDirection.EthToEeth) {
             uint256 balanceBefore =
