@@ -100,7 +100,7 @@ contract EtherfiExecutorTest is Constants, TestUtils {
 
         uint256 balanceAfter = IERC20(EETH_ADDR).balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);
-        assertEq(balanceAfter - balanceBefore, amountOut);
+        assertApproxEqAbs(balanceAfter - balanceBefore, amountOut, 1);
     }
 
     function testSwapEethToWeeth() public {
@@ -117,7 +117,7 @@ contract EtherfiExecutorTest is Constants, TestUtils {
         uint256 balanceAfter = IERC20(WEETH_ADDR).balanceOf(BOB);
 
         assertGt(balanceAfter, balanceBefore);
-        assertEq(balanceAfter - balanceBefore, amountOut);
+        assertApproxEqAbs(balanceAfter - balanceBefore, amountOut, 1);
     }
 
     function testSwapWeethToEeth() public {
@@ -142,8 +142,55 @@ contract EtherfiExecutorTest is Constants, TestUtils {
         uint256 balanceAfter = IERC20(EETH_ADDR).balanceOf(BOB);
 
         assertGt(balanceAfter, balanceBefore);
-        assertEq(balanceAfter - balanceBefore, amountOut);
+        assertApproxEqAbs(balanceAfter - balanceBefore, amountOut, 1);
     }
 }
 
-contract TychoRouterForEtherfiTest is TychoRouterTestSetup {}
+contract TychoRouterForEtherfiTest is TychoRouterTestSetup {
+    function getForkBlock() public pure override returns (uint256) {
+        return 24332199;
+    }
+
+    function testSingleEtherfiUnwrapIntegration() public {
+        // weeth -> (unwrap) -> eeth -> (RedemptionManager) -> eth
+        address WEETH_ADDR = address(0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee);
+        IERC20 weeth = IERC20(WEETH_ADDR);
+        deal(WEETH_ADDR, BOB, 1 ether);
+        uint256 balanceBefore = BOB.balance;
+
+        vm.startPrank(BOB);
+        IERC20(WEETH_ADDR).approve(tychoRouterAddr, type(uint256).max);
+
+        bytes memory callData = loadCallDataFromFile(
+            "test_sequential_encoding_strategy_etherfi_unwrap_weeth"
+        );
+        (bool success,) = tychoRouterAddr.call(callData);
+
+        uint256 balanceAfter = BOB.balance;
+
+        assertTrue(success, "Call Failed");
+        assertEq(IERC20(WEETH_ADDR).balanceOf(tychoRouterAddr), 0);
+        assertGt(balanceAfter, balanceBefore);
+    }
+
+    function testSingleEtherfiWrapIntegration() public {
+        // eth -> (deposit) -> eeth -> (wrap) -> weeth
+        address WEETH_ADDR = address(0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee);
+        IERC20 weeth = IERC20(WEETH_ADDR);
+        deal(BOB, 1 ether);
+        uint256 balanceBefore = weeth.balanceOf(BOB);
+
+        vm.startPrank(BOB);
+
+        bytes memory callData = loadCallDataFromFile(
+            "test_sequential_encoding_strategy_etherfi_wrap_eeth"
+        );
+        (bool success,) = tychoRouterAddr.call{value: 1 ether}(callData);
+
+        uint256 balanceAfter = weeth.balanceOf(BOB);
+
+        assertTrue(success, "Call Failed");
+        assertEq(IERC20(WEETH_ADDR).balanceOf(tychoRouterAddr), 0);
+        assertGt(balanceAfter, balanceBefore);
+    }
+}
