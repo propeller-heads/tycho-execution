@@ -6,9 +6,9 @@ require("@nomicfoundation/hardhat-foundry");
 
 module.exports = {
     solidity: {
-        version: "0.8.26",
+        version: "0.8.33",
         settings: {
-            evmVersion: "cancun",
+            evmVersion: "osaka",
             viaIR: true,
             optimizer: {
                 enabled: true,
