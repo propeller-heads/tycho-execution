@@ -593,7 +593,7 @@ mod tests {
     }
 
     fn router_address() -> Bytes {
-        Bytes::from_str("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395").unwrap()
+        Bytes::from_str("0x6bc529DC7B81A031828dDCE2BC419d01FF268C66").unwrap()
     }
 
     mod single {
@@ -894,7 +894,7 @@ mod tests {
                 eth_chain(),
                 swap_encoder_registry,
                 UserTransferType::TransferFromPermit2,
-                Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395"),
+                Bytes::from("0x6bc529DC7B81A031828dDCE2BC419d01FF268C66"),
                 false,
             )
             .unwrap();
@@ -928,7 +928,7 @@ mod tests {
                 "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // token in
                 "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token out
                 "0001f4",                                   // pool fee
-                "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver
+                "6bc529dc7b81a031828ddce2bc419d01ff268c66", // receiver
                 "88e6a0c2ddd26feeb64f039a2c41296fcb3f5640", // component id
                 "01",                                       // zero2one
                 "00",                                       // transfer type TransferFrom
@@ -940,7 +940,7 @@ mod tests {
                 "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // token in
                 "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token out
                 "000bb8",                                   // pool fee
-                "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver
+                "6bc529dc7b81a031828ddce2bc419d01ff268c66", // receiver
                 "8ad599c3a0ff1de082011efddc58f1908eb6e6d8", // component id
                 "01",                                       // zero2one
                 "00",                                       // transfer type TransferFrom
@@ -1040,7 +1040,7 @@ mod tests {
                 eth_chain(),
                 swap_encoder_registry,
                 UserTransferType::TransferFrom,
-                Bytes::from("0x3Ede3eCa2a72B3aeCC820E955B36f38437D01395"),
+                Bytes::from("0x6bc529DC7B81A031828dDCE2BC419d01FF268C66"),
                 false,
             )
             .unwrap();
@@ -1073,7 +1073,7 @@ mod tests {
                 "5615deb798bb3e4dfa0139dfa1b3d433cc23b72f", // executor address
                 "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // token in
                 "b4e16d0168e52d35cacd2c6185b44281ec28c9dc", // component id
-                "3ede3eca2a72b3aecc820e955b36f38437d01395", // receiver
+                "6bc529dc7b81a031828ddce2bc419d01ff268c66", // receiver
                 "01",                                       // zero2one
                 "00",                                       // transfer type TransferFrom
                 "006e",                                     // ple encoded swaps
