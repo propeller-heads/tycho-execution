@@ -5,7 +5,10 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IExecutor} from "@interfaces/IExecutor.sol";
 import {ICallback} from "@interfaces/ICallback.sol";
 import {ICore} from "@ekubo-v3/interfaces/ICore.sol";
-import {IFlashAccountant} from "@ekubo-v3/interfaces/IFlashAccountant.sol";
+import {
+    IFlashAccountant,
+    ILocker
+} from "@ekubo-v3/interfaces/IFlashAccountant.sol";
 import {CoreLib} from "@ekubo-v3/libraries/CoreLib.sol";
 import {FlashAccountantLib} from "@ekubo-v3/libraries/FlashAccountantLib.sol";
 import {SafeTransferLib} from "@solady/utils/SafeTransferLib.sol";
@@ -46,8 +49,6 @@ contract EkuboV3Executor is IExecutor, ICallback, RestrictTransferFrom {
     uint256 constant POOL_DATA_OFFSET = 57;
     uint256 constant HOP_BYTE_LEN = 52;
 
-    bytes4 constant LOCKED_SELECTOR = 0x00000000; // cast sig "locked_6416899205(uint256)"
-
     uint256 constant SKIP_AHEAD = 0;
 
     using SafeERC20 for IERC20;
@@ -87,7 +88,7 @@ contract EkuboV3Executor is IExecutor, ICallback, RestrictTransferFrom {
 
     function verifyCallback(bytes calldata raw) public view coreOnly {
         bytes4 selector = bytes4(raw[:4]);
-        if (selector != LOCKED_SELECTOR) {
+        if (selector != ILocker.locked_6416899205.selector) {
             revert EkuboExecutor__UnknownCallback();
         }
     }
@@ -148,8 +149,9 @@ contract EkuboV3Executor is IExecutor, ICallback, RestrictTransferFrom {
                     (PoolBalanceUpdate, PoolState)
                 );
             } else {
+                PoolState _stateAfter;
                 // slither-disable-next-line calls-loop
-                (balanceUpdate,) = CORE.swap(0, pk, swapParameters);
+                (balanceUpdate, _stateAfter) = CORE.swap(0, pk, swapParameters);
             }
 
             nextTokenIn = nextTokenOut;
@@ -176,7 +178,7 @@ contract EkuboV3Executor is IExecutor, ICallback, RestrictTransferFrom {
             return;
         }
 
-        LibCall.callContract(
+        bytes memory _result = LibCall.callContract(
             CORE_ADDRESS,
             abi.encodeWithSelector(
                 IFlashAccountant.startPayments.selector, token
@@ -185,7 +187,7 @@ contract EkuboV3Executor is IExecutor, ICallback, RestrictTransferFrom {
 
         _transfer(CORE_ADDRESS, transferType, token, amount);
 
-        LibCall.callContract(
+        _result = LibCall.callContract(
             CORE_ADDRESS,
             abi.encodeWithSelector(
                 IFlashAccountant.completePayments.selector, token
