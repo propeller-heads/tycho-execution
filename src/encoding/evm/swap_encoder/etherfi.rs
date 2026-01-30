@@ -148,6 +148,18 @@ mod tests {
     use super::*;
     use crate::encoding::models::TransferType;
 
+    const EETH_ADDRESS: &str = "0x35fA164735182de50811E8e2E824cFb9B6118ac2";
+    const WEETH_ADDRESS: &str = "0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee";
+    const REDEMPTION_MANAGER_ADDRESS: &str = "0xDadEf1fFBFeaAB4f68A9fD181395F68b4e4E7Ae0";
+
+    fn etherfi_config() -> HashMap<String, String> {
+        HashMap::from([
+            ("eeth_address".to_string(), EETH_ADDRESS.to_string()),
+            ("weeth_address".to_string(), WEETH_ADDRESS.to_string()),
+            ("redemption_manager_address".to_string(), REDEMPTION_MANAGER_ADDRESS.to_string()),
+        ])
+    }
+
     fn encoding_context(token_in: &Bytes, token_out: &Bytes) -> EncodingContext {
         EncodingContext {
             receiver: Bytes::from("0x1D96F2f6BeF1202E4Ce1Ff6Dad0c2CB002861d3e"),
@@ -164,7 +176,7 @@ mod tests {
         EtherfiSwapEncoder::new(
             Bytes::from("0x543778987b293C7E8Cf0722BB2e935ba6f4068D4"),
             Chain::Ethereum,
-            None,
+            Some(etherfi_config()),
         )
         .unwrap()
     }
