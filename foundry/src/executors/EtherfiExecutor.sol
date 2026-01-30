@@ -36,18 +36,26 @@ enum EtherfiDirection {
 contract EtherfiExecutor is IExecutor, RestrictTransferFrom {
     using SafeERC20 for IERC20;
 
-    constructor(address _permit2) RestrictTransferFrom(_permit2) {}
+    address public immutable ETH_ADDRESS;
+    address public immutable EETH_ADDRESS;
+    address public immutable LIQUIDITY_POOL_ADDRESS;
+    address public immutable WEETH_ADDRESS;
+    address public immutable REDEMPTION_MANAGER_ADDRESS;
 
-    address public constant ETH_ADDRESS =
-        0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-    address public constant EETH_ADDRESS =
-        0x35fA164735182de50811E8e2E824cFb9B6118ac2;
-    address public constant LIQUIDITY_POOL_ADDRESS =
-        0x308861A430be4cce5502d0A12724771Fc6DaF216;
-    address public constant WEETH_ADDRESS =
-        0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee;
-    address public constant REDEMPTION_MANAGER_ADDRESS =
-        0xDadEf1fFBFeaAB4f68A9fD181395F68b4e4E7Ae0;
+    constructor(
+        address _permit2,
+        address _ethAddress,
+        address _eethAddress,
+        address _liquidityPoolAddress,
+        address _weethAddress,
+        address _redemptionManagerAddress
+    ) RestrictTransferFrom(_permit2) {
+        ETH_ADDRESS = _ethAddress;
+        EETH_ADDRESS = _eethAddress;
+        LIQUIDITY_POOL_ADDRESS = _liquidityPoolAddress;
+        WEETH_ADDRESS = _weethAddress;
+        REDEMPTION_MANAGER_ADDRESS = _redemptionManagerAddress;
+    }
 
     receive() external payable {}
 
@@ -92,7 +100,12 @@ contract EtherfiExecutor is IExecutor, RestrictTransferFrom {
             calculatedAmount = balanceAfter - balanceBefore;
 
             if (receiver != address(this)) {
+                uint256 receiverBalanceBefore =
+                    IERC20(EETH_ADDRESS).balanceOf(receiver);
                 IERC20(EETH_ADDRESS).safeTransfer(receiver, calculatedAmount);
+                uint256 receiverBalanceAfter =
+                    IERC20(EETH_ADDRESS).balanceOf(receiver);
+                calculatedAmount = receiverBalanceAfter - receiverBalanceBefore;
             }
         } else if (direction == EtherfiDirection.EethToWeeth) {
             _transfer(address(this), transferType, EETH_ADDRESS, givenAmount);

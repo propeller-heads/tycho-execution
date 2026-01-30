@@ -12,10 +12,6 @@ use crate::encoding::{
     swap_encoder::SwapEncoder,
 };
 
-const EETH_ADDRESS: &str = "0x35fA164735182de50811E8e2E824cFb9B6118ac2";
-const WEETH_ADDRESS: &str = "0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee";
-const REDEMPTION_MANAGER_ADDRESS: &str = "0xDadEf1fFBFeaAB4f68A9fD181395F68b4e4E7Ae0";
-
 /// Encodes a swap on a Etherfi pool through the given executor address.
 ///
 /// # Fields
@@ -41,13 +37,39 @@ impl SwapEncoder for EtherfiSwapEncoder {
     fn new(
         executor_address: Bytes,
         chain: Chain,
-        _config: Option<HashMap<String, String>>,
+        config: Option<HashMap<String, String>>,
     ) -> Result<Self, EncodingError> {
+        let config = config
+            .ok_or_else(|| EncodingError::FatalError("Etherfi config is empty".to_string()))?;
+
+        let eeth_address = config
+            .get("eeth_address")
+            .map(|a| Bytes::from(a.as_str()))
+            .ok_or_else(|| {
+                EncodingError::FatalError("Missing eeth_address in etherfi config".to_string())
+            })?;
+
+        let weeth_address = config
+            .get("weeth_address")
+            .map(|a| Bytes::from(a.as_str()))
+            .ok_or_else(|| {
+                EncodingError::FatalError("Missing weeth_address in etherfi config".to_string())
+            })?;
+
+        let redemption_manager_address = config
+            .get("redemption_manager_address")
+            .map(|a| Bytes::from(a.as_str()))
+            .ok_or_else(|| {
+                EncodingError::FatalError(
+                    "Missing redemption_manager_address in etherfi config".to_string(),
+                )
+            })?;
+
         Ok(Self {
             executor_address,
-            eeth_address: Bytes::from(EETH_ADDRESS),
-            weeth_address: Bytes::from(WEETH_ADDRESS),
-            redemption_manager_address: Bytes::from(REDEMPTION_MANAGER_ADDRESS),
+            eeth_address,
+            weeth_address,
+            redemption_manager_address,
             eth_address: chain.native_token().address,
         })
     }

@@ -7,7 +7,23 @@ import "@src/executors/EtherfiExecutor.sol";
 import {Constants} from "../Constants.sol";
 
 contract EtherfiExecutorExposed is EtherfiExecutor {
-    constructor(address _permit2) EtherfiExecutor(_permit2) {}
+    constructor(
+        address _permit2,
+        address _ethAddress,
+        address _eethAddress,
+        address _liquidityPoolAddress,
+        address _weethAddress,
+        address _redemptionManagerAddress
+    )
+        EtherfiExecutor(
+            _permit2,
+            _ethAddress,
+            _eethAddress,
+            _liquidityPoolAddress,
+            _weethAddress,
+            _redemptionManagerAddress
+        )
+    {}
 
     function decodeParams(bytes calldata data)
         external
@@ -26,15 +42,17 @@ contract EtherfiExecutorExposed is EtherfiExecutor {
 contract EtherfiExecutorTest is Constants, TestUtils {
     EtherfiExecutorExposed etherfiExposed;
 
-    address constant EETH_ADDR =
-        address(0x35fA164735182de50811E8e2E824cFb9B6118ac2);
-    address constant WEETH_ADDR =
-        address(0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee);
-
     function setUp() public {
         uint256 forkBlock = 23934489;
         vm.createSelectFork(vm.rpcUrl("mainnet"), forkBlock);
-        etherfiExposed = new EtherfiExecutorExposed(PERMIT2_ADDRESS);
+        etherfiExposed = new EtherfiExecutorExposed(
+            PERMIT2_ADDRESS,
+            ETH_ADDR_FOR_CURVE,
+            EETH_ADDR,
+            LIQUIDITY_POOL_ADDR,
+            WEETH_ADDR,
+            REDEMPTION_MANAGER_ADDR
+        );
     }
 
     function _mintEethToExecutor(uint256 amountIn)
@@ -100,7 +118,7 @@ contract EtherfiExecutorTest is Constants, TestUtils {
 
         uint256 balanceAfter = IERC20(EETH_ADDR).balanceOf(BOB);
         assertGt(balanceAfter, balanceBefore);
-        assertApproxEqAbs(balanceAfter - balanceBefore, amountOut, 1);
+        assertEq(balanceAfter - balanceBefore, amountOut);
     }
 
     function testSwapEethToWeeth() public {
@@ -153,7 +171,6 @@ contract TychoRouterForEtherfiTest is TychoRouterTestSetup {
 
     function testSingleEtherfiUnwrapIntegration() public {
         // weeth -> (unwrap) -> eeth -> (RedemptionManager) -> eth
-        address WEETH_ADDR = address(0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee);
         IERC20 weeth = IERC20(WEETH_ADDR);
         deal(WEETH_ADDR, BOB, 1 ether);
         uint256 balanceBefore = BOB.balance;
@@ -175,7 +192,6 @@ contract TychoRouterForEtherfiTest is TychoRouterTestSetup {
 
     function testSingleEtherfiWrapIntegration() public {
         // eth -> (deposit) -> eeth -> (wrap) -> weeth
-        address WEETH_ADDR = address(0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee);
         IERC20 weeth = IERC20(WEETH_ADDR);
         deal(BOB, 1 ether);
         uint256 balanceBefore = weeth.balanceOf(BOB);

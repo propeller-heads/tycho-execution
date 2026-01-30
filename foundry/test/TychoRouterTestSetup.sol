@@ -173,7 +173,14 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
         lidoExecutor =
             new LidoExecutor(STETH_ADDR, WSTETH_ADDR, PERMIT2_ADDRESS);
         ekuboV3Executor = new EkuboV3Executor(PERMIT2_ADDRESS);
-        etherfiExecutor = new EtherfiExecutor(PERMIT2_ADDRESS);        
+        etherfiExecutor = new EtherfiExecutor(
+            PERMIT2_ADDRESS,
+            ETH_ADDR_FOR_CURVE,
+            0x35fA164735182de50811E8e2E824cFb9B6118ac2,
+            0x308861A430be4cce5502d0A12724771Fc6DaF216,
+            0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee,
+            0xDadEf1fFBFeaAB4f68A9fD181395F68b4e4E7Ae0
+        );
 
         address[] memory executors = new address[](18);
         executors[0] = address(usv2Executor);
