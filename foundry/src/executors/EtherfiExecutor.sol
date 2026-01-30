@@ -36,11 +36,11 @@ enum EtherfiDirection {
 contract EtherfiExecutor is IExecutor, RestrictTransferFrom {
     using SafeERC20 for IERC20;
 
-    address public immutable ETH_ADDRESS;
-    address public immutable EETH_ADDRESS;
-    address public immutable LIQUIDITY_POOL_ADDRESS;
-    address public immutable WEETH_ADDRESS;
-    address public immutable REDEMPTION_MANAGER_ADDRESS;
+    address public immutable ethAddress;
+    address public immutable eethAddress;
+    address public immutable liquidityPoolAddress;
+    address public immutable weethAddress;
+    address public immutable redemptionManagerAddress;
 
     constructor(
         address _permit2,
@@ -50,11 +50,29 @@ contract EtherfiExecutor is IExecutor, RestrictTransferFrom {
         address _weethAddress,
         address _redemptionManagerAddress
     ) RestrictTransferFrom(_permit2) {
-        ETH_ADDRESS = _ethAddress;
-        EETH_ADDRESS = _eethAddress;
-        LIQUIDITY_POOL_ADDRESS = _liquidityPoolAddress;
-        WEETH_ADDRESS = _weethAddress;
-        REDEMPTION_MANAGER_ADDRESS = _redemptionManagerAddress;
+        require(
+            _ethAddress != address(0), "EtherfiExecutor: ethAddress is zero"
+        );
+        require(
+            _eethAddress != address(0), "EtherfiExecutor: eethAddress is zero"
+        );
+        require(
+            _liquidityPoolAddress != address(0),
+            "EtherfiExecutor: liquidityPoolAddress is zero"
+        );
+        require(
+            _weethAddress != address(0), "EtherfiExecutor: weethAddress is zero"
+        );
+        require(
+            _redemptionManagerAddress != address(0),
+            "EtherfiExecutor: redemptionManagerAddress is zero"
+        );
+
+        ethAddress = _ethAddress;
+        eethAddress = _eethAddress;
+        liquidityPoolAddress = _liquidityPoolAddress;
+        weethAddress = _weethAddress;
+        redemptionManagerAddress = _redemptionManagerAddress;
     }
 
     receive() external payable {}
@@ -73,57 +91,56 @@ contract EtherfiExecutor is IExecutor, RestrictTransferFrom {
         (receiver, transferType, direction, approvalNeeded) = _decodeData(data);
 
         if (direction == EtherfiDirection.EethToEth) {
-            _transfer(address(this), transferType, EETH_ADDRESS, givenAmount);
+            _transfer(address(this), transferType, eethAddress, givenAmount);
             if (approvalNeeded) {
-                IERC20(EETH_ADDRESS)
-                    .forceApprove(REDEMPTION_MANAGER_ADDRESS, type(uint256).max);
+                IERC20(eethAddress)
+                    .forceApprove(redemptionManagerAddress, type(uint256).max);
             }
 
             uint256 balanceBefore = receiver.balance;
             // eETH is share-based and rounds down on amount conversions;
             // cap redeem amount to current balance to avoid 1-wei dust reverts.
-            uint256 redeemAmount = IERC20(EETH_ADDRESS).balanceOf(address(this));
+            uint256 redeemAmount = IERC20(eethAddress).balanceOf(address(this));
             if (redeemAmount > givenAmount) {
                 redeemAmount = givenAmount;
             }
-            IEtherfiRedemptionManager(REDEMPTION_MANAGER_ADDRESS)
-                .redeemEEth(redeemAmount, receiver, ETH_ADDRESS);
+            IEtherfiRedemptionManager(redemptionManagerAddress)
+                .redeemEEth(redeemAmount, receiver, ethAddress);
             calculatedAmount = receiver.balance - balanceBefore;
         } else if (direction == EtherfiDirection.EthToEeth) {
-            uint256 balanceBefore =
-                IERC20(EETH_ADDRESS).balanceOf(address(this));
+            uint256 balanceBefore = IERC20(eethAddress).balanceOf(address(this));
             // deposit() returns shares, not the eETH amount; use balance delta for amount-out.
-            // slither-disable-next-line unused-return
-            IEtherfiLiquidityPool(LIQUIDITY_POOL_ADDRESS)
-            .deposit{value: givenAmount}();
-            uint256 balanceAfter = IERC20(EETH_ADDRESS).balanceOf(address(this));
+            // slither-disable-next-line arbitrary-send-eth
+            IEtherfiLiquidityPool(liquidityPoolAddress)
+                .deposit{value: givenAmount}();
+            uint256 balanceAfter = IERC20(eethAddress).balanceOf(address(this));
             calculatedAmount = balanceAfter - balanceBefore;
 
             if (receiver != address(this)) {
                 uint256 receiverBalanceBefore =
-                    IERC20(EETH_ADDRESS).balanceOf(receiver);
-                IERC20(EETH_ADDRESS).safeTransfer(receiver, calculatedAmount);
+                    IERC20(eethAddress).balanceOf(receiver);
+                IERC20(eethAddress).safeTransfer(receiver, calculatedAmount);
                 uint256 receiverBalanceAfter =
-                    IERC20(EETH_ADDRESS).balanceOf(receiver);
+                    IERC20(eethAddress).balanceOf(receiver);
                 calculatedAmount = receiverBalanceAfter - receiverBalanceBefore;
             }
         } else if (direction == EtherfiDirection.EethToWeeth) {
-            _transfer(address(this), transferType, EETH_ADDRESS, givenAmount);
+            _transfer(address(this), transferType, eethAddress, givenAmount);
             if (approvalNeeded) {
-                IERC20(EETH_ADDRESS)
-                    .forceApprove(WEETH_ADDRESS, type(uint256).max);
+                IERC20(eethAddress)
+                    .forceApprove(weethAddress, type(uint256).max);
             }
-            calculatedAmount = IWeETH(WEETH_ADDRESS).wrap(givenAmount);
+            calculatedAmount = IWeETH(weethAddress).wrap(givenAmount);
 
             if (receiver != address(this)) {
-                IERC20(WEETH_ADDRESS).safeTransfer(receiver, calculatedAmount);
+                IERC20(weethAddress).safeTransfer(receiver, calculatedAmount);
             }
         } else if (direction == EtherfiDirection.WeethToEeth) {
-            _transfer(address(this), transferType, WEETH_ADDRESS, givenAmount);
-            calculatedAmount = IWeETH(WEETH_ADDRESS).unwrap(givenAmount);
+            _transfer(address(this), transferType, weethAddress, givenAmount);
+            calculatedAmount = IWeETH(weethAddress).unwrap(givenAmount);
 
             if (receiver != address(this)) {
-                IERC20(EETH_ADDRESS).safeTransfer(receiver, calculatedAmount);
+                IERC20(eethAddress).safeTransfer(receiver, calculatedAmount);
             }
         } else {
             revert EtherfiExecutor__InvalidDirection();
