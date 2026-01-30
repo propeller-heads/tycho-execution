@@ -88,6 +88,45 @@ contract TychoRouterSingleSwapTest is TychoRouterTestSetup {
         vm.stopPrank();
     }
 
+    function testSingleSwapVault() public {
+        // Trade 1 WETH for DAI with 1 swap on Uniswap V2
+        // Checks amount out at the end
+        uint256 amountIn = 1 ether;
+
+        deal(WETH_ADDR, ALICE, amountIn);
+        vm.startPrank(ALICE);
+        // Approve the tokenIn to be transferred to the router
+        IERC20(WETH_ADDR).approve(address(tychoRouterAddr), amountIn);
+        tychoRouter.deposit(WETH_ADDR, amountIn);
+
+        bytes memory protocolData =
+            encodeUniswapV2Swap(DAI_WETH_UNIV2_POOL, WETH_ADDR, DAI_ADDR);
+
+        bytes memory swap =
+            encodeSingleSwap(address(usv2Executor), protocolData);
+
+        uint256 minAmountOut = 2000 * 1e18;
+        uint256 amountOut = tychoRouter.singleSwapUsingVault(
+            amountIn,
+            WETH_ADDR,
+            DAI_ADDR,
+            minAmountOut,
+            ALICE,
+            0,
+            address(0),
+            0,
+            swap
+        );
+
+        uint256 expectedAmount = 2018817438608734439722;
+        assertEq(amountOut, expectedAmount);
+        uint256 daiBalance = IERC20(DAI_ADDR).balanceOf(ALICE);
+        assertEq(daiBalance, expectedAmount);
+        assertEq(IERC20(WETH_ADDR).balanceOf(ALICE), 0);
+
+        vm.stopPrank();
+    }
+
     function testSingleSwapUndefinedMinAmount() public {
         // Trade 1 WETH for DAI with 1 swap on Uniswap V2
         // Checks amount out at the end
