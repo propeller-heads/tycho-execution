@@ -7,6 +7,7 @@ import {BalancerV3Executor} from "../src/executors/BalancerV3Executor.sol";
 import {BebopExecutor} from "../src/executors/BebopExecutor.sol";
 import {CurveExecutor} from "../src/executors/CurveExecutor.sol";
 import {EkuboExecutor} from "../src/executors/EkuboExecutor.sol";
+import {EkuboV3Executor} from "../src/executors/EkuboV3Executor.sol";
 import {HashflowExecutor} from "../src/executors/HashflowExecutor.sol";
 import {MaverickV2Executor} from "../src/executors/MaverickV2Executor.sol";
 import {UniswapV2Executor} from "../src/executors/UniswapV2Executor.sol";
@@ -76,7 +77,8 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
     UniswapV3Executor public pancakev3Executor;
     UniswapV4Executor public usv4Executor;
     BalancerV2Executor public balancerv2Executor;
-    EkuboExecutor public ekuboExecutor;
+    EkuboExecutor public ekuboV2Executor;
+    EkuboV3Executor public ekuboV3Executor;
     CurveExecutor public curveExecutor;
     MaverickV2Executor public maverickv2Executor;
     BalancerV3Executor public balancerV3Executor;
@@ -133,8 +135,8 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
         bytes32 initCodeV3 = USV3_POOL_CODE_INIT_HASH;
         bytes32 initCodePancakeV3 = PANCAKEV3_POOL_CODE_INIT_HASH;
         address poolManagerAddress = 0x000000000004444c5dc75cB358380D2e3dE08A90;
-        address ekuboCore = 0xe0e0e08A6A4b9Dc7bD67BCB7aadE5cF48157d444;
-        address ekuboMevResist = 0x553a2EFc570c9e104942cEC6aC1c18118e54C091;
+        address ekuboV2Core = 0xe0e0e08A6A4b9Dc7bD67BCB7aadE5cF48157d444;
+        address ekuboV2MevResist = 0x553a2EFc570c9e104942cEC6aC1c18118e54C091;
 
         IPoolManager poolManager = IPoolManager(poolManagerAddress);
         usv2Executor =
@@ -147,8 +149,8 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
             factoryPancakeV3, initCodePancakeV3, PERMIT2_ADDRESS
         );
         balancerv2Executor = new BalancerV2Executor(PERMIT2_ADDRESS);
-        ekuboExecutor =
-            new EkuboExecutor(ekuboCore, ekuboMevResist, PERMIT2_ADDRESS);
+        ekuboV2Executor =
+            new EkuboExecutor(ekuboV2Core, ekuboV2MevResist, PERMIT2_ADDRESS);
         curveExecutor =
             new CurveExecutor(ETH_ADDR_FOR_CURVE, PERMIT2_ADDRESS, STETH_ADDR);
         maverickv2Executor =
@@ -168,14 +170,15 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
         erc4626Executor = new ERC4626Executor(PERMIT2_ADDRESS);
         lidoExecutor =
             new LidoExecutor(STETH_ADDR, WSTETH_ADDR, PERMIT2_ADDRESS);
+        ekuboV3Executor = new EkuboV3Executor(PERMIT2_ADDRESS);
 
-        address[] memory executors = new address[](16);
+        address[] memory executors = new address[](17);
         executors[0] = address(usv2Executor);
         executors[1] = address(usv3Executor);
         executors[2] = address(pancakev3Executor);
         executors[3] = address(usv4Executor);
         executors[4] = address(balancerv2Executor);
-        executors[5] = address(ekuboExecutor);
+        executors[5] = address(ekuboV2Executor);
         executors[6] = address(curveExecutor);
         executors[7] = address(maverickv2Executor);
         executors[8] = address(balancerV3Executor);
@@ -186,6 +189,7 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
         executors[13] = address(rocketpoolExecutor);
         executors[14] = address(erc4626Executor);
         executors[15] = address(lidoExecutor);
+        executors[16] = address(ekuboV3Executor);
 
         return executors;
     }

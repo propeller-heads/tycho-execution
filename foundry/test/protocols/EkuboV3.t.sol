@@ -3,44 +3,50 @@ pragma solidity ^0.8.26;
 
 import "../TestUtils.sol";
 import "../TychoRouterTestSetup.sol";
-import "@src/executors/EkuboExecutor.sol";
+import "@src/executors/EkuboV3Executor.sol";
+import {ILocker} from "@ekubo-v3/interfaces/IFlashAccountant.sol";
 import {Constants} from "../Constants.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {NATIVE_TOKEN_ADDRESS} from "@ekubo/math/constants.sol";
+import {SafeTransferLib} from "@solady/utils/SafeTransferLib.sol";
 import {console} from "forge-std/Test.sol";
 
-contract EkuboExecutorTest is Constants, TestUtils {
-    address constant EXECUTOR_ADDRESS =
-        0xcA4F73Fe97D0B987a0D12B39BBD562c779BAb6f6; // Same address as in swap_encoder.rs tests
-    EkuboExecutor executor;
+// Handles callbacks directly and receives the native token directly
+contract EkuboV3ExecutorStandalone is EkuboV3Executor, ILocker {
+    constructor(address _permit2) EkuboV3Executor(_permit2) {}
+
+    function locked_6416899205(uint256 id) external {
+        bytes memory res = handleCallback(msg.data);
+        assembly ("memory-safe") {
+            return(add(res, 32), mload(res))
+        }
+    }
+
+    // To receive withdrawals from Core
+    receive() external payable {}
+}
+
+contract EkuboV3ExecutorTest is Constants, TestUtils {
+    EkuboV3ExecutorStandalone immutable executor =
+        new EkuboV3ExecutorStandalone(PERMIT2_ADDRESS);
 
     IERC20 USDC = IERC20(USDC_ADDR);
     IERC20 USDT = IERC20(USDT_ADDR);
 
-    address constant CORE_ADDRESS = 0xe0e0e08A6A4b9Dc7bD67BCB7aadE5cF48157d444;
-    address constant MEV_RESIST_ADDRESS =
-        0x553a2EFc570c9e104942cEC6aC1c18118e54C091;
-
     bytes32 constant ORACLE_CONFIG =
-        0x51d02a5948496a67827242eabc5725531342527c000000000000000000000000;
+        0x517E506700271AEa091b02f42756F5E174Af5230000000000000000000000000;
 
-    // 0.01% fee and 0.02% tick spacing
-    bytes32 constant MEV_RESIST_POOL_CONFIG =
-        0x553a2EFc570c9e104942cEC6aC1c18118e54C09100068db8bac710cb000000c8;
+    constructor() {
+        vm.makePersistent(address(executor));
+    }
 
     modifier setUpFork(uint256 blockNumber) {
         vm.createSelectFork(vm.rpcUrl("mainnet"), blockNumber);
+        // Forks always use the default hardfork https://github.com/foundry-rs/foundry/issues/13040
+        vm.setEvmVersion("osaka");
 
-        deployCodeTo(
-            "executors/EkuboExecutor.sol",
-            abi.encode(CORE_ADDRESS, MEV_RESIST_ADDRESS, PERMIT2_ADDRESS),
-            EXECUTOR_ADDRESS
-        );
-        executor = EkuboExecutor(payable(EXECUTOR_ADDRESS));
         _;
     }
 
-    function testSingleSwapEth() public setUpFork(22722989) {
+    function testSingleSwapEth() public setUpFork(24218590) {
         uint256 amountIn = 1 ether;
 
         deal(address(executor), amountIn);
@@ -77,7 +83,7 @@ contract EkuboExecutorTest is Constants, TestUtils {
         );
     }
 
-    function testSingleSwapERC20() public setUpFork(22722989) {
+    function testSingleSwapERC20() public setUpFork(24218590) {
         uint256 amountIn = 1_000_000_000;
 
         deal(USDC_ADDR, address(executor), amountIn);
@@ -114,23 +120,25 @@ contract EkuboExecutorTest is Constants, TestUtils {
         );
     }
 
-    function testMevResist() public setUpFork(22722989) {
-        uint256 amountIn = 1_000_000_000;
+    function testMevCapture() public setUpFork(24198199) {
+        uint256 amountIn = 1_000;
 
         deal(USDC_ADDR, address(executor), amountIn);
 
         uint256 usdcBalanceBeforeCore = USDC.balanceOf(CORE_ADDRESS);
         uint256 usdcBalanceBeforeExecutor = USDC.balanceOf(address(executor));
 
-        uint256 ethBalanceBeforeCore = CORE_ADDRESS.balance;
-        uint256 ethBalanceBeforeExecutor = address(executor).balance;
+        uint256 usdtBalanceBeforeCore = USDT.balanceOf(CORE_ADDRESS);
+        uint256 usdtBalanceBeforeExecutor = USDT.balanceOf(address(executor));
 
         bytes memory data = abi.encodePacked(
             uint8(RestrictTransferFrom.TransferType.Transfer), // transferNeeded (transfer from executor to core)
             address(executor), // receiver
             USDC_ADDR, // tokenIn
-            NATIVE_TOKEN_ADDRESS, // tokenOut
-            MEV_RESIST_POOL_CONFIG // config
+            USDT_ADDR, // tokenOut
+            bytes32(
+                0x5555ff9ff2757500bf4ee020dcfd0210cffa41be000053e2d6238da480000032
+            ) // config (0.0005% fee and 0.005% tick spacing)
         );
 
         uint256 gasBefore = gasleft();
@@ -145,26 +153,30 @@ contract EkuboExecutorTest is Constants, TestUtils {
             usdcBalanceBeforeExecutor - amountIn
         );
 
-        assertEq(CORE_ADDRESS.balance, ethBalanceBeforeCore - amountOut);
         assertEq(
-            address(executor).balance, ethBalanceBeforeExecutor + amountOut
+            USDT.balanceOf(CORE_ADDRESS), usdtBalanceBeforeCore - amountOut
+        );
+        assertEq(
+            USDT.balanceOf(address(executor)),
+            usdtBalanceBeforeExecutor + amountOut
         );
     }
 
-    // Expects input that encodes the same test case as swap_encoder::tests::ekubo::test_encode_swap_multi
-    function multiHopSwap(bytes memory data) internal {
+    // Data is generated by test case in swap_encoder::tests::ekubo_v3::test_encode_swap_multi
+    function testMultiHopSwapIntegration() public setUpFork(24218590) {
         uint256 amountIn = 1 ether;
-
         deal(address(executor), amountIn);
 
         uint256 ethBalanceBeforeCore = CORE_ADDRESS.balance;
         uint256 ethBalanceBeforeExecutor = address(executor).balance;
 
         uint256 usdtBalanceBeforeCore = USDT.balanceOf(CORE_ADDRESS);
-        uint256 usdtBalanceBeforeExecutor = USDT.balanceOf(address(executor));
+        uint256 usdtBalanceBeforeAlice = USDT.balanceOf(ALICE);
 
         uint256 gasBefore = gasleft();
-        uint256 amountOut = executor.swap(amountIn, data);
+        uint256 amountOut = executor.swap(
+            amountIn, loadCallDataFromFile("test_ekubo_v3_encode_swap_multi")
+        );
         console.log(gasBefore - gasleft());
 
         console.log(amountOut);
@@ -175,50 +187,31 @@ contract EkuboExecutorTest is Constants, TestUtils {
         assertEq(
             USDT.balanceOf(CORE_ADDRESS), usdtBalanceBeforeCore - amountOut
         );
-        assertEq(
-            USDT.balanceOf(address(executor)),
-            usdtBalanceBeforeExecutor + amountOut
-        );
-    }
-
-    // Same test case as in swap_encoder::tests::ekubo::test_encode_swap_multi
-    function testMultiHopSwap() public setUpFork(22082754) {
-        bytes memory data = abi.encodePacked(
-            uint8(RestrictTransferFrom.TransferType.Transfer), // transferNeeded (transfer from executor to core)
-            address(executor), // receiver
-            NATIVE_TOKEN_ADDRESS, // tokenIn
-            USDC_ADDR, // tokenOut of 1st swap
-            ORACLE_CONFIG, // config of 1st swap
-            USDT_ADDR, // tokenOut of 2nd swap
-            bytes32(
-                0x00000000000000000000000000000000000000000001a36e2eb1c43200000032
-            ) // config of 2nd swap (0.0025% fee & 0.005% base pool)
-        );
-        multiHopSwap(data);
-    }
-
-    // Data is generated by test case in swap_encoder::tests::ekubo::test_encode_swap_multi
-    function testMultiHopSwapIntegration() public setUpFork(22082754) {
-        multiHopSwap(loadCallDataFromFile("test_ekubo_encode_swap_multi"));
+        assertEq(USDT.balanceOf(ALICE), usdtBalanceBeforeAlice + amountOut);
     }
 }
 
-contract TychoRouterForEkuboTest is TychoRouterTestSetup {
+contract TychoRouterForEkuboV3Test is TychoRouterTestSetup {
     function getForkBlock() public view virtual override returns (uint256) {
-        return 23518049;
+        return 24218590;
+    }
+
+    function setUp() public virtual override {
+        super.setUp();
+
+        // Remove delegations
+        vm.etch(ALICE, "");
     }
 
     function testSingleEkuboIntegration() public {
-        vm.stopPrank();
-
         deal(ALICE, 1 ether);
         uint256 balanceBefore = IERC20(USDC_ADDR).balanceOf(ALICE);
 
         // Approve permit2
         vm.startPrank(ALICE);
-        bytes memory callData =
-            loadCallDataFromFile("test_single_encoding_strategy_ekubo");
-        (bool success,) = tychoRouterAddr.call{value: 1 ether}(callData);
+        (bool success,) = tychoRouterAddr.call{value: 1 ether}(
+            loadCallDataFromFile("test_single_encoding_strategy_ekubo_v3")
+        );
 
         uint256 balanceAfter = IERC20(USDC_ADDR).balanceOf(ALICE);
 
@@ -230,24 +223,23 @@ contract TychoRouterForEkuboTest is TychoRouterTestSetup {
     function testTwoEkuboIntegration() public {
         // Test multi-hop Ekubo swaps (grouped swap)
         //
-        // USDE ──(EKUBO)──> USDC ──(EKUBO)──> USDT
+        // USDT ──(EKUBO)──> USDC ──(EKUBO)──> ETH
         //
-        deal(USDE_ADDR, ALICE, 1 ether);
-        uint256 balanceBefore = IERC20(USDT_ADDR).balanceOf(ALICE);
+        deal(USDT_ADDR, ALICE, 10_000_000_000);
+        uint256 balanceBefore = ALICE.balance;
 
         // Approve permit2
         vm.startPrank(ALICE);
-        IERC20(USDE_ADDR).approve(tychoRouterAddr, type(uint256).max);
-        bytes memory callData =
-            loadCallDataFromFile("test_single_ekubo_grouped_swap");
-        (bool success,) = tychoRouterAddr.call(callData);
+        SafeTransferLib.safeApprove(
+            USDT_ADDR, tychoRouterAddr, type(uint256).max
+        );
 
-        vm.stopPrank();
+        (bool success,) = tychoRouterAddr.call(
+            loadCallDataFromFile("test_single_ekubo_v3_grouped_swap")
+        );
+        assertTrue(success, "call failed");
 
-        uint256 balanceAfter = IERC20(USDT_ADDR).balanceOf(ALICE);
-
-        assertTrue(success, "Call Failed");
-        assertEq(balanceAfter - balanceBefore, 999804);
-        assertEq(IERC20(WETH_ADDR).balanceOf(tychoRouterAddr), 0);
+        assertEq(ALICE.balance - balanceBefore, 2500939754680596105);
+        assertEq(IERC20(USDT_ADDR).balanceOf(ALICE), 0);
     }
 }
