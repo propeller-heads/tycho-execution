@@ -1,3 +1,10 @@
+## [0.155.0](https://github.com/propeller-heads/tycho-execution/compare/0.154.3...0.155.0) (2026-01-30)
+
+
+### Features
+
+* deploy ekubo v3 executor on Ethereum ([913ec05](https://github.com/propeller-heads/tycho-execution/commit/913ec05fbdbf455baeb1ef840c4b04a3c352aa62))
+
 ## [0.154.3](https://github.com/propeller-heads/tycho-execution/compare/0.154.2...0.154.3) (2026-01-27)
 
 
