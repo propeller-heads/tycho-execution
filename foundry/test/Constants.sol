@@ -180,6 +180,16 @@ contract Constants is Test, BaseConstants {
     // Angstrom hook address
     address ANGSTROM_HOOK = 0x0000000aa232009084Bd71A5797d089AA4Edfad4;
 
+    // Etherfi address
+    address constant EETH_ADDR =
+        address(0x35fA164735182de50811E8e2E824cFb9B6118ac2);
+    address constant WEETH_ADDR =
+        address(0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee);
+    address constant LIQUIDITY_POOL_ADDR =
+        address(0x308861A430be4cce5502d0A12724771Fc6DaF216);
+    address constant REDEMPTION_MANAGER_ADDR =
+        address(0xDadEf1fFBFeaAB4f68A9fD181395F68b4e4E7Ae0);
+
     /**
      * @dev Deploys a dummy contract with non-empty bytecode
      */
