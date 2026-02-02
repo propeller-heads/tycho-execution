@@ -22,7 +22,7 @@ error Dispatcher__InvalidDataLength();
  */
 contract Dispatcher {
     struct ExecutorData {
-        uint256 activationBlock;
+        uint64 activationBlock;
         bool approved;
     }
 
@@ -32,8 +32,6 @@ contract Dispatcher {
     uint256 private constant _CURRENTLY_SWAPPING_EXECUTOR_SLOT =
         0x098a7a3b47801589e8cdf9ec791b93ad44273246946c32ef1fc4dbe45390c80e;
 
-    uint256 private constant _BLOCKS_TO_DELAY_FOR_NEW_EXECUTOR = 50400; // ~1 week
-
     event ExecutorSet(address indexed executor);
     event ExecutorRemoved(address indexed executor);
 
@@ -42,15 +40,15 @@ contract Dispatcher {
      *  contract.
      * @param target address of the executor contract
      */
-    function _setExecutor(address target) internal {
+    function _setExecutor(address target, uint64 block_to_delay_activation)
+        internal
+    {
         if (target.code.length == 0) {
             revert Dispatcher__NonContractExecutor();
         }
 
         executorData[target] = ExecutorData({
-            activationBlock: uint64(
-                block.number + _BLOCKS_TO_DELAY_FOR_NEW_EXECUTOR
-            ),
+            activationBlock: uint64(block.number + block_to_delay_activation),
             approved: true
         });
         emit ExecutorSet(target);

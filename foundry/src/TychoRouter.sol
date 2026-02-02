@@ -89,6 +89,15 @@ contract TychoRouter is
     bytes32 public constant FUND_RESCUER_ROLE =
         0x912e45d663a6f4cc1d0491d8f046e06c616f40352565ea1cdb86a0e1aaefa41b;
 
+    function _blocksToDelayForNewExecutor()
+        internal
+        view
+        virtual
+        returns (uint64)
+    {
+        return 50400; // ~1 week
+    }
+
     event Withdrawal(
         address indexed token, uint256 amount, address indexed receiver
     );
@@ -726,7 +735,7 @@ contract TychoRouter is
         onlyRole(EXECUTOR_SETTER_ROLE)
     {
         for (uint256 i = 0; i < targets.length; i++) {
-            _setExecutor(targets[i]);
+            _setExecutor(targets[i], _blocksToDelayForNewExecutor());
         }
     }
 
