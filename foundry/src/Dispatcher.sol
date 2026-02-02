@@ -5,6 +5,7 @@ import "@interfaces/IExecutor.sol";
 import "@interfaces/ICallback.sol";
 
 error Dispatcher__UnapprovedExecutor(address executor);
+error Dispatcher__ExecutorIsTimelocked(address executor);
 error Dispatcher__NonContractExecutor();
 error Dispatcher__InvalidDataLength();
 
@@ -20,11 +21,18 @@ error Dispatcher__InvalidDataLength();
  *  an alternate selector is specified.
  */
 contract Dispatcher {
-    mapping(address => bool) public executors;
+    struct ExecutorData {
+        uint256 activationBlock;
+        bool approved;
+    }
+
+    mapping(address => ExecutorData) public executorData;
 
     // keccak256("Dispatcher#CURRENTLY_SWAPPING_EXECUTOR_SLOT")
     uint256 private constant _CURRENTLY_SWAPPING_EXECUTOR_SLOT =
         0x098a7a3b47801589e8cdf9ec791b93ad44273246946c32ef1fc4dbe45390c80e;
+
+    uint256 private constant _BLOCKS_TO_DELAY_FOR_NEW_EXECUTOR = 50400; // ~1 week
 
     event ExecutorSet(address indexed executor);
     event ExecutorRemoved(address indexed executor);
@@ -38,7 +46,13 @@ contract Dispatcher {
         if (target.code.length == 0) {
             revert Dispatcher__NonContractExecutor();
         }
-        executors[target] = true;
+
+        executorData[target] = ExecutorData({
+            activationBlock: uint64(
+                block.number + _BLOCKS_TO_DELAY_FOR_NEW_EXECUTOR
+            ),
+            approved: true
+        });
         emit ExecutorSet(target);
     }
 
@@ -47,7 +61,7 @@ contract Dispatcher {
      * @param target address of the executor contract
      */
     function _removeExecutor(address target) internal {
-        delete executors[target];
+        delete executorData[target];
         emit ExecutorRemoved(target);
     }
 
@@ -61,8 +75,14 @@ contract Dispatcher {
         uint256 amount,
         bytes calldata data
     ) internal returns (uint256 calculatedAmount) {
-        if (!executors[executor]) {
+        ExecutorData memory d = executorData[executor];
+
+        if (!d.approved) {
             revert Dispatcher__UnapprovedExecutor(executor);
+        }
+
+        if (block.number < d.activationBlock) {
+            revert Dispatcher__ExecutorIsTimelocked(executor);
         }
 
         assembly {
@@ -102,7 +122,9 @@ contract Dispatcher {
             executor := tload(_CURRENTLY_SWAPPING_EXECUTOR_SLOT)
         }
 
-        if (!executors[executor]) {
+        ExecutorData memory d = executorData[executor];
+
+        if (!d.approved) {
             revert Dispatcher__UnapprovedExecutor(executor);
         }
 
