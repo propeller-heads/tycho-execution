@@ -32,6 +32,15 @@ import "@src/TychoRouter.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 
 contract TychoRouterExposed is TychoRouter {
+    function _blocksToDelayForNewExecutor()
+        internal
+        view
+        override
+        returns (uint64)
+    {
+        return 0;
+    }
+
     constructor(address _permit2, address weth) TychoRouter(_permit2, weth) {}
 
     function wrapETH(uint256 amount) external payable {

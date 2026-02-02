@@ -17,14 +17,17 @@ contract TychoRouterTest is TychoRouterTestSetup {
         address indexed token, uint256 amount, address indexed receiver
     );
 
-    function testSetExecutorsValidRole() public {
+    function testsetExecutorsForTestValidRole() public {
         // Set single executor
         address[] memory executors = new address[](1);
         executors[0] = DUMMY;
         vm.startPrank(EXECUTOR_SETTER);
         tychoRouter.setExecutors(executors);
         vm.stopPrank();
-        assert(tychoRouter.executors(DUMMY) == true);
+        (uint64 activationBlock, bool approved) =
+            tychoRouter.executorData(DUMMY);
+        assertEq(approved, true);
+        assertGt(activationBlock, 0);
 
         // Set multiple executors
         address[] memory executors2 = new address[](2);
@@ -33,8 +36,16 @@ contract TychoRouterTest is TychoRouterTestSetup {
         vm.startPrank(EXECUTOR_SETTER);
         tychoRouter.setExecutors(executors2);
         vm.stopPrank();
-        assert(tychoRouter.executors(DUMMY2) == true);
-        assert(tychoRouter.executors(DUMMY3) == true);
+
+        (uint64 activationBlock2, bool approved2) =
+            tychoRouter.executorData(DUMMY2);
+        assertEq(approved2, true);
+        assertGt(activationBlock2, 0);
+
+        (uint64 activationBlock3, bool approved3) =
+            tychoRouter.executorData(DUMMY3);
+        assertEq(approved3, true);
+        assertGt(activationBlock3, 0);
     }
 
     function testRemoveExecutorValidRole() public {
@@ -44,7 +55,11 @@ contract TychoRouterTest is TychoRouterTestSetup {
         tychoRouter.setExecutors(executors);
         tychoRouter.removeExecutor(DUMMY);
         vm.stopPrank();
-        assert(tychoRouter.executors(DUMMY) == false);
+
+        (uint64 activationBlock, bool approved) =
+            tychoRouter.executorData(DUMMY);
+        assertEq(approved, false);
+        assertEq(activationBlock, 0);
     }
 
     function testRemoveExecutorMissingSetterRole() public {
@@ -52,7 +67,7 @@ contract TychoRouterTest is TychoRouterTestSetup {
         tychoRouter.removeExecutor(BOB);
     }
 
-    function testSetExecutorsMissingSetterRole() public {
+    function testsetExecutorsForTestMissingSetterRole() public {
         vm.expectRevert();
         address[] memory executors = new address[](1);
         executors[0] = DUMMY;
