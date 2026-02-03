@@ -429,8 +429,7 @@ fn test_balancer_v2_uniswap_v2_vault_fees() {
             .data;
 
     let hex_calldata = encode(&calldata);
-    write_calldata_to_file("test_balancer_v2_uniswap_v2_vault_fees", hex_calldata.as_str
-    ());
+    write_calldata_to_file("test_balancer_v2_uniswap_v2_vault_fees", hex_calldata.as_str());
 }
 
 #[test]
@@ -493,9 +492,7 @@ fn test_balancer_v2_uniswap_v2_transfer_from_fees() {
             .data;
 
     let hex_calldata = encode(&calldata);
-    write_calldata_to_file("test_balancer_v2_uniswap_v2_transfer_from_fees",
-    hex_calldata.as_str
-    ());
+    write_calldata_to_file("test_balancer_v2_uniswap_v2_transfer_from_fees", hex_calldata.as_str());
 }
 
 #[test]

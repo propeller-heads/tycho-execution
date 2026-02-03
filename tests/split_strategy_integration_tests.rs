@@ -595,8 +595,7 @@ fn test_split_swap_strategy_vault_with_fees() {
     .data;
 
     let hex_calldata = encode(&calldata);
-    write_calldata_to_file("test_split_swap_strategy_vault_with_fees", hex_calldata
-    .as_str());
+    write_calldata_to_file("test_split_swap_strategy_vault_with_fees", hex_calldata.as_str());
 }
 
 #[test]
@@ -681,6 +680,5 @@ fn test_split_swap_strategy_vault() {
     .data;
 
     let hex_calldata = encode(&calldata);
-    write_calldata_to_file("test_split_swap_strategy_vault", hex_calldata
-    .as_str());
+    write_calldata_to_file("test_split_swap_strategy_vault", hex_calldata.as_str());
 }
