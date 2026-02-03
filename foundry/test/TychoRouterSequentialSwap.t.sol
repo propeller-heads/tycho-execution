@@ -412,11 +412,6 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
         deal(WETH_ADDR, ALICE, 1 ether);
         uint256 balanceBefore = IERC20(USDT_ADDR).balanceOf(ALICE);
 
-        vm.startPrank(FEE_SETTER);
-        feeCalculator.setRouterFeeOnOutput(1000); // 10% router fee
-        feeCalculator.setRouterFeeReceiver(routerFeeReceiver);
-        vm.stopPrank();
-
         // Approve
         vm.startPrank(ALICE);
         IERC20(WETH_ADDR).approve(tychoRouterAddr, type(uint256).max);
