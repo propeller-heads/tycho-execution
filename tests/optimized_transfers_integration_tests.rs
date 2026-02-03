@@ -769,7 +769,7 @@ fn test_multi_protocol_vault() {
             .data;
 
     let hex_calldata = encode(&calldata);
-    write_calldata_to_file("test_multi_protocol_vault_and_fees", hex_calldata.as_str());
+    write_calldata_to_file("test_multi_protocol_vault", hex_calldata.as_str());
 }
 
 #[test]
