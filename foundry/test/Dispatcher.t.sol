@@ -17,7 +17,7 @@ contract DispatcherExposed is Dispatcher {
         _setExecutor(target, 50400);
     }
 
-    function exposedsetExecutorImmediately(address target) external {
+    function exposedSetExecutorImmediately(address target) external {
         _setExecutor(target, 0);
     }
 
@@ -119,7 +119,7 @@ contract DispatcherTest is Constants {
         // Thus, we chose a previously-deployed Hashflow executor for simplicity. To
         // change this test, we can find any of our transactions that succeeded, and
         // obtain the calldata passed to the executor via Tenderly.
-        dispatcherExposed.exposedsetExecutorImmediately(
+        dispatcherExposed.exposedSetExecutorImmediately(
             address(0xe592557AB9F4A75D992283fD6066312FF013ba3d)
         );
         bytes memory data =
@@ -143,7 +143,7 @@ contract DispatcherTest is Constants {
         // Thus, we chose a previously-deployed Hashflow executor for simplicity. To
         // change this test, we can find any of our transactions that succeeded, and
         // obtain the calldata passed to the executor via Tenderly.
-        dispatcherExposed.exposedsetExecutorImmediately(
+        dispatcherExposed.exposedSetExecutorImmediately(
             address(0xe592557AB9F4A75D992283fD6066312FF013ba3d)
         );
         bytes memory data =

@@ -73,13 +73,13 @@ contract Dispatcher {
         uint256 amount,
         bytes calldata data
     ) internal returns (uint256 calculatedAmount) {
-        ExecutorData memory d = executorData[executor];
+        ExecutorData memory executorInfo = executorData[executor];
 
-        if (!d.approved) {
+        if (!executorInfo.approved) {
             revert Dispatcher__UnapprovedExecutor(executor);
         }
 
-        if (block.number < d.activationBlock) {
+        if (block.number < executorInfo.activationBlock) {
             revert Dispatcher__ExecutorIsTimelocked(executor);
         }
 
@@ -120,9 +120,9 @@ contract Dispatcher {
             executor := tload(_CURRENTLY_SWAPPING_EXECUTOR_SLOT)
         }
 
-        ExecutorData memory d = executorData[executor];
+        ExecutorData memory executorInfo = executorData[executor];
 
-        if (!d.approved) {
+        if (!executorInfo.approved) {
             revert Dispatcher__UnapprovedExecutor(executor);
         }
 
