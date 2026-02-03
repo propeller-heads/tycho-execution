@@ -72,7 +72,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
         );
     }
 
-    function testSequentialSwapTransferFromUsingVault() public {
+    function testSequentialSwapUsingVault() public {
         // Trade 1 WETH for USDC through DAI - see _getSequentialSwaps for more info
         uint256 amountIn = 1 ether;
         deal(WETH_ADDR, ALICE, amountIn);
@@ -97,6 +97,61 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
         uint256 usdcBalance = IERC20(USDC_ADDR).balanceOf(ALICE);
         assertEq(usdcBalance, 2005810530);
         assertEq(IERC20(WETH_ADDR).balanceOf(tychoRouterAddr), 0);
+    }
+
+    function testSequentialSwapUsingVaultWithFees() public {
+        // Trade 1 WETH for USDC through DAI - see _getSequentialSwaps for more info
+        uint256 amountIn = 1 ether;
+        deal(WETH_ADDR, ALICE, amountIn);
+
+        vm.startPrank(FEE_SETTER);
+        feeCalculator.setRouterFeeOnOutput(1000); // 10% router fee
+        feeCalculator.setRouterFeeReceiver(routerFeeReceiver);
+        vm.stopPrank();
+
+        vm.startPrank(ALICE);
+        IERC20(WETH_ADDR).approve(tychoRouterAddr, amountIn);
+        tychoRouter.deposit(WETH_ADDR, amountIn);
+
+        bytes[] memory swaps = _getSequentialSwaps();
+        tychoRouter.sequentialSwapUsingVault(
+            amountIn,
+            WETH_ADDR,
+            USDC_ADDR,
+            1000_000000, // min amount
+            ALICE,
+            1000, // solver fee bps 10%
+            BOB, // solver fee receiver
+            0,
+            pleEncode(swaps)
+        );
+    }
+
+    function testSequentialSwapTransferFromWithFees() public {
+        // Trade 1 WETH for USDC through DAI - see _getSequentialSwaps for more info
+        uint256 amountIn = 1 ether;
+        deal(WETH_ADDR, ALICE, amountIn);
+
+        vm.startPrank(FEE_SETTER);
+        feeCalculator.setRouterFeeOnOutput(1000); // 10% router fee
+        feeCalculator.setRouterFeeReceiver(routerFeeReceiver);
+        vm.stopPrank();
+
+        vm.startPrank(ALICE);
+        IERC20(WETH_ADDR).approve(tychoRouterAddr, amountIn);
+
+        bytes[] memory swaps = _getSequentialSwaps();
+        tychoRouter.sequentialSwap(
+            amountIn,
+            WETH_ADDR,
+            USDC_ADDR,
+            1000_000000, // min amount
+            ALICE,
+            1000, // solver fee bps 10%
+            BOB, // solver fee receiver
+            0,
+            pleEncode(swaps)
+        );
     }
 
     function testSequentialSwapUndefinedMinAmount() public {

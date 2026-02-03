@@ -52,4 +52,53 @@ contract TychoRouterTestProtocolIntegration is TychoRouterTestSetup {
         assertTrue(success, "Call Failed");
         assertEq(balanceAfter - balanceBefore, 732214216964381330);
     }
+
+    function testMultiProtocolIntegrationVaultAndFees() public {
+        // Test created with calldata from our router encoder.
+        //
+        //  DAI ─(USV2)─> WETH ─(bal)─> WBTC ─(curve)─> USDT ─(ekubo)─> ETH ─(USV4)─> USDC
+
+        deal(DAI_ADDR, ALICE, 1500 ether);
+        uint256 balanceBefore = address(ALICE).balance;
+
+        // Approve permit2
+        vm.startPrank(ALICE);
+        IERC20(DAI_ADDR).approve(tychoRouterAddr, type(uint256).max);
+        tychoRouter.deposit(DAI_ADDR, 1500 ether);
+
+        bytes memory callData =
+            loadCallDataFromFile("test_multi_protocol_vault_and_fees");
+        (bool success,) = tychoRouterAddr.call(callData);
+
+        vm.stopPrank();
+
+        uint256 balanceAfter = address(ALICE).balance;
+
+        assertTrue(success, "Call Failed");
+        assertEq(balanceAfter - balanceBefore, 658992795267943197);
+    }
+
+    function testMultiProtocolIntegrationTransferFromAndFees() public {
+        // Test created with calldata from our router encoder.
+        //
+        //  DAI ─(USV2)─> WETH ─(bal)─> WBTC ─(curve)─> USDT ─(ekubo)─> ETH ─(USV4)─> USDC
+
+        deal(DAI_ADDR, ALICE, 1500 ether);
+        uint256 balanceBefore = address(ALICE).balance;
+
+        // Approve permit2
+        vm.startPrank(ALICE);
+        IERC20(DAI_ADDR).approve(tychoRouterAddr, type(uint256).max);
+
+        bytes memory callData =
+            loadCallDataFromFile("test_multi_protocol_transfer_from_and_fees");
+        (bool success,) = tychoRouterAddr.call(callData);
+
+        vm.stopPrank();
+
+        uint256 balanceAfter = address(ALICE).balance;
+
+        assertTrue(success, "Call Failed");
+        assertEq(balanceAfter - balanceBefore, 658992795267943197);
+    }
 }

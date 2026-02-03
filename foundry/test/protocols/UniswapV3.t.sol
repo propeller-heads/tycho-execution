@@ -276,8 +276,8 @@ contract TychoRouterForUniswapV3Test is TychoRouterTestSetup {
         vm.stopPrank();
     }
 
-    function testSingleSwapUSV3Vault() public {
-        // Trade 1 WETH for DAI with 1 swap on Uniswap V3 using Permit2
+    function testSingleSwapUSV3VaultNoFees() public {
+        // Trade 1 WETH for DAI with 1 swap on Uniswap V3 using the Vault
         // Tests entire USV3 flow including callback
         // 1 WETH   ->   DAI
         //       (USV3)
@@ -294,7 +294,7 @@ contract TychoRouterForUniswapV3Test is TychoRouterTestSetup {
         bytes memory swap =
             encodeSingleSwap(address(usv3Executor), protocolData);
 
-        tychoRouter.singleSwap(
+        tychoRouter.singleSwapUsingVault(
             amountIn,
             WETH_ADDR,
             DAI_ADDR,
@@ -302,6 +302,91 @@ contract TychoRouterForUniswapV3Test is TychoRouterTestSetup {
             ALICE,
             0,
             address(0),
+            0,
+            swap
+        );
+
+        uint256 finalBalance = IERC20(DAI_ADDR).balanceOf(ALICE);
+        assertGe(finalBalance, expAmountOut);
+
+        vm.stopPrank();
+    }
+
+    function testSingleSwapUSV3VaultAndFees() public {
+        // Trade 1 WETH for DAI with 1 swap on Uniswap V3 using the Vault and taking
+        // fees.
+        // Tests entire USV3 flow including callback
+        // 1 WETH   ->   DAI
+        //       (USV3)
+        vm.startPrank(FEE_SETTER);
+        feeCalculator.setRouterFeeOnOutput(1000); // 10% router fee
+        feeCalculator.setRouterFeeReceiver(routerFeeReceiver);
+        vm.stopPrank();
+
+        vm.startPrank(ALICE);
+        uint256 amountIn = 10 ** 18;
+
+        deal(WETH_ADDR, ALICE, amountIn);
+        IERC20(WETH_ADDR).approve(tychoRouterAddr, amountIn);
+        tychoRouter.deposit(WETH_ADDR, amountIn);
+
+        uint256 expAmountOut = 1205_128428842122129186; //Swap 1 WETH for 1205.12 DAI
+        bool zeroForOne = false;
+        bytes memory protocolData =
+            encodeUniswapV3Swap(WETH_ADDR, DAI_ADDR, DAI_WETH_USV3, zeroForOne);
+        bytes memory swap =
+            encodeSingleSwap(address(usv3Executor), protocolData);
+
+        tychoRouter.singleSwapUsingVault(
+            amountIn,
+            WETH_ADDR,
+            DAI_ADDR,
+            expAmountOut - 1,
+            ALICE,
+            1000, // solver fee bps 10%
+            BOB, // solver fee receiver
+            0,
+            swap
+        );
+
+        uint256 finalBalance = IERC20(DAI_ADDR).balanceOf(ALICE);
+        assertGe(finalBalance, expAmountOut);
+
+        vm.stopPrank();
+    }
+
+    function testSingleSwapUSV3TransferFromAndFees() public {
+        // Trade 1 WETH for DAI with 1 swap on Uniswap V3 using the Vault and taking
+        // fees.
+        // Tests entire USV3 flow including callback
+        // 1 WETH   ->   DAI
+        //       (USV3)
+        vm.startPrank(FEE_SETTER);
+        feeCalculator.setRouterFeeOnOutput(1000); // 10% router fee
+        feeCalculator.setRouterFeeReceiver(routerFeeReceiver);
+        vm.stopPrank();
+
+        vm.startPrank(ALICE);
+        uint256 amountIn = 10 ** 18;
+
+        deal(WETH_ADDR, ALICE, amountIn);
+        IERC20(WETH_ADDR).approve(tychoRouterAddr, amountIn);
+
+        uint256 expAmountOut = 1205_128428842122129186; //Swap 1 WETH for 1205.12 DAI
+        bool zeroForOne = false;
+        bytes memory protocolData =
+            encodeUniswapV3Swap(WETH_ADDR, DAI_ADDR, DAI_WETH_USV3, zeroForOne);
+        bytes memory swap =
+            encodeSingleSwap(address(usv3Executor), protocolData);
+
+        tychoRouter.singleSwap(
+            amountIn,
+            WETH_ADDR,
+            DAI_ADDR,
+            expAmountOut - 1,
+            ALICE,
+            1000, // solver fee bps 10%
+            BOB, // solver fee receiver
             0,
             swap
         );
