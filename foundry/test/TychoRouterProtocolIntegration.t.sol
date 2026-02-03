@@ -61,6 +61,11 @@ contract TychoRouterTestProtocolIntegration is TychoRouterTestSetup {
         deal(DAI_ADDR, ALICE, 1500 ether);
         uint256 balanceBefore = address(ALICE).balance;
 
+        vm.startPrank(FEE_SETTER);
+        feeCalculator.setRouterFeeOnOutput(1000); // 10% router fee
+        feeCalculator.setRouterFeeReceiver(routerFeeReceiver);
+        vm.stopPrank();
+
         // Approve permit2
         vm.startPrank(ALICE);
         IERC20(DAI_ADDR).approve(tychoRouterAddr, type(uint256).max);
@@ -75,7 +80,7 @@ contract TychoRouterTestProtocolIntegration is TychoRouterTestSetup {
         uint256 balanceAfter = address(ALICE).balance;
 
         assertTrue(success, "Call Failed");
-        assertEq(balanceAfter - balanceBefore, 658992795267943197);
+        assertEq(balanceAfter - balanceBefore, 585771373571505064);
     }
 
     function testMultiProtocolIntegrationTransferFromAndFees() public {
@@ -85,6 +90,11 @@ contract TychoRouterTestProtocolIntegration is TychoRouterTestSetup {
 
         deal(DAI_ADDR, ALICE, 1500 ether);
         uint256 balanceBefore = address(ALICE).balance;
+
+        vm.startPrank(FEE_SETTER);
+        feeCalculator.setRouterFeeOnOutput(1000); // 10% router fee
+        feeCalculator.setRouterFeeReceiver(routerFeeReceiver);
+        vm.stopPrank();
 
         // Approve permit2
         vm.startPrank(ALICE);
@@ -99,6 +109,6 @@ contract TychoRouterTestProtocolIntegration is TychoRouterTestSetup {
         uint256 balanceAfter = address(ALICE).balance;
 
         assertTrue(success, "Call Failed");
-        assertEq(balanceAfter - balanceBefore, 658992795267943197);
+        assertEq(balanceAfter - balanceBefore, 585771373571505064);
     }
 }

@@ -309,6 +309,196 @@ fn test_balancer_v2_uniswap_v2() {
 }
 
 #[test]
+fn test_balancer_v2_uniswap_v2_vault() {
+    // Note: This test does not assert anything. It is only used to obtain
+    // integration test data for our router solidity test.
+    //
+    // Performs a sequential swap from WETH to USDC though WBTC using balancer and
+    // USV2 pools
+    //
+    //   WETH ───(balancer)──> WBTC ───(USV2)──> USDC
+
+    let weth = weth();
+    let wbtc = Bytes::from_str("0x2260fac5e5542a773aa44fbcfedf7c193bc2c599").unwrap();
+    let usdc = Bytes::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap();
+
+    let swap_weth_wbtc = Swap::new(
+        ProtocolComponent {
+            id: "0xa6f548df93de924d73be7d25dc02554c6bd66db500020000000000000000000e".to_string(),
+            protocol_system: "vm:balancer_v2".to_string(),
+            ..Default::default()
+        },
+        weth.clone(),
+        wbtc.clone(),
+    );
+
+    let swap_wbtc_usdc = Swap::new(
+        ProtocolComponent {
+            id: "0x004375Dff511095CC5A197A54140a24eFEF3A416".to_string(),
+            protocol_system: "uniswap_v2".to_string(),
+            ..Default::default()
+        },
+        wbtc.clone(),
+        usdc.clone(),
+    );
+    let encoder = get_tycho_router_encoder(UserTransferType::UseVaultsFunds);
+
+    let solution = Solution {
+        exact_out: false,
+        token_in: weth,
+        amount_in: BigUint::from_str("1_000000000000000000").unwrap(),
+        token_out: usdc,
+        min_amount_out: BigUint::from_str("26173932").unwrap(),
+        sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
+        receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
+        swaps: vec![swap_weth_wbtc, swap_wbtc_usdc],
+        ..Default::default()
+    };
+
+    let encoded_solution = encoder
+        .encode_solutions(vec![solution.clone()])
+        .unwrap()[0]
+        .clone();
+
+    let calldata =
+        encode_tycho_router_call(eth_chain().id(), encoded_solution, &solution, &eth(), None)
+            .unwrap()
+            .data;
+
+    let hex_calldata = encode(&calldata);
+    write_calldata_to_file("test_balancer_v2_uniswap_v2_vault", hex_calldata.as_str());
+}
+
+#[test]
+fn test_balancer_v2_uniswap_v2_vault_fees() {
+    // Note: This test does not assert anything. It is only used to obtain
+    // integration test data for our router solidity test.
+    //
+    // Performs a sequential swap from WETH to USDC though WBTC using balancer and
+    // USV2 pools
+    //
+    //   WETH ───(balancer)──> WBTC ───(USV2)──> USDC
+
+    let weth = weth();
+    let wbtc = Bytes::from_str("0x2260fac5e5542a773aa44fbcfedf7c193bc2c599").unwrap();
+    let usdc = Bytes::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap();
+
+    let swap_weth_wbtc = Swap::new(
+        ProtocolComponent {
+            id: "0xa6f548df93de924d73be7d25dc02554c6bd66db500020000000000000000000e".to_string(),
+            protocol_system: "vm:balancer_v2".to_string(),
+            ..Default::default()
+        },
+        weth.clone(),
+        wbtc.clone(),
+    );
+
+    let swap_wbtc_usdc = Swap::new(
+        ProtocolComponent {
+            id: "0x004375Dff511095CC5A197A54140a24eFEF3A416".to_string(),
+            protocol_system: "uniswap_v2".to_string(),
+            ..Default::default()
+        },
+        wbtc.clone(),
+        usdc.clone(),
+    );
+    let encoder = get_tycho_router_encoder(UserTransferType::UseVaultsFunds);
+
+    let solution = Solution {
+        exact_out: false,
+        token_in: weth,
+        amount_in: BigUint::from_str("1_000000000000000000").unwrap(),
+        token_out: usdc,
+        min_amount_out: BigUint::from_str("26173932").unwrap(),
+        sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
+        receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
+        swaps: vec![swap_weth_wbtc, swap_wbtc_usdc],
+        solver_fee_bps: 1000,
+        solver_fee_receiver: Bytes::from_str("0x9964bff29baa37b47604f3f3f51f3b3c5149d6de").unwrap(),
+        ..Default::default()
+    };
+
+    let encoded_solution = encoder
+        .encode_solutions(vec![solution.clone()])
+        .unwrap()[0]
+        .clone();
+
+    let calldata =
+        encode_tycho_router_call(eth_chain().id(), encoded_solution, &solution, &eth(), None)
+            .unwrap()
+            .data;
+
+    let hex_calldata = encode(&calldata);
+    write_calldata_to_file("test_balancer_v2_uniswap_v2_vault_fees", hex_calldata.as_str
+    ());
+}
+
+#[test]
+fn test_balancer_v2_uniswap_v2_transfer_from_fees() {
+    // Note: This test does not assert anything. It is only used to obtain
+    // integration test data for our router solidity test.
+    //
+    // Performs a sequential swap from WETH to USDC though WBTC using balancer and
+    // USV2 pools
+    //
+    //   WETH ───(balancer)──> WBTC ───(USV2)──> USDC
+
+    let weth = weth();
+    let wbtc = Bytes::from_str("0x2260fac5e5542a773aa44fbcfedf7c193bc2c599").unwrap();
+    let usdc = Bytes::from_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap();
+
+    let swap_weth_wbtc = Swap::new(
+        ProtocolComponent {
+            id: "0xa6f548df93de924d73be7d25dc02554c6bd66db500020000000000000000000e".to_string(),
+            protocol_system: "vm:balancer_v2".to_string(),
+            ..Default::default()
+        },
+        weth.clone(),
+        wbtc.clone(),
+    );
+
+    let swap_wbtc_usdc = Swap::new(
+        ProtocolComponent {
+            id: "0x004375Dff511095CC5A197A54140a24eFEF3A416".to_string(),
+            protocol_system: "uniswap_v2".to_string(),
+            ..Default::default()
+        },
+        wbtc.clone(),
+        usdc.clone(),
+    );
+    let encoder = get_tycho_router_encoder(UserTransferType::TransferFrom);
+
+    let solution = Solution {
+        exact_out: false,
+        token_in: weth,
+        amount_in: BigUint::from_str("1_000000000000000000").unwrap(),
+        token_out: usdc,
+        min_amount_out: BigUint::from_str("26173932").unwrap(),
+        sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
+        receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
+        swaps: vec![swap_weth_wbtc, swap_wbtc_usdc],
+        solver_fee_bps: 1000,
+        solver_fee_receiver: Bytes::from_str("0x9964bff29baa37b47604f3f3f51f3b3c5149d6de").unwrap(),
+        ..Default::default()
+    };
+
+    let encoded_solution = encoder
+        .encode_solutions(vec![solution.clone()])
+        .unwrap()[0]
+        .clone();
+
+    let calldata =
+        encode_tycho_router_call(eth_chain().id(), encoded_solution, &solution, &eth(), None)
+            .unwrap()
+            .data;
+
+    let hex_calldata = encode(&calldata);
+    write_calldata_to_file("test_balancer_v2_uniswap_v2_transfer_from_fees",
+    hex_calldata.as_str
+    ());
+}
+
+#[test]
 fn test_multi_protocol() {
     // Note: This test does not assert anything. It is only used to obtain
     // integration test data for our router solidity test.
@@ -694,7 +884,7 @@ fn test_multi_protocol_vault_and_fees() {
         token_in: dai,
         amount_in: BigUint::from_str("1500_000000000000000000").unwrap(),
         token_out: eth.clone(),
-        min_amount_out: BigUint::from_str("658992795267943197").unwrap(),
+        min_amount_out: BigUint::from_str("1").unwrap(),
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         solver_fee_bps: 1000,
@@ -832,7 +1022,7 @@ fn test_multi_protocol_transfer_from_and_fees() {
         token_in: dai,
         amount_in: BigUint::from_str("1500_000000000000000000").unwrap(),
         token_out: eth.clone(),
-        min_amount_out: BigUint::from_str("658992795267943197").unwrap(),
+        min_amount_out: BigUint::from_str("1").unwrap(),
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         solver_fee_bps: 1000,

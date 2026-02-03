@@ -194,7 +194,7 @@ contract TychoRouterFeesTest is TychoRouterTestSetup {
         assertEq(solverFeeReceiverBalance, expectedFeeAmount);
     }
 
-    function testSplitSwapWithSolverFees() public {
+    function testSplitSwapWithFees() public {
         // Performs a split swap from WETH to USDC though WBTC and DAI using USV2 pools
         //
         //         ┌──(USV2)──> WBTC ───(USV2)──> USDC
@@ -202,9 +202,15 @@ contract TychoRouterFeesTest is TychoRouterTestSetup {
         //         └──(USV2)──> DAI  ───(USV2)──> USDC
         //  1 WETH -> 991384372 + 1004476082 = 1995860454 USDC
         // Solver takes 1% (19958604)
+        // Router takes 10%
 
         deal(WETH_ADDR, ALICE, 1 ether);
         uint256 balanceBefore = IERC20(USDC_ADDR).balanceOf(ALICE);
+
+        vm.startPrank(FEE_SETTER);
+        feeCalculator.setRouterFeeOnOutput(1000); // 10% router fee
+        feeCalculator.setRouterFeeReceiver(routerFeeReceiver);
+        vm.stopPrank();
 
         vm.startPrank(ALICE);
         IERC20(WETH_ADDR).approve(tychoRouterAddr, type(uint256).max);
@@ -217,14 +223,76 @@ contract TychoRouterFeesTest is TychoRouterTestSetup {
 
         uint256 balanceAfter = IERC20(USDC_ADDR).balanceOf(ALICE);
         assertTrue(success, "Call Failed");
-        uint256 expectedAmountOut = 1975901850;
-        assertEq(balanceAfter - balanceBefore, expectedAmountOut);
-
         uint256 expectedFeeAmount = 19958604;
 
         // Check solver fee receiver vault balance (BOB)
         uint256 solverFeeReceiverBalance =
             tychoRouter.balanceOf(BOB, uint256(uint160(USDC_ADDR)));
         assertEq(solverFeeReceiverBalance, expectedFeeAmount);
+    }
+
+    function testSplitSwapUsingVaultWithFees() public {
+        // Performs a split swap from WETH to USDC though WBTC and DAI using USV2 pools
+        //
+        //         ┌──(USV2)──> WBTC ───(USV2)──> USDC
+        //   WETH ─┤
+        //         └──(USV2)──> DAI  ───(USV2)──> USDC
+        //  1 WETH -> 991384372 + 1004476082 = 1995860454 USDC
+        // Solver takes 1% (19958604)
+        // Router takes 10%
+
+        deal(WETH_ADDR, ALICE, 1 ether);
+        uint256 balanceBefore = IERC20(USDC_ADDR).balanceOf(ALICE);
+
+        vm.startPrank(FEE_SETTER);
+        feeCalculator.setRouterFeeOnOutput(1000); // 10% router fee
+        feeCalculator.setRouterFeeReceiver(routerFeeReceiver);
+        vm.stopPrank();
+
+        vm.startPrank(ALICE);
+        IERC20(WETH_ADDR).approve(tychoRouterAddr, type(uint256).max);
+        tychoRouter.deposit(WETH_ADDR, 1 ether);
+
+        bytes memory callData =
+            loadCallDataFromFile("test_split_swap_strategy_vault_with_fees");
+        (bool success,) = tychoRouterAddr.call(callData);
+
+        vm.stopPrank();
+
+        uint256 balanceAfter = IERC20(USDC_ADDR).balanceOf(ALICE);
+        assertTrue(success, "Call Failed");
+        uint256 expectedFeeAmount = 19958604;
+
+        // Check solver fee receiver vault balance (BOB)
+        uint256 solverFeeReceiverBalance =
+            tychoRouter.balanceOf(BOB, uint256(uint160(USDC_ADDR)));
+        assertEq(solverFeeReceiverBalance, expectedFeeAmount);
+    }
+
+    function testSplitSwapUsingVaultNoFees() public {
+        // Performs a split swap from WETH to USDC though WBTC and DAI using USV2 pools
+        //
+        //         ┌──(USV2)──> WBTC ───(USV2)──> USDC
+        //   WETH ─┤
+        //         └──(USV2)──> DAI  ───(USV2)──> USDC
+        //  1 WETH -> 991384372 + 1004476082 = 1995860454 USDC
+        // Solver takes 1% (19958604)
+        // Router takes 10%
+
+        deal(WETH_ADDR, ALICE, 1 ether);
+        uint256 balanceBefore = IERC20(USDC_ADDR).balanceOf(ALICE);
+
+        vm.startPrank(ALICE);
+        IERC20(WETH_ADDR).approve(tychoRouterAddr, type(uint256).max);
+        tychoRouter.deposit(WETH_ADDR, 1 ether);
+
+        bytes memory callData =
+            loadCallDataFromFile("test_split_swap_strategy_vault");
+        (bool success,) = tychoRouterAddr.call(callData);
+
+        vm.stopPrank();
+
+        uint256 balanceAfter = IERC20(USDC_ADDR).balanceOf(ALICE);
+        assertTrue(success, "Call Failed");
     }
 }

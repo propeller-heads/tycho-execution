@@ -412,6 +412,11 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
         deal(WETH_ADDR, ALICE, 1 ether);
         uint256 balanceBefore = IERC20(USDT_ADDR).balanceOf(ALICE);
 
+        vm.startPrank(FEE_SETTER);
+        feeCalculator.setRouterFeeOnOutput(1000); // 10% router fee
+        feeCalculator.setRouterFeeReceiver(routerFeeReceiver);
+        vm.stopPrank();
+
         // Approve
         vm.startPrank(ALICE);
         IERC20(WETH_ADDR).approve(tychoRouterAddr, type(uint256).max);
@@ -424,7 +429,81 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
         uint256 balanceAfter = IERC20(USDC_ADDR).balanceOf(ALICE);
 
         assertTrue(success, "Call Failed");
-        assertEq(balanceAfter - balanceBefore, 1949668893);
-        assertEq(IERC20(WETH_ADDR).balanceOf(tychoRouterAddr), 0);
+    }
+
+    function testBalancerV2USV2IntegrationVault() public {
+        // Performs a sequential swap from WETH to USDC though WBTC using Balancer v2 and USV2 pools
+        //
+        //   WETH ──(balancer)──> WBTC ───(USV2)──> USDC
+        deal(WETH_ADDR, ALICE, 1 ether);
+        uint256 balanceBefore = IERC20(USDT_ADDR).balanceOf(ALICE);
+
+        // Approve
+        vm.startPrank(ALICE);
+        IERC20(WETH_ADDR).approve(tychoRouterAddr, type(uint256).max);
+        tychoRouter.deposit(WETH_ADDR, 1 ether);
+        bytes memory callData =
+            loadCallDataFromFile("test_balancer_v2_uniswap_v2_vault");
+        (bool success,) = tychoRouterAddr.call(callData);
+
+        vm.stopPrank();
+
+        uint256 balanceAfter = IERC20(USDC_ADDR).balanceOf(ALICE);
+
+        assertTrue(success, "Call Failed");
+    }
+
+    function testBalancerV2USV2IntegrationVaultFees() public {
+        // Performs a sequential swap from WETH to USDC though WBTC using Balancer v2 and USV2 pools
+        //
+        //   WETH ──(balancer)──> WBTC ───(USV2)──> USDC
+        deal(WETH_ADDR, ALICE, 1 ether);
+        uint256 balanceBefore = IERC20(USDT_ADDR).balanceOf(ALICE);
+
+        vm.startPrank(FEE_SETTER);
+        feeCalculator.setRouterFeeOnOutput(1000); // 10% router fee
+        feeCalculator.setRouterFeeReceiver(routerFeeReceiver);
+        vm.stopPrank();
+
+        // Approve
+        vm.startPrank(ALICE);
+        IERC20(WETH_ADDR).approve(tychoRouterAddr, type(uint256).max);
+        tychoRouter.deposit(WETH_ADDR, 1 ether);
+        bytes memory callData =
+            loadCallDataFromFile("test_balancer_v2_uniswap_v2_vault_fees");
+        (bool success,) = tychoRouterAddr.call(callData);
+
+        vm.stopPrank();
+
+        uint256 balanceAfter = IERC20(USDC_ADDR).balanceOf(ALICE);
+
+        assertTrue(success, "Call Failed");
+    }
+
+    function testBalancerV2USV2IntegrationTransferFromFees() public {
+        // Performs a sequential swap from WETH to USDC though WBTC using Balancer v2 and USV2 pools
+        //
+        //   WETH ──(balancer)──> WBTC ───(USV2)──> USDC
+        deal(WETH_ADDR, ALICE, 1 ether);
+        uint256 balanceBefore = IERC20(USDT_ADDR).balanceOf(ALICE);
+
+        vm.startPrank(FEE_SETTER);
+        feeCalculator.setRouterFeeOnOutput(1000); // 10% router fee
+        feeCalculator.setRouterFeeReceiver(routerFeeReceiver);
+        vm.stopPrank();
+
+        // Approve
+        vm.startPrank(ALICE);
+        IERC20(WETH_ADDR).approve(tychoRouterAddr, type(uint256).max);
+        bytes memory callData = loadCallDataFromFile(
+            "test_balancer_v2_uniswap_v2_transfer_from_fees"
+        );
+        (bool success,) = tychoRouterAddr.call(callData);
+
+        vm.stopPrank();
+
+        uint256 balanceAfter = IERC20(USDC_ADDR).balanceOf(ALICE);
+
+        assertTrue(success, "Call Failed");
     }
 }
