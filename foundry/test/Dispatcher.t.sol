@@ -59,12 +59,11 @@ contract DispatcherTest is Constants {
         emit ExecutorRemoved(DUMMY);
         dispatcherExposed.exposedRemoveExecutor(DUMMY);
 
-        // Assert: mapping stores a struct, so check the struct fields
         (uint64 activationBlock, bool approved) =
             dispatcherExposed.executorData(DUMMY);
 
         assertEq(approved, false);
-        assertEq(activationBlock, 0); // `delete` zeroes the whole struct
+        assertEq(activationBlock, 0);
     }
 
     function testRemoveUnSetExecutor() public {

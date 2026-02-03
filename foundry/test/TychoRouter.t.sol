@@ -67,7 +67,7 @@ contract TychoRouterTest is TychoRouterTestSetup {
         tychoRouter.removeExecutor(BOB);
     }
 
-    function testsetExecutorsForTestMissingSetterRole() public {
+    function testSetExecutorsForTestMissingSetterRole() public {
         vm.expectRevert();
         address[] memory executors = new address[](1);
         executors[0] = DUMMY;
