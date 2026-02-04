@@ -1,7 +1,6 @@
 use std::{collections::HashMap, str::FromStr, sync::Arc};
 
 use alloy::primitives::Address;
-use serde::Deserialize;
 use tokio::{
     runtime::{Handle, Runtime},
     task::block_in_place,
@@ -21,16 +20,6 @@ use crate::encoding::{
     swap_encoder::SwapEncoder,
 };
 
-/// Allowance structure from Liquorice API
-#[derive(Debug, Clone, Deserialize)]
-struct LiquoriceAllowance {
-    #[allow(dead_code)]
-    token: String,
-    spender: String,
-    #[allow(dead_code)]
-    amount: String,
-}
-
 /// Encodes a swap on Liquorice (RFQ) through the given executor address.
 ///
 /// Liquorice uses a Request-for-Quote model where quotes are obtained off-chain
@@ -38,10 +27,12 @@ struct LiquoriceAllowance {
 ///
 /// # Fields
 /// * `executor_address` - The address of the executor contract that will perform the swap.
+/// * `balance_manager_address` - The address of the Liquorice balance manager contract.
 /// * `native_token_address` - The chain's native token address.
 #[derive(Clone)]
 pub struct LiquoriceSwapEncoder {
     executor_address: Bytes,
+    balance_manager_address: Bytes,
     native_token_address: Bytes,
     runtime_handle: Handle,
     #[allow(dead_code)]
@@ -52,14 +43,29 @@ impl SwapEncoder for LiquoriceSwapEncoder {
     fn new(
         executor_address: Bytes,
         chain: Chain,
-        _config: Option<HashMap<String, String>>,
+        config: Option<HashMap<String, String>>,
     ) -> Result<Self, EncodingError> {
-        // No protocol-specific config needed for Liquorice
-        // The target contract comes from the quote itself
+        let config = config.ok_or(EncodingError::FatalError(
+            "Missing liquorice specific addresses in config".to_string(),
+        ))?;
+        let balance_manager_address = config
+            .get("balance_manager_address")
+            .map(|s| {
+                Bytes::from_str(s).map_err(|_| {
+                    EncodingError::FatalError(
+                        "Invalid liquorice balance manager address".to_string(),
+                    )
+                })
+            })
+            .ok_or(EncodingError::FatalError(
+                "Missing liquorice balance manager address in config".to_string(),
+            ))
+            .flatten()?;
         let native_token_address = chain.native_token().address;
         let (runtime_handle, runtime) = get_runtime()?;
         Ok(Self {
             executor_address,
+            balance_manager_address,
             native_token_address,
             runtime_handle,
             runtime,
@@ -114,13 +120,6 @@ impl SwapEncoder for LiquoriceSwapEncoder {
         })?;
 
         // Extract required fields from quote
-        let target_contract = signed_quote
-            .quote_attributes
-            .get("target_contract")
-            .ok_or(EncodingError::FatalError(
-                "Liquorice quote must have a target_contract attribute".to_string(),
-            ))?;
-
         let liquorice_calldata = signed_quote
             .quote_attributes
             .get("calldata")
@@ -156,65 +155,33 @@ impl SwapEncoder for LiquoriceSwapEncoder {
             padded
         };
 
-        // Parse allowances from quote
-        let allowances: Vec<LiquoriceAllowance> = signed_quote
-            .quote_attributes
-            .get("allowances")
-            .map(|bytes| {
-                let json_str = String::from_utf8_lossy(bytes);
-                serde_json::from_str(&json_str).unwrap_or_default()
-            })
-            .unwrap_or_default();
-
-        // Check which allowances need approval
-        let executor_address = bytes_to_address(&self.executor_address)?;
-        let approvals_manager = ProtocolApprovalsManager::new()?;
-
-        let mut allowance_data: Vec<(Address, bool)> = Vec::new();
-        for allowance in &allowances {
-            let spender = Address::from_str(&allowance.spender).map_err(|_| {
-                EncodingError::FatalError(format!(
-                    "Invalid allowance spender address: {}",
-                    allowance.spender
-                ))
-            })?;
-
-            // Check if approval is needed from executor to spender
-            let approval_needed = if *swap.token_in() == self.native_token_address {
-                false
-            } else {
-                approvals_manager.approval_needed(token_in, executor_address, spender)?
-            };
-
-            allowance_data.push((spender, approval_needed));
-        }
+        // Check if approval is needed from executor to balance manager
+        let approval_needed = if *swap.token_in() == self.native_token_address {
+            false
+        } else {
+            let executor_address = bytes_to_address(&self.executor_address)?;
+            let balance_manager_address = Address::from_slice(&self.balance_manager_address);
+            ProtocolApprovalsManager::new()?.approval_needed(
+                token_in,
+                executor_address,
+                balance_manager_address,
+            )?
+        };
 
         let receiver = bytes_to_address(&encoding_context.receiver)?;
-        let target = bytes_to_address(target_contract)?;
 
         // Encode packed data for the executor
         // Format: token_in | token_out | transfer_type | partial_fill_offset |
-        //         original_base_token_amount | num_allowances |
-        //         [allowance_spender | approval_needed]... |
-        //         target_contract | receiver | liquorice_calldata
+        //         original_base_token_amount | approval_needed |
+        //         receiver | liquorice_calldata
         let mut encoded = Vec::new();
 
-        // Fixed fields
         encoded.extend_from_slice(token_in.as_slice()); // 20 bytes
         encoded.extend_from_slice(token_out.as_slice()); // 20 bytes
         encoded.push(encoding_context.transfer_type as u8); // 1 byte
         encoded.push(partial_fill_offset); // 1 byte
         encoded.extend_from_slice(&original_base_token_amount); // 32 bytes
-
-        // Allowances
-        encoded.push(allowance_data.len() as u8); // 1 byte
-        for (spender, approval_needed) in &allowance_data {
-            encoded.extend_from_slice(spender.as_slice()); // 20 bytes
-            encoded.push(*approval_needed as u8); // 1 byte
-        }
-
-        // Target and receiver
-        encoded.extend_from_slice(target.as_slice()); // 20 bytes
+        encoded.push(approval_needed as u8); // 1 byte
         encoded.extend_from_slice(receiver.as_slice()); // 20 bytes
 
         // Calldata (variable length)
@@ -249,6 +216,13 @@ mod tests {
         models::TransferType,
     };
 
+    fn liquorice_config() -> Option<HashMap<String, String>> {
+        Some(HashMap::from([(
+            "balance_manager_address".to_string(),
+            "0x71D9750ECF0c5081FAE4E3EDC4253E52024b0B59".to_string(),
+        )]))
+    }
+
     #[test]
     fn test_encode_liquorice_single_fails_without_protocol_data() {
         let liquorice_component = ProtocolComponent {
@@ -276,7 +250,7 @@ mod tests {
         let encoder = LiquoriceSwapEncoder::new(
             Bytes::from("0x543778987b293C7E8Cf0722BB2e935ba6f4068D4"),
             Chain::Ethereum,
-            None,
+            liquorice_config(),
         )
         .unwrap();
 
@@ -300,21 +274,12 @@ mod tests {
             ..Default::default()
         };
 
-        // Allowances JSON - one spender needing approval
-        let allowances_json =
-            r#"[{"token":"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48","spender":"0x71D9750ECF0c5081FAE4E3EDC4253E52024b0B59","amount":"3000000000"}]"#;
-
         let liquorice_state = MockRFQState {
             quote_amount_out,
             quote_data: HashMap::from([
-                (
-                    "target_contract".to_string(),
-                    Bytes::from_str("0x71D9750ECF0c5081FAE4E3EDC4253E52024b0B59").unwrap(),
-                ),
                 ("calldata".to_string(), liquorice_calldata.clone()),
                 ("base_token_amount".to_string(), Bytes::from(base_token_amount.clone())),
                 ("partial_fill_offset".to_string(), Bytes::from(vec![12u8])),
-                ("allowances".to_string(), Bytes::from(allowances_json.as_bytes().to_vec())),
             ]),
         };
 
@@ -338,7 +303,7 @@ mod tests {
         let encoder = LiquoriceSwapEncoder::new(
             Bytes::from("0x543778987b293C7E8Cf0722BB2e935ba6f4068D4"),
             Chain::Ethereum,
-            None,
+            liquorice_config(),
         )
         .unwrap();
 
@@ -349,9 +314,8 @@ mod tests {
 
         // Expected format:
         // token_in (20) | token_out (20) | transfer_type (1) | partial_fill_offset (1) |
-        // original_base_token_amount (32) | num_allowances (1) |
-        // [spender (20) | approval_needed (1)]... |
-        // target_contract (20) | receiver (20) | calldata (variable)
+        // original_base_token_amount (32) | approval_needed (1) |
+        // receiver (20) | calldata (variable)
         let expected_swap = String::from(concat!(
             // token_in (USDC)
             "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
@@ -363,14 +327,8 @@ mod tests {
             "0c",
             // original_base_token_amount (3000000000 as U256)
             "00000000000000000000000000000000000000000000000000000000b2d05e00",
-            // num_allowances
-            "01",
-            // allowance spender
-            "71d9750ecf0c5081fae4e3edc4253e52024b0b59",
             // approval_needed
             "01",
-            // target_contract
-            "71d9750ecf0c5081fae4e3edc4253e52024b0b59",
             // receiver
             "c5564c13a157e6240659fb81882a28091add8670",
         ));
@@ -378,8 +336,8 @@ mod tests {
     }
 
     #[test]
-    fn test_encode_liquorice_no_allowances() {
-        // Test with empty allowances
+    fn test_encode_liquorice_no_approval_needed() {
+        // Test with no approval needed (approval byte at position 74 should be 0)
         let quote_amount_out = BigUint::from_str("1000000000000000000").unwrap();
         let liquorice_calldata = Bytes::from_str("0xabcdef").unwrap();
         let base_token_amount = biguint_to_u256(&BigUint::from(1000000000_u64))
@@ -395,13 +353,8 @@ mod tests {
         let liquorice_state = MockRFQState {
             quote_amount_out,
             quote_data: HashMap::from([
-                (
-                    "target_contract".to_string(),
-                    Bytes::from_str("0x71D9750ECF0c5081FAE4E3EDC4253E52024b0B59").unwrap(),
-                ),
                 ("calldata".to_string(), liquorice_calldata.clone()),
                 ("base_token_amount".to_string(), Bytes::from(base_token_amount)),
-                ("allowances".to_string(), Bytes::from("[]".as_bytes().to_vec())),
             ]),
         };
 
@@ -425,7 +378,7 @@ mod tests {
         let encoder = LiquoriceSwapEncoder::new(
             Bytes::from("0x543778987b293C7E8Cf0722BB2e935ba6f4068D4"),
             Chain::Ethereum,
-            None,
+            liquorice_config(),
         )
         .unwrap();
 
@@ -433,7 +386,8 @@ mod tests {
             .encode_swap(&swap, &encoding_context)
             .unwrap();
 
-        // Verify num_allowances is 0 (at byte position 74)
-        assert_eq!(encoded_swap[74], 0);
+        // Verify approval_needed byte at position 74
+        // (20 + 20 + 1 + 1 + 32 = 74)
+        assert_eq!(encoded_swap[74], 1); // approval needed (new executor, no prior approval)
     }
 }

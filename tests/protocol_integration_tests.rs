@@ -1916,17 +1916,9 @@ fn test_single_encoding_strategy_liquorice() {
             .unwrap(),
     );
 
-    // Allowances JSON - one spender
-    let allowances_json =
-        r#"[{"token":"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48","spender":"0x71D9750ECF0c5081FAE4E3EDC4253E52024b0B59","amount":"3000000000"}]"#;
-
     let liquorice_state = MockRFQState {
         quote_amount_out,
         quote_data: HashMap::from([
-            (
-                "target_contract".to_string(),
-                Bytes::from_str("0x71D9750ECF0c5081FAE4E3EDC4253E52024b0B59").unwrap(),
-            ),
             ("calldata".to_string(), mock_calldata),
             (
                 "base_token_amount".to_string(),
@@ -1939,10 +1931,6 @@ fn test_single_encoding_strategy_liquorice() {
             (
                 "partial_fill_offset".to_string(),
                 Bytes::from(vec![12u8]), // offset = 12
-            ),
-            (
-                "allowances".to_string(),
-                Bytes::from(allowances_json.as_bytes().to_vec()),
             ),
         ]),
     };
