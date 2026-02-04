@@ -1894,3 +1894,99 @@ fn test_single_swap_with_univ4_angstrom() {
     // following assert would fail
     assert_eq!(hex_calldata[904..].len(), 1152);
 }
+
+#[test]
+fn test_single_encoding_strategy_liquorice() {
+    // Note: This test does not assert anything. It is only used to obtain
+    // integration test data for our router solidity test.
+    //
+    // Performs a swap from USDC to WETH using Liquorice RFQ
+    //
+    //   USDC ───(Liquorice RFQ)──> WETH
+
+    let usdc = usdc();
+    let weth = weth();
+
+    // USDC -> WETH via Liquorice RFQ using mock order data
+    let quote_amount_out = BigUint::from_str("1000000000000000000").unwrap(); // 1 WETH
+
+    // Mock calldata for Liquorice settlement
+    let mock_calldata = Bytes::from(
+        hex::decode("deadbeef1234567890abcdef1234567890abcdef1234567890abcdef1234567890")
+            .unwrap(),
+    );
+
+    // Allowances JSON - one spender
+    let allowances_json =
+        r#"[{"token":"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48","spender":"0x71D9750ECF0c5081FAE4E3EDC4253E52024b0B59","amount":"3000000000"}]"#;
+
+    let liquorice_state = MockRFQState {
+        quote_amount_out,
+        quote_data: HashMap::from([
+            (
+                "target_contract".to_string(),
+                Bytes::from_str("0x71D9750ECF0c5081FAE4E3EDC4253E52024b0B59").unwrap(),
+            ),
+            ("calldata".to_string(), mock_calldata),
+            (
+                "base_token_amount".to_string(),
+                Bytes::from(
+                    biguint_to_u256(&BigUint::from(3000000000_u64))
+                        .to_be_bytes::<32>()
+                        .to_vec(),
+                ),
+            ),
+            (
+                "partial_fill_offset".to_string(),
+                Bytes::from(vec![12u8]), // offset = 12
+            ),
+            (
+                "allowances".to_string(),
+                Bytes::from(allowances_json.as_bytes().to_vec()),
+            ),
+        ]),
+    };
+
+    let liquorice_component = ProtocolComponent {
+        id: String::from("liquorice-rfq"),
+        protocol_system: String::from("rfq:liquorice"),
+        ..Default::default()
+    };
+
+    let swap_usdc_weth = Swap::new(liquorice_component, usdc.clone(), weth.clone())
+        .estimated_amount_in(BigUint::from_str("3000000000").unwrap())
+        .protocol_state(Arc::new(liquorice_state));
+
+    let encoder = get_tycho_router_encoder(UserTransferType::TransferFrom);
+
+    let solution = Solution {
+        exact_out: false,
+        given_token: usdc,
+        given_amount: BigUint::from_str("3000000000").unwrap(),
+        checked_token: weth,
+        checked_amount: BigUint::from_str("1000000000000000000").unwrap(),
+        sender: alice_address(),
+        receiver: alice_address(),
+        swaps: vec![swap_usdc_weth],
+        ..Default::default()
+    };
+
+    let encoded_solution = encoder
+        .encode_solutions(vec![solution.clone()])
+        .unwrap()[0]
+        .clone();
+
+    let calldata = encode_tycho_router_call(
+        eth_chain().id(),
+        encoded_solution,
+        &solution,
+        &UserTransferType::TransferFrom,
+        &eth(),
+        None,
+    )
+    .unwrap()
+    .data;
+
+    let hex_calldata = encode(&calldata);
+    write_calldata_to_file("test_single_encoding_strategy_liquorice", hex_calldata.as_str());
+}
