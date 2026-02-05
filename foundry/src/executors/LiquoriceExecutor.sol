@@ -23,13 +23,15 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
     /// @notice Liquorice-specific errors
     error LiquoriceExecutor__InvalidDataLength();
     error LiquoriceExecutor__ZeroAddress();
+    error LiquoriceExecutor__AmountBelowMinimum();
 
     /// @notice The Liquorice settlement contract address
     address public immutable liquoriceSettlement;
 
-    constructor(address _liquoriceSettlement, address _permit2)
-        RestrictTransferFrom(_permit2)
-    {
+    constructor(
+        address _liquoriceSettlement,
+        address _permit2
+    ) RestrictTransferFrom(_permit2) {
         if (_liquoriceSettlement == address(0)) {
             revert LiquoriceExecutor__ZeroAddress();
         }
@@ -40,26 +42,21 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
     /// @param givenAmount The amount of input token to swap
     /// @param data Encoded swap data containing tokens and liquorice calldata
     /// @return calculatedAmount The amount of output token received
-    function swap(uint256 givenAmount, bytes calldata data)
-        external
-        payable
-        virtual
-        override
-        returns (uint256 calculatedAmount)
-    {
+    function swap(
+        uint256 givenAmount,
+        bytes calldata data
+    ) external payable virtual override returns (uint256 calculatedAmount) {
         (
             address tokenIn,
             address tokenOut,
             TransferType transferType,
             uint8 partialFillOffset,
             uint256 originalBaseTokenAmount,
+            uint256 minBaseTokenAmount,
             bool approvalNeeded,
             address receiver,
             bytes memory liquoriceCalldata
         ) = _decodeData(data);
-
-        // Transfer tokens to executor
-        _transfer(address(this), transferType, tokenIn, givenAmount);
 
         // Grant approval to Liquorice balance manager if needed
         if (approvalNeeded && tokenIn != address(0)) {
@@ -70,14 +67,22 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
             IERC20(tokenIn).forceApprove(balanceManager, type(uint256).max);
         }
 
+        givenAmount = _clampAmount(
+            givenAmount,
+            originalBaseTokenAmount,
+            minBaseTokenAmount
+        );
+
+        // Transfer tokens to executor
+        _transfer(address(this), transferType, tokenIn, givenAmount);
+
         // Modify the fill amount in the calldata if partial fill is supported
         // If partialFillOffset is 0, partial fill is not supported
         bytes memory finalCalldata = liquoriceCalldata;
-        if (partialFillOffset > 0) {
+        if (partialFillOffset > 0 && originalBaseTokenAmount > givenAmount) {
             finalCalldata = _modifyFilledTakerAmount(
                 liquoriceCalldata,
                 givenAmount,
-                originalBaseTokenAmount,
                 partialFillOffset
             );
         }
@@ -94,7 +99,9 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
     }
 
     /// @dev Decodes the packed calldata
-    function _decodeData(bytes calldata data)
+    function _decodeData(
+        bytes calldata data
+    )
         internal
         pure
         returns (
@@ -103,6 +110,7 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
             TransferType transferType,
             uint8 partialFillOffset,
             uint256 originalBaseTokenAmount,
+            uint256 minBaseTokenAmount,
             bool approvalNeeded,
             address receiver,
             bytes memory liquoriceCalldata
@@ -110,44 +118,55 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
     {
         // Minimum fixed fields:
         // tokenIn (20) + tokenOut (20) + transferType (1) + partialFillOffset (1) +
-        // originalBaseTokenAmount (32) + approvalNeeded (1) + receiver (20) = 95 bytes
-        if (data.length < 95) revert LiquoriceExecutor__InvalidDataLength();
+        // originalBaseTokenAmount (32) + minBaseTokenAmount (32) +
+        // approvalNeeded (1) + receiver (20) = 127 bytes
+        if (data.length < 127) revert LiquoriceExecutor__InvalidDataLength();
 
         tokenIn = address(bytes20(data[0:20]));
         tokenOut = address(bytes20(data[20:40]));
         transferType = TransferType(uint8(data[40]));
         partialFillOffset = uint8(data[41]);
         originalBaseTokenAmount = uint256(bytes32(data[42:74]));
-        approvalNeeded = data[74] != 0;
-        receiver = address(bytes20(data[75:95]));
-        liquoriceCalldata = data[95:];
+        minBaseTokenAmount = uint256(bytes32(data[74:106]));
+        approvalNeeded = data[106] != 0;
+        receiver = address(bytes20(data[107:127]));
+        liquoriceCalldata = data[127:];
+    }
+
+    /// @dev Clamps the given amount to be within the valid range for the quote
+    /// @param givenAmount The amount provided by the router
+    /// @param originalBaseTokenAmount The maximum amount the quote supports
+    /// @param minBaseTokenAmount The minimum amount required for partial fills
+    /// @return The clamped amount
+    function _clampAmount(
+        uint256 givenAmount,
+        uint256 originalBaseTokenAmount,
+        uint256 minBaseTokenAmount
+    ) internal pure returns (uint256) {
+        // For partially filled quotes, revert if below minimum amount requirement
+        if (givenAmount < minBaseTokenAmount) {
+            revert LiquoriceExecutor__AmountBelowMinimum();
+        }
+        // It is possible to have a quote with lesser amount than was requested
+        if (givenAmount > originalBaseTokenAmount) {
+            return originalBaseTokenAmount;
+        }
+        return givenAmount;
     }
 
     /// @dev Modifies the filledTakerAmount in the liquorice calldata to handle slippage
     /// @param liquoriceCalldata The original calldata for the liquorice settlement
     /// @param givenAmount The actual amount available from the router
-    /// @param originalBaseTokenAmount The original amount expected when the quote was generated
     /// @param partialFillOffset The offset from Liquorice API indicating where the fill amount is located
     /// @return The modified calldata with updated fill amount
     function _modifyFilledTakerAmount(
         bytes memory liquoriceCalldata,
         uint256 givenAmount,
-        uint256 originalBaseTokenAmount,
         uint8 partialFillOffset
     ) internal pure returns (bytes memory) {
         // Use the offset from Liquorice API to locate the fill amount
         // Position = 4 bytes (selector) + offset * 32 bytes
         uint256 fillAmountPos = 4 + uint256(partialFillOffset) * 32;
-
-        // Cap the fill amount at what we actually have available
-        uint256 newFillAmount = originalBaseTokenAmount > givenAmount
-            ? givenAmount
-            : originalBaseTokenAmount;
-
-        // If the new fill amount is the same as the original, return the original calldata
-        if (newFillAmount == originalBaseTokenAmount) {
-            return liquoriceCalldata;
-        }
 
         // Use assembly to modify the fill amount at the correct position
         // slither-disable-next-line assembly
@@ -157,7 +176,7 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
 
             // Calculate the actual position and store the new value
             let actualPos := add(dataPtr, fillAmountPos)
-            mstore(actualPos, newFillAmount)
+            mstore(actualPos, givenAmount)
         }
 
         return liquoriceCalldata;
@@ -167,14 +186,14 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
     /// @param token The token address, or address(0) for ETH
     /// @param account The account to get the balance of
     /// @return The balance of the token or ETH for the account
-    function _balanceOf(address token, address account)
-        internal
-        view
-        returns (uint256)
-    {
-        return token == address(0)
-            ? account.balance
-            : IERC20(token).balanceOf(account);
+    function _balanceOf(
+        address token,
+        address account
+    ) internal view returns (uint256) {
+        return
+            token == address(0)
+                ? account.balance
+                : IERC20(token).balanceOf(account);
     }
 
     /// @dev Allow receiving ETH for settlement calls that require ETH

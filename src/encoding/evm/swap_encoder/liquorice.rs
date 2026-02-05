@@ -134,7 +134,8 @@ impl SwapEncoder for LiquoriceSwapEncoder {
                 "Liquorice quote must have a base_token_amount attribute".to_string(),
             ))?;
 
-        // Get partial fill offset (defaults to 0 if not present, meaning no partial fill support)
+        // Get partial fill offset (defaults to 0 if not present, meaning partial fill is not
+        // available for the quote)
         let partial_fill_offset: u8 = signed_quote
             .quote_attributes
             .get("partial_fill_offset")
@@ -144,6 +145,13 @@ impl SwapEncoder for LiquoriceSwapEncoder {
             })
             .unwrap_or(0);
 
+        // Get min base token amount (defaults to original base token amount if partiall fill is not
+        // available for the quote)
+        let min_base_token_amount = signed_quote
+            .quote_attributes
+            .get("min_base_token_amount")
+            .unwrap_or(base_token_amount);
+
         // Parse original base token amount (U256 encoded as 32 bytes)
         let original_base_token_amount = if base_token_amount.len() == 32 {
             base_token_amount.to_vec()
@@ -152,6 +160,16 @@ impl SwapEncoder for LiquoriceSwapEncoder {
             let mut padded = vec![0u8; 32];
             let start = 32 - base_token_amount.len();
             padded[start..].copy_from_slice(base_token_amount);
+            padded
+        };
+
+        // Parse min base token amount (U256 encoded as 32 bytes)
+        let min_base_token_amount = if min_base_token_amount.len() == 32 {
+            min_base_token_amount.to_vec()
+        } else {
+            let mut padded = vec![0u8; 32];
+            let start = 32 - min_base_token_amount.len();
+            padded[start..].copy_from_slice(min_base_token_amount);
             padded
         };
 
@@ -172,8 +190,8 @@ impl SwapEncoder for LiquoriceSwapEncoder {
 
         // Encode packed data for the executor
         // Format: token_in | token_out | transfer_type | partial_fill_offset |
-        //         original_base_token_amount | approval_needed |
-        //         receiver | liquorice_calldata
+        //         original_base_token_amount | min_base_token_amount |
+        //         approval_needed | receiver | liquorice_calldata
         let mut encoded = Vec::new();
 
         encoded.extend_from_slice(token_in.as_slice()); // 20 bytes
@@ -181,6 +199,7 @@ impl SwapEncoder for LiquoriceSwapEncoder {
         encoded.push(encoding_context.transfer_type as u8); // 1 byte
         encoded.push(partial_fill_offset); // 1 byte
         encoded.extend_from_slice(&original_base_token_amount); // 32 bytes
+        encoded.extend_from_slice(&min_base_token_amount); // 32 bytes
         encoded.push(approval_needed as u8); // 1 byte
         encoded.extend_from_slice(receiver.as_slice()); // 20 bytes
 
@@ -274,11 +293,16 @@ mod tests {
             ..Default::default()
         };
 
+        let min_base_token_amount = biguint_to_u256(&BigUint::from(2500000000_u64))
+            .to_be_bytes::<32>()
+            .to_vec();
+
         let liquorice_state = MockRFQState {
             quote_amount_out,
             quote_data: HashMap::from([
                 ("calldata".to_string(), liquorice_calldata.clone()),
                 ("base_token_amount".to_string(), Bytes::from(base_token_amount.clone())),
+                ("min_base_token_amount".to_string(), Bytes::from(min_base_token_amount.clone())),
                 ("partial_fill_offset".to_string(), Bytes::from(vec![12u8])),
             ]),
         };
@@ -314,8 +338,8 @@ mod tests {
 
         // Expected format:
         // token_in (20) | token_out (20) | transfer_type (1) | partial_fill_offset (1) |
-        // original_base_token_amount (32) | approval_needed (1) |
-        // receiver (20) | calldata (variable)
+        // original_base_token_amount (32) | min_base_token_amount (32) |
+        // approval_needed (1) | receiver (20) | calldata (variable)
         let expected_swap = String::from(concat!(
             // token_in (USDC)
             "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
@@ -327,6 +351,8 @@ mod tests {
             "0c",
             // original_base_token_amount (3000000000 as U256)
             "00000000000000000000000000000000000000000000000000000000b2d05e00",
+            // min_base_token_amount (2500000000 as U256)
+            "0000000000000000000000000000000000000000000000000000000094f5f200",
             // approval_needed
             "01",
             // receiver
@@ -350,11 +376,16 @@ mod tests {
             ..Default::default()
         };
 
+        let min_base_token_amount = biguint_to_u256(&BigUint::from(800000000_u64))
+            .to_be_bytes::<32>()
+            .to_vec();
+
         let liquorice_state = MockRFQState {
             quote_amount_out,
             quote_data: HashMap::from([
                 ("calldata".to_string(), liquorice_calldata.clone()),
                 ("base_token_amount".to_string(), Bytes::from(base_token_amount)),
+                ("min_base_token_amount".to_string(), Bytes::from(min_base_token_amount)),
             ]),
         };
 
@@ -386,8 +417,8 @@ mod tests {
             .encode_swap(&swap, &encoding_context)
             .unwrap();
 
-        // Verify approval_needed byte at position 74
-        // (20 + 20 + 1 + 1 + 32 = 74)
-        assert_eq!(encoded_swap[74], 1); // approval needed (new executor, no prior approval)
+        // Verify approval_needed byte at position 106
+        // (20 + 20 + 1 + 1 + 32 + 32 = 106)
+        assert_eq!(encoded_swap[106], 1); // approval needed (new executor, no prior approval)
     }
 }

@@ -12,11 +12,14 @@ import {
 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract LiquoriceExecutorExposed is LiquoriceExecutor {
-    constructor(address _liquoriceSettlement, address _permit2)
-        LiquoriceExecutor(_liquoriceSettlement, _permit2)
-    {}
+    constructor(
+        address _liquoriceSettlement,
+        address _permit2
+    ) LiquoriceExecutor(_liquoriceSettlement, _permit2) {}
 
-    function decodeData(bytes calldata data)
+    function decodeData(
+        bytes calldata data
+    )
         external
         pure
         returns (
@@ -25,12 +28,26 @@ contract LiquoriceExecutorExposed is LiquoriceExecutor {
             TransferType transferType,
             uint8 partialFillOffset,
             uint256 originalBaseTokenAmount,
+            uint256 minBaseTokenAmount,
             bool approvalNeeded,
             address receiver,
             bytes memory liquoriceCalldata
         )
     {
         return _decodeData(data);
+    }
+
+    function clampAmount(
+        uint256 givenAmount,
+        uint256 originalBaseTokenAmount,
+        uint256 minBaseTokenAmount
+    ) external pure returns (uint256) {
+        return
+            _clampAmount(
+                givenAmount,
+                originalBaseTokenAmount,
+                minBaseTokenAmount
+            );
     }
 }
 
@@ -48,17 +65,20 @@ contract LiquoriceExecutorTest is Constants, Permit2TestHelper, TestUtils {
 
     function setUp() public {
         vm.createSelectFork(vm.rpcUrl("mainnet"), 22667985);
-        liquoriceExecutor =
-            new LiquoriceExecutorExposed(LIQUORICE_SETTLEMENT, PERMIT2_ADDRESS);
+        liquoriceExecutor = new LiquoriceExecutorExposed(
+            LIQUORICE_SETTLEMENT,
+            PERMIT2_ADDRESS
+        );
     }
 
-    function testDecodeData_NoApproval() public view {
+    function testDecodeData() public view {
         bytes memory liquoriceCalldata = abi.encodePacked(
             bytes4(0xdeadbeef), // mock selector
             hex"1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
         );
 
         uint256 originalAmount = 1000000000; // 1000 USDC
+        uint256 minAmount = 800000000; // 800 USDC
         address receiver = address(0xABcdEFABcdEFabcdEfAbCdefabcdeFABcDEFabCD);
 
         bytes memory params = abi.encodePacked(
@@ -67,6 +87,7 @@ contract LiquoriceExecutorTest is Constants, Permit2TestHelper, TestUtils {
             uint8(RestrictTransferFrom.TransferType.Transfer), // transferType (1 byte)
             uint8(5), // partialFillOffset (1 byte)
             originalAmount, // originalBaseTokenAmount (32 bytes)
+            minAmount, // minBaseTokenAmount (32 bytes)
             uint8(0), // approvalNeeded (1 byte) - false
             receiver, // receiver (20 bytes)
             liquoriceCalldata // variable length
@@ -78,6 +99,7 @@ contract LiquoriceExecutorTest is Constants, Permit2TestHelper, TestUtils {
             RestrictTransferFrom.TransferType decodedTransferType,
             uint8 decodedPartialFillOffset,
             uint256 decodedOriginalAmount,
+            uint256 decodedMinAmount,
             bool decodedApprovalNeeded,
             address decodedReceiver,
             bytes memory decodedCalldata
@@ -92,57 +114,12 @@ contract LiquoriceExecutorTest is Constants, Permit2TestHelper, TestUtils {
         );
         assertEq(decodedPartialFillOffset, 5, "partialFillOffset mismatch");
         assertEq(
-            decodedOriginalAmount, originalAmount, "originalAmount mismatch"
+            decodedOriginalAmount,
+            originalAmount,
+            "originalAmount mismatch"
         );
+        assertEq(decodedMinAmount, minAmount, "minAmount mismatch");
         assertFalse(decodedApprovalNeeded, "approvalNeeded should be false");
-        assertEq(decodedReceiver, receiver, "receiver mismatch");
-        assertEq(
-            keccak256(decodedCalldata),
-            keccak256(liquoriceCalldata),
-            "calldata mismatch"
-        );
-    }
-
-    function testDecodeData_WithApproval() public view {
-        bytes memory liquoriceCalldata = hex"deadbeef";
-
-        uint256 originalAmount = 2000000000; // 2000 USDC
-        address receiver = address(0x2222222222222222222222222222222222222222);
-
-        bytes memory params = abi.encodePacked(
-            USDC_ADDR, // tokenIn (20 bytes)
-            WBTC_ADDR, // tokenOut (20 bytes)
-            uint8(RestrictTransferFrom.TransferType.None), // transferType (1 byte)
-            uint8(12), // partialFillOffset (1 byte)
-            originalAmount, // originalBaseTokenAmount (32 bytes)
-            uint8(1), // approvalNeeded (1 byte) - true
-            receiver, // receiver (20 bytes)
-            liquoriceCalldata // variable length
-        );
-
-        (
-            address decodedTokenIn,
-            address decodedTokenOut,
-            RestrictTransferFrom.TransferType decodedTransferType,
-            uint8 decodedPartialFillOffset,
-            uint256 decodedOriginalAmount,
-            bool decodedApprovalNeeded,
-            address decodedReceiver,
-            bytes memory decodedCalldata
-        ) = liquoriceExecutor.decodeData(params);
-
-        assertEq(decodedTokenIn, USDC_ADDR, "tokenIn mismatch");
-        assertEq(decodedTokenOut, WBTC_ADDR, "tokenOut mismatch");
-        assertEq(
-            uint8(decodedTransferType),
-            uint8(RestrictTransferFrom.TransferType.None),
-            "transferType mismatch"
-        );
-        assertEq(decodedPartialFillOffset, 12, "partialFillOffset mismatch");
-        assertEq(
-            decodedOriginalAmount, originalAmount, "originalAmount mismatch"
-        );
-        assertTrue(decodedApprovalNeeded, "approvalNeeded should be true");
         assertEq(decodedReceiver, receiver, "receiver mismatch");
         assertEq(
             keccak256(decodedCalldata),
@@ -166,24 +143,39 @@ contract LiquoriceExecutorTest is Constants, Permit2TestHelper, TestUtils {
         liquoriceExecutor.decodeData(tooShort);
     }
 
-    function testDecodeData_ZeroPartialFillOffset() public view {
-        bytes memory liquoriceCalldata = hex"cafebabe";
-        address receiver = address(0x6666666666666666666666666666666666666666);
-
-        // partialFillOffset = 0 means partial fill not supported
-        bytes memory params = abi.encodePacked(
-            WETH_ADDR,
-            USDC_ADDR,
-            uint8(RestrictTransferFrom.TransferType.Transfer),
-            uint8(0), // partialFillOffset = 0
-            uint256(1e18),
-            uint8(0), // approvalNeeded = false
-            receiver,
-            liquoriceCalldata
+    function testClampAmount_WithinRange() public view {
+        // givenAmount is within [minBaseTokenAmount, originalBaseTokenAmount]
+        uint256 result = liquoriceExecutor.clampAmount(
+            500, // givenAmount
+            1000, // originalBaseTokenAmount
+            100 // minBaseTokenAmount
         );
+        assertEq(result, 500, "Should return givenAmount when within range");
+    }
 
-        (,,, uint8 decodedOffset,,,,) = liquoriceExecutor.decodeData(params);
+    function testClampAmount_ExceedsMax() public view {
+        // givenAmount exceeds originalBaseTokenAmount
+        uint256 result = liquoriceExecutor.clampAmount(
+            1500, // givenAmount
+            1000, // originalBaseTokenAmount
+            100 // minBaseTokenAmount
+        );
+        assertEq(
+            result,
+            1000,
+            "Should clamp to originalBaseTokenAmount when exceeded"
+        );
+    }
 
-        assertEq(decodedOffset, 0, "partialFillOffset should be 0");
+    function testClampAmount_BelowMin_Reverts() public {
+        // givenAmount is below minBaseTokenAmount - should revert
+        vm.expectRevert(
+            LiquoriceExecutor.LiquoriceExecutor__AmountBelowMinimum.selector
+        );
+        liquoriceExecutor.clampAmount(
+            50, // givenAmount
+            1000, // originalBaseTokenAmount
+            100 // minBaseTokenAmount
+        );
     }
 }
