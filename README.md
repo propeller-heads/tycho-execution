@@ -20,4 +20,4 @@ The vulnerabilities discovered during the audits have been acknowledged and addr
 
 ### Report a Vulnerability
 
-Contact [security@propellerheads.xyz](mailto:security@propellerheads.xyz)
+Contact [security@propellerheads.xyz](mailto:security@propellerheads.xyz).
