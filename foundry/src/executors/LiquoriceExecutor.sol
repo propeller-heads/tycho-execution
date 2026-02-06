@@ -9,7 +9,16 @@ import {
     SafeERC20
 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "../liquorice/ILiquoriceSettlement.sol";
+
+interface ILiquoriceSettlement {
+    function BALANCE_MANAGER() external view returns (address);
+    function AUTHENTICATOR() external view returns (address);
+}
+
+interface IAllowListAuthentication {
+    function addSolver(address _solver) external;
+    function addMaker(address _maker) external;
+}
 
 /// @title LiquoriceExecutor
 /// @notice Executor for Liquorice RFQ (Request for Quote) swaps
@@ -165,8 +174,8 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
         uint8 partialFillOffset
     ) internal pure returns (bytes memory) {
         // Use the offset from Liquorice API to locate the fill amount
-        // Position = 4 bytes (selector) + offset * 32 bytes
-        uint256 fillAmountPos = 4 + uint256(partialFillOffset) * 32;
+        // Position = 4 bytes (selector) + offset bytes
+        uint256 fillAmountPos = 4 + uint256(partialFillOffset);
 
         // Use assembly to modify the fill amount at the correct position
         // slither-disable-next-line assembly
