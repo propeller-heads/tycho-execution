@@ -28,12 +28,10 @@ use crate::encoding::{
 /// # Fields
 /// * `executor_address` - The address of the executor contract that will perform the swap.
 /// * `balance_manager_address` - The address of the Liquorice balance manager contract.
-/// * `native_token_address` - The chain's native token address.
 #[derive(Clone)]
 pub struct LiquoriceSwapEncoder {
     executor_address: Bytes,
     balance_manager_address: Bytes,
-    native_token_address: Bytes,
     runtime_handle: Handle,
     #[allow(dead_code)]
     runtime: Option<Arc<Runtime>>,
@@ -42,7 +40,7 @@ pub struct LiquoriceSwapEncoder {
 impl SwapEncoder for LiquoriceSwapEncoder {
     fn new(
         executor_address: Bytes,
-        chain: Chain,
+        _chain: Chain,
         config: Option<HashMap<String, String>>,
     ) -> Result<Self, EncodingError> {
         let config = config.ok_or(EncodingError::FatalError(
@@ -61,15 +59,9 @@ impl SwapEncoder for LiquoriceSwapEncoder {
                 "Missing liquorice balance manager address in config".to_string(),
             ))
             .flatten()?;
-        let native_token_address = chain.native_token().address;
+
         let (runtime_handle, runtime) = get_runtime()?;
-        Ok(Self {
-            executor_address,
-            balance_manager_address,
-            native_token_address,
-            runtime_handle,
-            runtime,
-        })
+        Ok(Self { executor_address, balance_manager_address, runtime_handle, runtime })
     }
 
     fn encode_swap(
@@ -95,7 +87,7 @@ impl SwapEncoder for LiquoriceSwapEncoder {
                 "Estimated amount in is mandatory for a Liquorice swap".to_string(),
             ))?;
 
-        let sender = encoding_context
+        let router_address = encoding_context
             .router_address
             .clone()
             .ok_or(EncodingError::FatalError(
@@ -106,7 +98,7 @@ impl SwapEncoder for LiquoriceSwapEncoder {
             amount_in: estimated_amount_in.clone(),
             token_in: swap.token_in().clone(),
             token_out: swap.token_out().clone(),
-            sender,
+            sender: router_address.clone(),
             receiver: encoding_context.receiver.clone(),
         };
 
@@ -136,16 +128,23 @@ impl SwapEncoder for LiquoriceSwapEncoder {
 
         // Get partial fill offset (defaults to 0 if not present, meaning partial fill is not
         // available for the quote)
-        let partial_fill_offset: u8 = signed_quote
+        let partial_fill_offset: Vec<u8> = signed_quote
             .quote_attributes
             .get("partial_fill_offset")
             .map(|b| {
-                // Take the last byte (u8 value)
-                b.last().copied().unwrap_or(0)
+                if b.len() == 4 {
+                    b.to_vec()
+                } else {
+                    // Pad to 4 bytes if needed
+                    let mut padded = vec![0u8; 4];
+                    let start = 4 - b.len();
+                    padded[start..].copy_from_slice(b);
+                    padded
+                }
             })
-            .unwrap_or(0);
+            .unwrap_or(vec![0u8; 4]);
 
-        // Get min base token amount (defaults to original base token amount if partiall fill is not
+        // Get min base token amount (defaults to original base token amount if partial fill is not
         // available for the quote)
         let min_base_token_amount = signed_quote
             .quote_attributes
@@ -173,18 +172,14 @@ impl SwapEncoder for LiquoriceSwapEncoder {
             padded
         };
 
-        // Check if approval is needed from executor to balance manager
-        let approval_needed = if *swap.token_in() == self.native_token_address {
-            false
-        } else {
-            let executor_address = bytes_to_address(&self.executor_address)?;
-            let balance_manager_address = Address::from_slice(&self.balance_manager_address);
-            ProtocolApprovalsManager::new()?.approval_needed(
-                token_in,
-                executor_address,
-                balance_manager_address,
-            )?
-        };
+        // Check if approval is needed from Router to balance manager
+        let router_address = bytes_to_address(&router_address)?;
+        let balance_manager_address = Address::from_slice(&self.balance_manager_address);
+        let approval_needed = ProtocolApprovalsManager::new()?.approval_needed(
+            token_in,
+            router_address,
+            balance_manager_address,
+        )?;
 
         let receiver = bytes_to_address(&encoding_context.receiver)?;
 
@@ -197,7 +192,7 @@ impl SwapEncoder for LiquoriceSwapEncoder {
         encoded.extend_from_slice(token_in.as_slice()); // 20 bytes
         encoded.extend_from_slice(token_out.as_slice()); // 20 bytes
         encoded.push(encoding_context.transfer_type as u8); // 1 byte
-        encoded.push(partial_fill_offset); // 1 byte
+        encoded.extend_from_slice(&partial_fill_offset); // 4 bytes
         encoded.extend_from_slice(&original_base_token_amount); // 32 bytes
         encoded.extend_from_slice(&min_base_token_amount); // 32 bytes
         encoded.push(approval_needed as u8); // 1 byte
@@ -337,7 +332,7 @@ mod tests {
         let hex_swap = encode(&encoded_swap);
 
         // Expected format:
-        // token_in (20) | token_out (20) | transfer_type (1) | partial_fill_offset (1) |
+        // token_in (20) | token_out (20) | transfer_type (1) | partial_fill_offset (4) |
         // original_base_token_amount (32) | min_base_token_amount (32) |
         // approval_needed (1) | receiver (20) | calldata (variable)
         let expected_swap = String::from(concat!(
@@ -348,7 +343,7 @@ mod tests {
             // transfer_type
             "01",
             // partial_fill_offset
-            "0c",
+            "0000000c",
             // original_base_token_amount (3000000000 as U256)
             "00000000000000000000000000000000000000000000000000000000b2d05e00",
             // min_base_token_amount (2500000000 as U256)
@@ -417,8 +412,8 @@ mod tests {
             .encode_swap(&swap, &encoding_context)
             .unwrap();
 
-        // Verify approval_needed byte at position 106
-        // (20 + 20 + 1 + 1 + 32 + 32 = 106)
-        assert_eq!(encoded_swap[106], 1); // approval needed (new executor, no prior approval)
+        // Verify approval_needed byte at position 109
+        // (20 + 20 + 1 + 4 + 32 + 32 = 109)
+        assert_eq!(encoded_swap[109], 1); // approval needed (new executor, no prior approval)
     }
 }

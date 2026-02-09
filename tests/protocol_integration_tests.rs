@@ -1904,7 +1904,6 @@ fn test_single_encoding_strategy_liquorice_settle_single() {
     // Uses real calldata captured at block 24,392,845
     //
     //   USDC ───(Liquorice RFQ)──> WETH
-    let _router = Bytes::from_str("0x6bc529DC7B81A03O1828dDCE2BC419d01FF268C66").unwrap();
     let user = Bytes::from_str("0xd2068e04cf586f76eece7ba5beb779d7bb1474a1").unwrap();
 
     let usdc = usdc();
@@ -2004,7 +2003,6 @@ fn test_single_encoding_strategy_liquorice_settle() {
     //
     //   USDC ───(Liquorice RFQ)──> WETH
 
-    let _router = Bytes::from_str("0x6bc529DC7B81A031828dDCE2BC419d01FF268C66").unwrap();
     let user = Bytes::from_str("0xd2068e04cf586f76eece7ba5beb779d7bb1474a1").unwrap();
 
     let usdc = usdc();

@@ -59,7 +59,7 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
             address tokenIn,
             address tokenOut,
             TransferType transferType,
-            uint8 partialFillOffset,
+            uint32 partialFillOffset,
             uint256 originalBaseTokenAmount,
             uint256 minBaseTokenAmount,
             bool approvalNeeded,
@@ -117,7 +117,7 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
             address tokenIn,
             address tokenOut,
             TransferType transferType,
-            uint8 partialFillOffset,
+            uint32 partialFillOffset,
             uint256 originalBaseTokenAmount,
             uint256 minBaseTokenAmount,
             bool approvalNeeded,
@@ -126,20 +126,20 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
         )
     {
         // Minimum fixed fields:
-        // tokenIn (20) + tokenOut (20) + transferType (1) + partialFillOffset (1) +
+        // tokenIn (20) + tokenOut (20) + transferType (1) + partialFillOffset (4) +
         // originalBaseTokenAmount (32) + minBaseTokenAmount (32) +
-        // approvalNeeded (1) + receiver (20) = 127 bytes
-        if (data.length < 127) revert LiquoriceExecutor__InvalidDataLength();
+        // approvalNeeded (1) + receiver (20) = 130 bytes
+        if (data.length < 130) revert LiquoriceExecutor__InvalidDataLength();
 
         tokenIn = address(bytes20(data[0:20]));
         tokenOut = address(bytes20(data[20:40]));
         transferType = TransferType(uint8(data[40]));
-        partialFillOffset = uint8(data[41]);
-        originalBaseTokenAmount = uint256(bytes32(data[42:74]));
-        minBaseTokenAmount = uint256(bytes32(data[74:106]));
-        approvalNeeded = data[106] != 0;
-        receiver = address(bytes20(data[107:127]));
-        liquoriceCalldata = data[127:];
+        partialFillOffset = uint32(bytes4(data[41:45]));
+        originalBaseTokenAmount = uint256(bytes32(data[45:77]));
+        minBaseTokenAmount = uint256(bytes32(data[77:109]));
+        approvalNeeded = data[109] != 0;
+        receiver = address(bytes20(data[110:130]));
+        liquoriceCalldata = data[130:];
     }
 
     /// @dev Clamps the given amount to be within the valid range for the quote
@@ -156,7 +156,7 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
         if (givenAmount < minBaseTokenAmount) {
             revert LiquoriceExecutor__AmountBelowMinimum();
         }
-        // It is possible to have a quote with lesser amount than was requested
+        // It is possible to have a quote with a smaller amount than was requested
         if (givenAmount > originalBaseTokenAmount) {
             return originalBaseTokenAmount;
         }
@@ -171,7 +171,7 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
     function _modifyFilledTakerAmount(
         bytes memory liquoriceCalldata,
         uint256 givenAmount,
-        uint8 partialFillOffset
+        uint32 partialFillOffset
     ) internal pure returns (bytes memory) {
         // Use the offset from Liquorice API to locate the fill amount
         // Position = 4 bytes (selector) + offset bytes

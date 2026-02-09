@@ -26,7 +26,7 @@ contract LiquoriceExecutorExposed is LiquoriceExecutor {
             address tokenIn,
             address tokenOut,
             TransferType transferType,
-            uint8 partialFillOffset,
+            uint32 partialFillOffset,
             uint256 originalBaseTokenAmount,
             uint256 minBaseTokenAmount,
             bool approvalNeeded,
@@ -100,7 +100,7 @@ contract LiquoriceExecutorTest is Constants, Permit2TestHelper, TestUtils {
         RestrictTransferFrom.TransferType transferType = RestrictTransferFrom
             .TransferType
             .None;
-        uint8 partialFillOffset = 96; // PARTIAL_FILL_OFFSET_SETTLE_SINGLE_ORDER
+        uint32 partialFillOffset = 96; // PARTIAL_FILL_OFFSET_SETTLE_SINGLE_ORDER
         uint256 amountIn = 3000e6; // 3000 USDC
         bool approvalNeeded = true;
         uint256 expectedAmountOut = 1 ether;
@@ -152,7 +152,7 @@ contract LiquoriceExecutorTest is Constants, Permit2TestHelper, TestUtils {
         RestrictTransferFrom.TransferType transferType = RestrictTransferFrom
             .TransferType
             .None;
-        uint8 partialFillOffset = 96; // PARTIAL_FILL_OFFSET_SETTLE_SINGLE_ORDER
+        uint32 partialFillOffset = 96; // PARTIAL_FILL_OFFSET_SETTLE_SINGLE_ORDER
         uint256 originalAmountIn = 3000e6; // Original quote: 3000 USDC
         uint256 amountIn = 1500e6; // Partial fill: 1500 USDC (50%)
         uint256 minAmountIn = 1500e6; // Minimum allowed
@@ -206,7 +206,7 @@ contract LiquoriceExecutorTest is Constants, Permit2TestHelper, TestUtils {
         RestrictTransferFrom.TransferType transferType = RestrictTransferFrom
             .TransferType
             .None;
-        uint8 partialFillOffset = 32; // PARTIAL_FILL_OFFSET_SETTLE_ORDER
+        uint32 partialFillOffset = 32; // PARTIAL_FILL_OFFSET_SETTLE_ORDER
         uint256 amountIn = 3000e6; // 3000 USDC
         bool approvalNeeded = true;
         uint256 expectedAmountOut = 1 ether;
@@ -258,7 +258,7 @@ contract LiquoriceExecutorTest is Constants, Permit2TestHelper, TestUtils {
         RestrictTransferFrom.TransferType transferType = RestrictTransferFrom
             .TransferType
             .None;
-        uint8 partialFillOffset = 32; // PARTIAL_FILL_OFFSET_SETTLE_ORDER
+        uint32 partialFillOffset = 32; // PARTIAL_FILL_OFFSET_SETTLE_ORDER
         uint256 originalAmountIn = 3000e6; // Original quote: 3000 USDC
         uint256 amountIn = 1500e6; // Partial fill: 1500 USDC (50%)
         uint256 minAmountIn = 1500e6; // Minimum allowed
@@ -316,7 +316,7 @@ contract LiquoriceExecutorTest is Constants, Permit2TestHelper, TestUtils {
             USDC_ADDR, // tokenIn (20 bytes)
             WETH_ADDR, // tokenOut (20 bytes)
             uint8(RestrictTransferFrom.TransferType.Transfer), // transferType (1 byte)
-            uint8(5), // partialFillOffset (1 byte)
+            uint32(5), // partialFillOffset (4 bytes)
             originalAmount, // originalBaseTokenAmount (32 bytes)
             minAmount, // minBaseTokenAmount (32 bytes)
             uint8(0), // approvalNeeded (1 byte) - false
@@ -328,7 +328,7 @@ contract LiquoriceExecutorTest is Constants, Permit2TestHelper, TestUtils {
             address decodedTokenIn,
             address decodedTokenOut,
             RestrictTransferFrom.TransferType decodedTransferType,
-            uint8 decodedPartialFillOffset,
+            uint32 decodedPartialFillOffset,
             uint256 decodedOriginalAmount,
             uint256 decodedMinAmount,
             bool decodedApprovalNeeded,
