@@ -59,8 +59,6 @@ contract LiquoriceExecutorTest is Constants, Permit2TestHelper, TestUtils {
     LiquoriceExecutorExposed liquoriceExecutor;
 
     address constant AUTH_MANAGER = 0x000438801500c89E225E8D6CB69D9c14dD05e000;
-    address constant LIQUORICE_SETTLEMENT =
-        0x0448633eb8B0A42EfED924C42069E0DcF08fb552;
 
     IERC20 WETH = IERC20(WETH_ADDR);
     IERC20 USDC = IERC20(USDC_ADDR);
@@ -410,5 +408,95 @@ contract LiquoriceExecutorTest is Constants, Permit2TestHelper, TestUtils {
             1000, // originalBaseTokenAmount
             100 // minBaseTokenAmount
         );
+    }
+}
+
+contract TychoRouterForLiquoriceTest is TychoRouterTestSetup {
+    using SafeERC20 for IERC20;
+
+    address constant AUTH_MANAGER = 0x000438801500c89E225E8D6CB69D9c14dD05e000;
+    address constant MAKER = 0x06465bcEEaef280Bb7340A58D75dfc5E1F687058;
+
+    // Override the fork block for Liquorice tests
+    function getForkBlock() public pure override returns (uint256) {
+        return 24392845;
+    }
+
+    function setUp() public override {
+        super.setUp();
+
+        // Whitelist executor as solver and MAKER
+        ILiquoriceSettlement settlement = ILiquoriceSettlement(
+            LIQUORICE_SETTLEMENT
+        );
+        IAllowListAuthentication authenticator = IAllowListAuthentication(
+            settlement.AUTHENTICATOR()
+        );
+
+        vm.prank(AUTH_MANAGER);
+        authenticator.addSolver(address(tychoRouter));
+        vm.prank(AUTH_MANAGER);
+        authenticator.addMaker(MAKER);
+
+        // MAKER approves balance manager
+        address balanceManager = settlement.BALANCE_MANAGER();
+        vm.prank(MAKER);
+        IERC20(WETH_ADDR).approve(balanceManager, type(uint256).max);
+    }
+
+    function testSettleSingleLiquoriceIntegration() public {
+        // 3000 USDC -> 1 WETH using settleSingleOrder
+        address user = 0xd2068e04Cf586f76EEcE7BA5bEB779D7bB1474A1;
+        deal(USDC_ADDR, user, 3000e6);
+        deal(WETH_ADDR, MAKER, 1 ether);
+        uint256 expAmountOut = 1 ether;
+
+        uint256 wethBefore = IERC20(WETH_ADDR).balanceOf(user);
+        vm.startPrank(user);
+        IERC20(USDC_ADDR).approve(tychoRouterAddr, type(uint256).max);
+
+        bytes memory callData = loadCallDataFromFile(
+            "test_single_encoding_strategy_liquorice_settle_single"
+        );
+
+        (bool success, ) = tychoRouterAddr.call(callData);
+
+        assertTrue(success, "Call Failed");
+        uint256 wethReceived = IERC20(WETH_ADDR).balanceOf(user) - wethBefore;
+        assertEq(wethReceived, expAmountOut, "Incorrect WETH received");
+        assertEq(
+            IERC20(USDC_ADDR).balanceOf(tychoRouterAddr),
+            0,
+            "USDC left in router"
+        );
+        vm.stopPrank();
+    }
+
+    function testSettleLiquoriceIntegration() public {
+        // 3000 USDC -> 1 WETH using settle
+        address user = 0xd2068e04Cf586f76EEcE7BA5bEB779D7bB1474A1;
+        deal(USDC_ADDR, user, 3000e6);
+        deal(WETH_ADDR, MAKER, 1 ether);
+        uint256 expAmountOut = 1 ether;
+
+        uint256 wethBefore = IERC20(WETH_ADDR).balanceOf(user);
+        vm.startPrank(user);
+        IERC20(USDC_ADDR).approve(tychoRouterAddr, type(uint256).max);
+
+        bytes memory callData = loadCallDataFromFile(
+            "test_single_encoding_strategy_liquorice_settle"
+        );
+
+        (bool success, ) = tychoRouterAddr.call(callData);
+
+        assertTrue(success, "Call Failed");
+        uint256 wethReceived = IERC20(WETH_ADDR).balanceOf(user) - wethBefore;
+        assertEq(wethReceived, expAmountOut, "Incorrect WETH received");
+        assertEq(
+            IERC20(USDC_ADDR).balanceOf(tychoRouterAddr),
+            0,
+            "USDC left in router"
+        );
+        vm.stopPrank();
     }
 }
