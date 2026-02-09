@@ -37,10 +37,9 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
     /// @notice The Liquorice settlement contract address
     address public immutable liquoriceSettlement;
 
-    constructor(
-        address _liquoriceSettlement,
-        address _permit2
-    ) RestrictTransferFrom(_permit2) {
+    constructor(address _liquoriceSettlement, address _permit2)
+        RestrictTransferFrom(_permit2)
+    {
         if (_liquoriceSettlement == address(0)) {
             revert LiquoriceExecutor__ZeroAddress();
         }
@@ -51,10 +50,13 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
     /// @param givenAmount The amount of input token to swap
     /// @param data Encoded swap data containing tokens and liquorice calldata
     /// @return calculatedAmount The amount of output token received
-    function swap(
-        uint256 givenAmount,
-        bytes calldata data
-    ) external payable virtual override returns (uint256 calculatedAmount) {
+    function swap(uint256 givenAmount, bytes calldata data)
+        external
+        payable
+        virtual
+        override
+        returns (uint256 calculatedAmount)
+    {
         (
             address tokenIn,
             address tokenOut,
@@ -77,9 +79,7 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
         }
 
         givenAmount = _clampAmount(
-            givenAmount,
-            originalBaseTokenAmount,
-            minBaseTokenAmount
+            givenAmount, originalBaseTokenAmount, minBaseTokenAmount
         );
 
         // Transfer tokens to executor
@@ -90,9 +90,7 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
         bytes memory finalCalldata = liquoriceCalldata;
         if (partialFillOffset > 0 && originalBaseTokenAmount > givenAmount) {
             finalCalldata = _modifyFilledTakerAmount(
-                liquoriceCalldata,
-                givenAmount,
-                partialFillOffset
+                liquoriceCalldata, givenAmount, partialFillOffset
             );
         }
 
@@ -108,9 +106,7 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
     }
 
     /// @dev Decodes the packed calldata
-    function _decodeData(
-        bytes calldata data
-    )
+    function _decodeData(bytes calldata data)
         internal
         pure
         returns (
@@ -195,14 +191,14 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
     /// @param token The token address, or address(0) for ETH
     /// @param account The account to get the balance of
     /// @return The balance of the token or ETH for the account
-    function _balanceOf(
-        address token,
-        address account
-    ) internal view returns (uint256) {
-        return
-            token == address(0)
-                ? account.balance
-                : IERC20(token).balanceOf(account);
+    function _balanceOf(address token, address account)
+        internal
+        view
+        returns (uint256)
+    {
+        return token == address(0)
+            ? account.balance
+            : IERC20(token).balanceOf(account);
     }
 
     /// @dev Allow receiving ETH for settlement calls that require ETH
