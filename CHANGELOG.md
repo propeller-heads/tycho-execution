@@ -1,3 +1,17 @@
+## [0.157.0](https://github.com/propeller-heads/tycho-execution/compare/0.156.0...0.157.0) (2026-02-06)
+
+
+### Features
+
+* Dummy commit to test SDK repo notification ([7862f96](https://github.com/propeller-heads/tycho-execution/commit/7862f96aff62795136a3877737eef327ca9e956a))
+
+## [0.156.0](https://github.com/propeller-heads/tycho-execution/compare/0.155.0...0.156.0) (2026-02-06)
+
+
+### Features
+
+* Notify SDK repo on new releases ([9fb06d2](https://github.com/propeller-heads/tycho-execution/commit/9fb06d209bb748752d61fc915f0bfbad166408b8))
+
 ## [0.155.0](https://github.com/propeller-heads/tycho-execution/compare/0.154.3...0.155.0) (2026-01-30)
 
 
