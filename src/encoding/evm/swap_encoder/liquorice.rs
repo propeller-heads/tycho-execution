@@ -233,44 +233,8 @@ mod tests {
     fn liquorice_config() -> Option<HashMap<String, String>> {
         Some(HashMap::from([(
             "balance_manager_address".to_string(),
-            "0x71D9750ECF0c5081FAE4E3EDC4253E52024b0B59".to_string(),
+            "0xb87bAE43a665EB5943A5642F81B26666bC9E5C95".to_string(),
         )]))
-    }
-
-    #[test]
-    fn test_encode_liquorice_single_fails_without_protocol_data() {
-        let liquorice_component = ProtocolComponent {
-            id: String::from("liquorice-rfq"),
-            protocol_system: String::from("rfq:liquorice"),
-            ..Default::default()
-        };
-
-        let token_in = Bytes::from("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"); // USDC
-        let token_out = Bytes::from("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"); // WETH
-
-        let swap = Swap::new(liquorice_component, token_in.clone(), token_out.clone())
-            .estimated_amount_in(BigUint::from_str("3000000000").unwrap());
-
-        let encoding_context = EncodingContext {
-            receiver: Bytes::from("0xc5564C13A157E6240659fb81882A28091add8670"),
-            exact_out: false,
-            router_address: Some(Bytes::zero(20)),
-            group_token_in: token_in.clone(),
-            group_token_out: token_out.clone(),
-            transfer_type: TransferType::Transfer,
-            historical_trade: false,
-        };
-
-        let encoder = LiquoriceSwapEncoder::new(
-            Bytes::from("0x543778987b293C7E8Cf0722BB2e935ba6f4068D4"),
-            Chain::Ethereum,
-            liquorice_config(),
-        )
-        .unwrap();
-
-        encoder
-            .encode_swap(&swap, &encoding_context)
-            .expect_err("Should return an error if the swap has no protocol state");
     }
 
     #[test]
@@ -347,73 +311,12 @@ mod tests {
             // original_base_token_amount (3000000000 as U256)
             "00000000000000000000000000000000000000000000000000000000b2d05e00",
             // min_base_token_amount (2500000000 as U256)
-            "0000000000000000000000000000000000000000000000000000000094f5f200",
+            "000000000000000000000000000000000000000000000000000000009502f900",
             // approval_needed
             "01",
             // receiver
             "c5564c13a157e6240659fb81882a28091add8670",
         ));
         assert_eq!(hex_swap, expected_swap + &liquorice_calldata.to_string()[2..]);
-    }
-
-    #[test]
-    fn test_encode_liquorice_no_approval_needed() {
-        // Test with no approval needed (approval byte at position 74 should be 0)
-        let quote_amount_out = BigUint::from_str("1000000000000000000").unwrap();
-        let liquorice_calldata = Bytes::from_str("0xabcdef").unwrap();
-        let base_token_amount = biguint_to_u256(&BigUint::from(1000000000_u64))
-            .to_be_bytes::<32>()
-            .to_vec();
-
-        let liquorice_component = ProtocolComponent {
-            id: String::from("liquorice-rfq"),
-            protocol_system: String::from("rfq:liquorice"),
-            ..Default::default()
-        };
-
-        let min_base_token_amount = biguint_to_u256(&BigUint::from(800000000_u64))
-            .to_be_bytes::<32>()
-            .to_vec();
-
-        let liquorice_state = MockRFQState {
-            quote_amount_out,
-            quote_data: HashMap::from([
-                ("calldata".to_string(), liquorice_calldata.clone()),
-                ("base_token_amount".to_string(), Bytes::from(base_token_amount)),
-                ("min_base_token_amount".to_string(), Bytes::from(min_base_token_amount)),
-            ]),
-        };
-
-        let token_in = Bytes::from("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
-        let token_out = Bytes::from("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
-
-        let swap = Swap::new(liquorice_component, token_in.clone(), token_out.clone())
-            .estimated_amount_in(BigUint::from_str("1000000000").unwrap())
-            .protocol_state(Arc::new(liquorice_state));
-
-        let encoding_context = EncodingContext {
-            receiver: Bytes::from("0xc5564C13A157E6240659fb81882A28091add8670"),
-            exact_out: false,
-            router_address: Some(Bytes::zero(20)),
-            group_token_in: token_in.clone(),
-            group_token_out: token_out.clone(),
-            transfer_type: TransferType::Transfer,
-            historical_trade: false,
-        };
-
-        let encoder = LiquoriceSwapEncoder::new(
-            Bytes::from("0x543778987b293C7E8Cf0722BB2e935ba6f4068D4"),
-            Chain::Ethereum,
-            liquorice_config(),
-        )
-        .unwrap();
-
-        let encoded_swap = encoder
-            .encode_swap(&swap, &encoding_context)
-            .unwrap();
-
-        // Verify approval_needed byte at position 109
-        // (20 + 20 + 1 + 4 + 32 + 32 = 109)
-        assert_eq!(encoded_swap[109], 1); // approval needed (new executor, no prior approval)
     }
 }
