@@ -13,7 +13,7 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'release' }}
     steps:
       - name: Wait for crates.io propagation
-        run: sleep 30
+        run: sleep 60
 
       - name: Get latest release tag
         id: get_tag
