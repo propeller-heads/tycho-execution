@@ -10,11 +10,11 @@ use crate::encoding::{
             balancer_v2::BalancerV2SwapEncoder, balancer_v3::BalancerV3SwapEncoder,
             bebop::BebopSwapEncoder, curve::CurveSwapEncoder, ekubo::EkuboSwapEncoder,
             ekubo_v3::EkuboV3SwapEncoder, erc_4626::ERC4626SwapEncoder,
-            fluid_v1::FluidV1SwapEncoder, hashflow::HashflowSwapEncoder, lido::LidoSwapEncoder,
-            liquorice::LiquoriceSwapEncoder, maverick_v2::MaverickV2SwapEncoder,
-            rocketpool::RocketpoolSwapEncoder, slipstreams::SlipstreamsSwapEncoder,
-            uniswap_v2::UniswapV2SwapEncoder, uniswap_v3::UniswapV3SwapEncoder,
-            uniswap_v4::UniswapV4SwapEncoder,
+            etherfi::EtherfiSwapEncoder, fluid_v1::FluidV1SwapEncoder,
+            hashflow::HashflowSwapEncoder, lido::LidoSwapEncoder, liquorice::LiquoriceSwapEncoder,
+            maverick_v2::MaverickV2SwapEncoder, rocketpool::RocketpoolSwapEncoder,
+            slipstreams::SlipstreamsSwapEncoder, uniswap_v2::UniswapV2SwapEncoder,
+            uniswap_v3::UniswapV3SwapEncoder, uniswap_v4::UniswapV4SwapEncoder,
         },
     },
     swap_encoder::SwapEncoder,
@@ -154,6 +154,9 @@ impl SwapEncoderRegistry {
             "lido" => Ok(Box::new(LidoSwapEncoder::new(executor_address, self.chain, config)?)),
             "velodrome_slipstreams" => {
                 Ok(Box::new(SlipstreamsSwapEncoder::new(executor_address, self.chain, config)?))
+            }
+            "etherfi" => {
+                Ok(Box::new(EtherfiSwapEncoder::new(executor_address, self.chain, config)?))
             }
             _ => Err(EncodingError::FatalError(format!(
                 "Unknown protocol system: {}",

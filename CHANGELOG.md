@@ -1,3 +1,30 @@
+## [0.159.0](https://github.com/propeller-heads/tycho-execution/compare/0.158.0...0.159.0) (2026-02-11)
+
+
+### Features
+
+* add Etherfi config and make executor addresses configurable ([31dd95d](https://github.com/propeller-heads/tycho-execution/commit/31dd95d3c35e9bd229bac589b4ee1a7c7943bafe))
+
+
+### Bug Fixes
+
+* add slither comment ([8177c26](https://github.com/propeller-heads/tycho-execution/commit/8177c2658edd75febf731441464de9c91f95b0fb))
+* add test constants and config for EtherFi swap encoder ([dfaa6dd](https://github.com/propeller-heads/tycho-execution/commit/dfaa6ddcc8a126bd00e52b535eda16d6ab2d47b6))
+* cap eETH redeem amount to avoid share-based rounding dust ([663086a](https://github.com/propeller-heads/tycho-execution/commit/663086a10886888ce5df8768638afded1a64a44f))
+* update EtherFi executor address in test config and calldata ([fed1739](https://github.com/propeller-heads/tycho-execution/commit/fed1739d8be5bf8527b116e3ec3f5f3f210a2f32))
+
+## [0.158.0](https://github.com/propeller-heads/tycho-execution/compare/0.157.0...0.158.0) (2026-02-10)
+
+
+### Features
+
+* dummy commit to trigger CI ([624d26a](https://github.com/propeller-heads/tycho-execution/commit/624d26afc8724c9fb2c11cb8f5ca906670855dd1))
+
+
+### Bug Fixes
+
+* **sdk notify:** Wait for cargo release, not just github publish ([f2f73a9](https://github.com/propeller-heads/tycho-execution/commit/f2f73a9488e4b9fa432d1a82074357062c572a74))
+
 ## [0.157.0](https://github.com/propeller-heads/tycho-execution/compare/0.156.0...0.157.0) (2026-02-06)
 
 
