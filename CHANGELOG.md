@@ -1,3 +1,36 @@
+## [0.158.0](https://github.com/propeller-heads/tycho-execution/compare/0.157.0...0.158.0) (2026-02-10)
+
+
+### Features
+
+* dummy commit to trigger CI ([624d26a](https://github.com/propeller-heads/tycho-execution/commit/624d26afc8724c9fb2c11cb8f5ca906670855dd1))
+
+
+### Bug Fixes
+
+* **sdk notify:** Wait for cargo release, not just github publish ([f2f73a9](https://github.com/propeller-heads/tycho-execution/commit/f2f73a9488e4b9fa432d1a82074357062c572a74))
+
+## [0.157.0](https://github.com/propeller-heads/tycho-execution/compare/0.156.0...0.157.0) (2026-02-06)
+
+
+### Features
+
+* Dummy commit to test SDK repo notification ([7862f96](https://github.com/propeller-heads/tycho-execution/commit/7862f96aff62795136a3877737eef327ca9e956a))
+
+## [0.156.0](https://github.com/propeller-heads/tycho-execution/compare/0.155.0...0.156.0) (2026-02-06)
+
+
+### Features
+
+* Notify SDK repo on new releases ([9fb06d2](https://github.com/propeller-heads/tycho-execution/commit/9fb06d209bb748752d61fc915f0bfbad166408b8))
+
+## [0.155.0](https://github.com/propeller-heads/tycho-execution/compare/0.154.3...0.155.0) (2026-01-30)
+
+
+### Features
+
+* deploy ekubo v3 executor on Ethereum ([913ec05](https://github.com/propeller-heads/tycho-execution/commit/913ec05fbdbf455baeb1ef840c4b04a3c352aa62))
+
 ## [0.154.3](https://github.com/propeller-heads/tycho-execution/compare/0.154.2...0.154.3) (2026-01-27)
 
 
