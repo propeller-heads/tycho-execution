@@ -67,17 +67,21 @@ contract FeeCalculator is AccessControl, IFeeCalculator {
      *      Router fee parameters are retrieved from contract storage based on the user address.
      *      Client fee parameters are passed as function arguments.
      * @param amountIn The amount before fee deduction
+     * @param minAmountOut The minimum expected output (used when capturePositiveSlippage is true)
      * @param user The user address to look up custom router fees for
-     * @param clientFeeBps Client fee in basis points
+     * @param clientFeeBps Client fee in basis points (ignored if capturePositiveSlippage is true)
      * @param clientFeeReceiver Address to receive client fees
+     * @param capturePositiveSlippage If true, client captures (amountIn - minAmountOut) instead of using bps
      * @return amountOut The amount remaining after all fee deductions
      * @return feeRecipients Array of (address, feeAmount) tuples for fee distribution
      */
     function calculateFee(
         uint256 amountIn,
+        uint256 minAmountOut,
         address user,
         uint16 clientFeeBps,
-        address clientFeeReceiver
+        address clientFeeReceiver,
+        bool capturePositiveSlippage
     )
         external
         view
@@ -96,9 +100,33 @@ contract FeeCalculator is AccessControl, IFeeCalculator {
         amountOut = amountIn;
         uint256 routerFeeOnClientFee = 0;
         uint256 clientPortion = 0;
+        uint256 routerFeeOnOutput = 0;
+        uint256 remainingAfterRouterFee = amountOut;
 
-        // Calculate client fee if > 0
-        if (clientFeeBps > 0) {
+        // Calculate router fee on output amount first (if applicable)
+        if (routerFeeOnOutputBps > 0) {
+            routerFeeOnOutput = (amountOut * routerFeeOnOutputBps) / 10000;
+            remainingAfterRouterFee -= routerFeeOnOutput;
+        }
+
+        // Calculate client fee
+        if (capturePositiveSlippage) {
+            // Client captures positive slippage from amount remaining after router output fee
+            // This ensures user gets exactly minAmountOut after all fees
+            uint256 totalClientFee = remainingAfterRouterFee > minAmountOut
+                ? remainingAfterRouterFee - minAmountOut
+                : 0;
+
+            // Calculate router's cut of the client fee
+            if (routerFeeOnClientFeeBps > 0 && totalClientFee > 0) {
+                routerFeeOnClientFee =
+                    (totalClientFee * routerFeeOnClientFeeBps) / 10_000;
+            }
+
+            // Client gets their portion (after router's cut)
+            clientPortion = totalClientFee - routerFeeOnClientFee;
+        } else if (clientFeeBps > 0) {
+            // Traditional bps-based client fee
             // Save numerator for later routerFeeOnClientFee calculation to avoid
             // divide-before-multiply precision loss and warning
             uint256 clientFeeNumerator = amountOut * clientFeeBps;
@@ -114,14 +142,7 @@ contract FeeCalculator is AccessControl, IFeeCalculator {
             clientPortion = totalClientFee - routerFeeOnClientFee;
         }
 
-        uint256 totalRouterFee = routerFeeOnClientFee;
-
-        // Calculate router fee on output amount if > 0
-        if (routerFeeOnOutputBps > 0) {
-            uint256 routerFeeOnOutput =
-                (amountOut * routerFeeOnOutputBps) / 10000;
-            totalRouterFee += routerFeeOnOutput;
-        }
+        uint256 totalRouterFee = routerFeeOnClientFee + routerFeeOnOutput;
 
         // Update amountOut considering both fees
         amountOut -= (clientPortion + totalRouterFee);

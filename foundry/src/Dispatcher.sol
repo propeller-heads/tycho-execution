@@ -323,8 +323,10 @@ contract Dispatcher is RestrictTransferFrom {
     function _callCalculateFee(
         address feeCalculator,
         uint256 amountIn,
+        uint256 minAmountOut,
         uint16 clientFeeBps,
-        address clientFeeReceiver
+        address clientFeeReceiver,
+        bool capturePositiveSlippage
     )
         internal
         view
@@ -335,9 +337,11 @@ contract Dispatcher is RestrictTransferFrom {
             abi.encodeWithSelector(
                 IFeeCalculator.calculateFee.selector,
                 amountIn,
+                minAmountOut,
                 msg.sender,
                 clientFeeBps,
-                clientFeeReceiver
+                clientFeeReceiver,
+                capturePositiveSlippage
             )
         );
 

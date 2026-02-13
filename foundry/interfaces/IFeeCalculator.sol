@@ -10,17 +10,21 @@ interface IFeeCalculator {
      *      Router fee parameters are retrieved from contract storage based on the user address.
      *      Client fee parameters are passed as function arguments.
      * @param amountIn The amount before fee deduction
+     * @param minAmountOut The minimum expected output (used when capturePositiveSlippage is true)
      * @param user The user address to look up custom router fees for
-     * @param clientFeeBps Client fee in basis points
+     * @param clientFeeBps Client fee in basis points (ignored if capturePositiveSlippage is true)
      * @param clientFeeReceiver Address to receive client fees
+     * @param capturePositiveSlippage If true, captures (amountIn - minAmountOut) as router fee instead of using bps
      * @return amountOut The amount remaining after all fee deductions
      * @return feeRecipients Array of (address, feeAmount) tuples for fee distribution
      */
     function calculateFee(
         uint256 amountIn,
+        uint256 minAmountOut,
         address user,
         uint16 clientFeeBps,
-        address clientFeeReceiver
+        address clientFeeReceiver,
+        bool capturePositiveSlippage
     )
         external
         view

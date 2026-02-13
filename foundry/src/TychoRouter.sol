@@ -148,8 +148,9 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
      * @param minAmountOut The minimum acceptable amount of the output token. Reverts if this condition is not met. This should always be set to avoid losing funds due to slippage.
      * @param nTokens The total number of tokens involved in the swap graph (used to initialize arrays for internal calculations).
      * @param receiver The address to receive the output tokens.
-     * @param clientFeeBps Fee in basis points to be paid to the client (0-10000, where 10000 = 100%)
+     * @param clientFeeBps Fee in basis points to be paid to the client (0-10000, where 10000 = 100%). Ignored if capturePositiveSlippage is true.
      * @param clientFeeReceiver Address to receive the client fee.
+     * @param capturePositiveSlippage If true, client captures all positive slippage (amountOut - minAmountOut) as fee instead of using clientFeeBps.
      * @param maxClientContribution Maximum amount the client will pay out of pocket to make the trade succeed.
      * @param swaps Encoded swap graph data containing details of each swap.
      *
@@ -164,6 +165,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
         address receiver,
         uint16 clientFeeBps,
         address clientFeeReceiver,
+        bool capturePositiveSlippage,
         uint256 maxClientContribution,
         bytes calldata swaps
     ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
@@ -183,6 +185,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
             receiver,
             clientFeeBps,
             clientFeeReceiver,
+            capturePositiveSlippage,
             maxClientContribution,
             swaps
         );
@@ -219,6 +222,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
         address receiver,
         uint16 clientFeeBps,
         address clientFeeReceiver,
+        bool capturePositiveSlippage,
         uint256 maxClientContribution,
         bytes calldata swaps
     ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
@@ -240,6 +244,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
             receiver,
             clientFeeBps,
             clientFeeReceiver,
+            capturePositiveSlippage,
             maxClientContribution,
             swaps
         );
@@ -278,6 +283,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
         address receiver,
         uint16 clientFeeBps,
         address clientFeeReceiver,
+        bool capturePositiveSlippage,
         uint256 maxClientContribution,
         IAllowanceTransfer.PermitSingle calldata permitSingle,
         bytes calldata signature,
@@ -305,6 +311,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
             receiver,
             clientFeeBps,
             clientFeeReceiver,
+            capturePositiveSlippage,
             maxClientContribution,
             swaps
         );
@@ -339,6 +346,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
         address receiver,
         uint16 clientFeeBps,
         address clientFeeReceiver,
+        bool capturePositiveSlippage,
         uint256 maxClientContribution,
         bytes calldata swaps
     ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
@@ -357,6 +365,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
             receiver,
             clientFeeBps,
             clientFeeReceiver,
+            capturePositiveSlippage,
             maxClientContribution,
             swaps
         );
@@ -391,6 +400,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
         address receiver,
         uint16 clientFeeBps,
         address clientFeeReceiver,
+        bool capturePositiveSlippage,
         uint256 maxClientContribution,
         bytes calldata swaps
     ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
@@ -411,6 +421,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
             receiver,
             clientFeeBps,
             clientFeeReceiver,
+            capturePositiveSlippage,
             maxClientContribution,
             swaps
         );
@@ -446,6 +457,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
         address receiver,
         uint16 clientFeeBps,
         address clientFeeReceiver,
+        bool capturePositiveSlippage,
         uint256 maxClientContribution,
         IAllowanceTransfer.PermitSingle calldata permitSingle,
         bytes calldata signature,
@@ -473,6 +485,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
             receiver,
             clientFeeBps,
             clientFeeReceiver,
+            capturePositiveSlippage,
             maxClientContribution,
             swaps
         );
@@ -506,6 +519,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
         address receiver,
         uint16 clientFeeBps,
         address clientFeeReceiver,
+        bool capturePositiveSlippage,
         uint256 maxClientContribution,
         bytes calldata swapData
     ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
@@ -524,6 +538,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
             receiver,
             clientFeeBps,
             clientFeeReceiver,
+            capturePositiveSlippage,
             maxClientContribution,
             swapData
         );
@@ -557,6 +572,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
         address receiver,
         uint16 clientFeeBps,
         address clientFeeReceiver,
+        bool capturePositiveSlippage,
         uint256 maxClientContribution,
         bytes calldata swapData
     ) public payable whenNotPaused nonReentrant returns (uint256 amountOut) {
@@ -577,6 +593,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
             receiver,
             clientFeeBps,
             clientFeeReceiver,
+            capturePositiveSlippage,
             maxClientContribution,
             swapData
         );
@@ -611,6 +628,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
         address receiver,
         uint16 clientFeeBps,
         address clientFeeReceiver,
+        bool capturePositiveSlippage,
         uint256 maxClientContribution,
         IAllowanceTransfer.PermitSingle calldata permitSingle,
         bytes calldata signature,
@@ -637,6 +655,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
             receiver,
             clientFeeBps,
             clientFeeReceiver,
+            capturePositiveSlippage,
             maxClientContribution,
             swapData
         );
@@ -662,6 +681,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
         address receiver,
         uint16 clientFeeBps,
         address clientFeeReceiver,
+        bool capturePositiveSlippage,
         uint256 maxClientContribution,
         bytes calldata swaps
     ) internal returns (uint256 amountOut) {
@@ -681,17 +701,28 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
             _callGetEffectiveRouterFeeOnOutput(_feeCalculator);
 
         address finalReceiver = determineFinalReceiver(
-            receiver, clientFeeBps, routerFeeOnOutputBps
+            receiver,
+            clientFeeBps,
+            routerFeeOnOutputBps,
+            capturePositiveSlippage
         );
         uint256 amountOutBeforeFees =
             _splitSwap(amountIn, nTokens, swaps, finalReceiver, isCyclical);
 
         // Skip _takeFees call if no fees exist
-        if (clientFeeBps == 0 && routerFeeOnOutputBps == 0) {
+        if (
+            clientFeeBps == 0 && routerFeeOnOutputBps == 0
+                && !capturePositiveSlippage
+        ) {
             amountOut = amountOutBeforeFees;
         } else {
             amountOut = _takeFees(
-                tokenOut, amountOutBeforeFees, clientFeeBps, clientFeeReceiver
+                tokenOut,
+                amountOutBeforeFees,
+                minAmountOut,
+                clientFeeBps,
+                clientFeeReceiver,
+                capturePositiveSlippage
             );
         }
 
@@ -737,6 +768,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
         address receiver,
         uint16 clientFeeBps,
         address clientFeeReceiver,
+        bool capturePositiveSlippage,
         uint256 maxClientContribution,
         bytes calldata swap_
     ) internal returns (uint256 amountOut) {
@@ -755,18 +787,29 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
             _callGetEffectiveRouterFeeOnOutput(_feeCalculator);
 
         address finalReceiver = determineFinalReceiver(
-            receiver, clientFeeBps, routerFeeOnOutputBps
+            receiver,
+            clientFeeBps,
+            routerFeeOnOutputBps,
+            capturePositiveSlippage
         );
         uint256 amountOutBeforeFees = _callSwapOnExecutor(
             executor, amountIn, protocolData, true, false, finalReceiver
         );
 
         // Skip _takeFees call if no fees exist
-        if (clientFeeBps == 0 && routerFeeOnOutputBps == 0) {
+        if (
+            clientFeeBps == 0 && routerFeeOnOutputBps == 0
+                && !capturePositiveSlippage
+        ) {
             amountOut = amountOutBeforeFees;
         } else {
             amountOut = _takeFees(
-                tokenOut, amountOutBeforeFees, clientFeeBps, clientFeeReceiver
+                tokenOut,
+                amountOutBeforeFees,
+                minAmountOut,
+                clientFeeBps,
+                clientFeeReceiver,
+                capturePositiveSlippage
             );
         }
 
@@ -811,6 +854,7 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
         address receiver,
         uint16 clientFeeBps,
         address clientFeeReceiver,
+        bool capturePositiveSlippage,
         uint256 maxClientContribution,
         bytes calldata swaps
     ) internal returns (uint256 amountOut) {
@@ -826,17 +870,28 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
             _callGetEffectiveRouterFeeOnOutput(_feeCalculator);
 
         address finalReceiver = determineFinalReceiver(
-            receiver, clientFeeBps, routerFeeOnOutputBps
+            receiver,
+            clientFeeBps,
+            routerFeeOnOutputBps,
+            capturePositiveSlippage
         );
         uint256 amountOutBeforeFees =
             _sequentialSwap(amountIn, swaps, finalReceiver);
 
         // Skip _takeFees call if no fees exist
-        if (clientFeeBps == 0 && routerFeeOnOutputBps == 0) {
+        if (
+            clientFeeBps == 0 && routerFeeOnOutputBps == 0
+                && !capturePositiveSlippage
+        ) {
             amountOut = amountOutBeforeFees;
         } else {
             amountOut = _takeFees(
-                tokenOut, amountOutBeforeFees, clientFeeBps, clientFeeReceiver
+                tokenOut,
+                amountOutBeforeFees,
+                minAmountOut,
+                clientFeeBps,
+                clientFeeReceiver,
+                capturePositiveSlippage
             );
         }
 
@@ -1092,19 +1147,28 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
      * @notice Calculates and takes fees using the FeeCalculator contract
      * @param token The token address for which fees are being taken
      * @param amountIn The amount before fee deduction
+     * @param minAmountOut The minimum expected output
      * @param clientFeeBps Client fee in basis points
      * @param clientFeeReceiver Address to receive client fees
+     * @param capturePositiveSlippage If true, client captures positive slippage instead of bps fee
      * @return amountOut The amount remaining after all fee deductions
      */
     function _takeFees(
         address token,
         uint256 amountIn,
+        uint256 minAmountOut,
         uint16 clientFeeBps,
-        address clientFeeReceiver
+        address clientFeeReceiver,
+        bool capturePositiveSlippage
     ) internal returns (uint256 amountOut) {
         FeeRecipient[] memory fees;
         (amountOut, fees) = _callCalculateFee(
-            _feeCalculator, amountIn, clientFeeBps, clientFeeReceiver
+            _feeCalculator,
+            amountIn,
+            minAmountOut,
+            clientFeeBps,
+            clientFeeReceiver,
+            capturePositiveSlippage
         );
 
         for (uint256 i = 0; i < fees.length; i++) {
@@ -1238,15 +1302,20 @@ contract TychoRouter is AccessControl, Dispatcher, Pausable {
      * @param receiver The receiver address
      * @param clientFeeBps Client fee in basis points
      * @param routerFeeOnOutputBps Router fee on output in basis points
+     * @param capturePositiveSlippage If true, client captures positive slippage
      * @return The final receiver address - either the router (for fee processing) or the intended receiver
      */
     function determineFinalReceiver(
         address receiver,
         uint16 clientFeeBps,
-        uint16 routerFeeOnOutputBps
+        uint16 routerFeeOnOutputBps,
+        bool capturePositiveSlippage
     ) internal view returns (address) {
         // Fast path: if no fees at all, send directly to receiver
-        if (clientFeeBps == 0 && routerFeeOnOutputBps == 0) {
+        if (
+            clientFeeBps == 0 && routerFeeOnOutputBps == 0
+                && !capturePositiveSlippage
+        ) {
             return receiver;
         }
         // Fees exist, must route through this contract
