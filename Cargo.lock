@@ -4983,6 +4983,7 @@ dependencies = [
  "tokio",
  "tycho-common",
  "tycho-execution",
+ "typetag",
 ]
 
 [[package]]

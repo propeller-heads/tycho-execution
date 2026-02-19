@@ -42,6 +42,7 @@ reqwest = { version = "0.12", features = ["json", "blocking"], optional = true }
 
 alloy = { version = "1.0.35", features = ["providers", "rpc-types-eth", "eip712", "signer-local", "node-bindings"], optional = true }
 async-trait = { version = "0.1.88", optional = true }
+typetag = { version = "0.2", optional = true }
 
 [dev-dependencies]
 rstest = "0.24.0"
@@ -51,7 +52,7 @@ tycho-execution = { path = "../tycho-execution", features = ["test-utils"] }
 default = ["evm"]
 evm = ["alloy", "reqwest"]
 fork-tests = []
-test-utils = ["async-trait"]
+test-utils = ["async-trait", "typetag"]
 
 [profile.bench]
 debug = true
