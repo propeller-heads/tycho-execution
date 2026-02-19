@@ -1167,7 +1167,7 @@ fn test_single_encoding_strategy_rocketpool_deposit() {
     // Based on real tx 0x6213b6c235c52d2132711c18a1c66934832722fd71c098e843bc792ecdbd11b3
     // where 4.5 ETH was deposited for 3.905847020555141679 rETH
     let rocketpool_pool = ProtocolComponent {
-        id: String::from("0xdd3f50f8a6cafbe9b31a427582963f465e745af8"),
+        id: String::from("0xce15294273cfb9d9b628f4d61636623decdf4fdc"),
         protocol_system: String::from("rocketpool"),
         ..Default::default()
     };
@@ -1182,7 +1182,7 @@ fn test_single_encoding_strategy_rocketpool_deposit() {
         token_in,
         amount_in: BigUint::from(4_500_000_000_000_000_000_u128),
         token_out,
-        min_amount_out: BigUint::from(3_905_847_020_555_141_679_u128),
+        min_amount_out: BigUint::from(3_005_847_020_555_141_679_u128),
         // Alice
         sender: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
         receiver: Bytes::from_str("0xcd09f75E2BF2A4d11F3AB23f1389FcC1621c0cc2").unwrap(),
@@ -1214,7 +1214,7 @@ fn test_single_encoding_strategy_rocketpool_burn() {
     // We use `bob*` address as sender/receiver as Alice's address has a drainer deployed that
     // would interfere with the test when we send ETH back to her.
     let rocketpool_pool = ProtocolComponent {
-        id: String::from("0xdd3f50f8a6cafbe9b31a427582963f465e745af8"),
+        id: String::from("0xce15294273cfb9d9b628f4d61636623decdf4fdc"),
         protocol_system: String::from("rocketpool"),
         ..Default::default()
     };

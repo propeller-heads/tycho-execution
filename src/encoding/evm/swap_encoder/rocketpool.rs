@@ -70,7 +70,7 @@ mod tests {
     fn test_encode_rocketpool_deposit() {
         // ETH -> (rocketpool) -> rETH
         let rocketpool_pool = ProtocolComponent {
-            id: String::from("0xdd3f50f8a6cafbe9b31a427582963f465e745af8"),
+            id: String::from("0xce15294273cfb9d9b628f4d61636623decdf4fdc"),
             protocol_system: String::from("rocketpool"),
             ..Default::default()
         };
@@ -104,7 +104,7 @@ mod tests {
     fn test_encode_rocketpool_burn() {
         // ETH -> (rocketpool) -> rETH
         let rocketpool_pool = ProtocolComponent {
-            id: String::from("0xdd3f50f8a6cafbe9b31a427582963f465e745af8"),
+            id: String::from("0xce15294273cfb9d9b628f4d61636623decdf4fdc"),
             protocol_system: String::from("rocketpool"),
             ..Default::default()
         };

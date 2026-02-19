@@ -230,7 +230,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
 /// Uses block 23899254 from tx 0x6213b6c235c52d2132711c18a1c66934832722fd71c098e843bc792ecdbd11b3
 contract RocketpoolDepositTest is TychoRouterTestSetup {
     function getForkBlock() public pure override returns (uint256) {
-        return 23899254;
+        return 24481127;
     }
 
     function testSingleSwap() public {
@@ -253,7 +253,7 @@ contract RocketpoolDepositTest is TychoRouterTestSetup {
         // Check balances
         assertTrue(success, "Call Failed");
         assertEq(
-            rethBalanceAfter - rethBalanceBefore, 3_905_847_020_555_141_679
+            rethBalanceAfter - rethBalanceBefore, 3_884_947_711_433_632_845
         );
         assertEq(RETH.balanceOf(tychoRouterAddr), 0);
         assertEq(tychoRouterAddr.balance, 0);
