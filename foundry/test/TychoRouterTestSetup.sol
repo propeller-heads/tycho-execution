@@ -9,6 +9,7 @@ import {CurveExecutor} from "../src/executors/CurveExecutor.sol";
 import {EkuboExecutor} from "../src/executors/EkuboExecutor.sol";
 import {EkuboV3Executor} from "../src/executors/EkuboV3Executor.sol";
 import {HashflowExecutor} from "../src/executors/HashflowExecutor.sol";
+import {LiquoriceExecutor} from "../src/executors/LiquoriceExecutor.sol";
 import {MaverickV2Executor} from "../src/executors/MaverickV2Executor.sol";
 import {UniswapV2Executor} from "../src/executors/UniswapV2Executor.sol";
 import {
@@ -85,6 +86,7 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
     BalancerV3Executor public balancerV3Executor;
     BebopExecutor public bebopExecutor;
     HashflowExecutor public hashflowExecutor;
+    LiquoriceExecutor public liquoriceExecutor;
     FluidV1Executor public fluidV1Executor;
     SlipstreamsExecutor public slipstreamsExecutor;
     RocketpoolExecutor public rocketpoolExecutor;
@@ -181,8 +183,10 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
             0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee,
             0xDadEf1fFBFeaAB4f68A9fD181395F68b4e4E7Ae0
         );
+        liquoriceExecutor =
+            new LiquoriceExecutor(LIQUORICE_SETTLEMENT, PERMIT2_ADDRESS);
 
-        address[] memory executors = new address[](18);
+        address[] memory executors = new address[](19);
         executors[0] = address(usv2Executor);
         executors[1] = address(usv3Executor);
         executors[2] = address(pancakev3Executor);
@@ -201,6 +205,7 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
         executors[15] = address(lidoExecutor);
         executors[16] = address(ekuboV3Executor);
         executors[17] = address(etherfiExecutor);
+        executors[18] = address(liquoriceExecutor);
 
         return executors;
     }

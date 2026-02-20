@@ -9,6 +9,7 @@ mod etherfi;
 mod fluid_v1;
 mod hashflow;
 mod lido;
+mod liquorice;
 mod maverick_v2;
 mod rocketpool;
 mod slipstreams;
