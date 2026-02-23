@@ -17,7 +17,7 @@ contract RocketpoolExecutor is IExecutor, RestrictTransferFrom {
     IRocketTokenRETH public constant RETH =
         IRocketTokenRETH(0xae78736Cd615f374D3085123A210448E74Fc6393);
     IRocketDepositPool public constant ROCKET_DEPOSIT_POOL =
-        IRocketDepositPool(0xDD3f50F8A6CafbE9b31a427582963f465E745AF8);
+        IRocketDepositPool(0xCE15294273CFb9D9b628F4D61636623decDF4fdC);
 
     constructor(address _permit2) RestrictTransferFrom(_permit2) {}
 
