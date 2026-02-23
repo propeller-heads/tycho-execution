@@ -17,7 +17,9 @@ import {StdUtils} from "../../lib/forge-std/src/StdUtils.sol";
 import {TestUtils} from "../TestUtils.sol";
 
 contract RocketpoolExecutorExposed is RocketpoolExecutor {
-    constructor(address _permit2) RocketpoolExecutor(_permit2) {}
+    constructor(address _rocketDepositPool, address _permit2)
+        RocketpoolExecutor(_rocketDepositPool, _permit2)
+    {}
 
     function decodeParams(bytes calldata data)
         external
@@ -35,9 +37,14 @@ contract RocketpoolExecutorExposed is RocketpoolExecutor {
 contract RocketpoolExecutorTest is TestUtils, Constants {
     RocketpoolExecutorExposed rocketpoolExecutor;
 
+    // Pre-Saturn deposit pool (for historical test txs at pre-Saturn fork blocks)
+    address constant ROCKET_DEPOSIT_POOL_V3 =
+        0xDD3f50F8A6CafbE9b31a427582963f465E745AF8;
+
     modifier setUpFork(uint256 blockNumber) {
         vm.createSelectFork(vm.rpcUrl("mainnet"), blockNumber);
-        rocketpoolExecutor = new RocketpoolExecutorExposed(PERMIT2_ADDRESS);
+        rocketpoolExecutor =
+            new RocketpoolExecutorExposed(ROCKET_DEPOSIT_POOL_V3, PERMIT2_ADDRESS);
         _;
     }
 

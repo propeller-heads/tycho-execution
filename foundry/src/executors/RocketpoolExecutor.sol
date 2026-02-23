@@ -16,10 +16,13 @@ contract RocketpoolExecutor is IExecutor, RestrictTransferFrom {
 
     IRocketTokenRETH public constant RETH =
         IRocketTokenRETH(0xae78736Cd615f374D3085123A210448E74Fc6393);
-    IRocketDepositPool public constant ROCKET_DEPOSIT_POOL =
-        IRocketDepositPool(0xCE15294273CFb9D9b628F4D61636623decDF4fdC);
+    IRocketDepositPool public immutable rocketDepositPool;
 
-    constructor(address _permit2) RestrictTransferFrom(_permit2) {}
+    constructor(address _rocketDepositPool, address _permit2)
+        RestrictTransferFrom(_permit2)
+    {
+        rocketDepositPool = IRocketDepositPool(_rocketDepositPool);
+    }
 
     // slither-disable-next-line locked-ether
     function swap(uint256 givenAmount, bytes calldata data)
@@ -34,7 +37,7 @@ contract RocketpoolExecutor is IExecutor, RestrictTransferFrom {
             // ETH -> rETH: Deposit ETH to Rocketpool to receive rETH
             // We don't need to _transfer ETH into this contract since it must be sent along with the call
             uint256 rethBefore = RETH.balanceOf(address(this));
-            ROCKET_DEPOSIT_POOL.deposit{value: givenAmount}();
+            rocketDepositPool.deposit{value: givenAmount}();
             calculatedAmount = RETH.balanceOf(address(this)) - rethBefore;
 
             if (receiver != address(this)) {
