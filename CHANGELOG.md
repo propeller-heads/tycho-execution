@@ -1,3 +1,15 @@
+## [0.160.0](https://github.com/propeller-heads/tycho-execution/compare/0.159.0...0.160.0) (2026-02-19)
+
+
+### Features
+
+* update tycho dependency to 0.143.0 ([8e55735](https://github.com/propeller-heads/tycho-execution/commit/8e557351ea66cefb495980e6ac36d61c70c0d960))
+
+
+### Bug Fixes
+
+* adapt MockRFQState to typetag-based ProtocolSim trait ([430adc3](https://github.com/propeller-heads/tycho-execution/commit/430adc3095d88f1602f97c2839b74a21737e4942))
+
 ## [0.159.0](https://github.com/propeller-heads/tycho-execution/compare/0.158.0...0.159.0) (2026-02-11)
 
 
