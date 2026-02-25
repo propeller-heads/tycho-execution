@@ -1,3 +1,18 @@
+## [0.161.0](https://github.com/propeller-heads/tycho-execution/compare/0.160.0...0.161.0) (2026-02-24)
+
+
+### Features
+
+* remove lido ([7fcd52b](https://github.com/propeller-heads/tycho-execution/commit/7fcd52b062fc7331ab01cf13f42e17c344844efe))
+* remove lido import ([4970c64](https://github.com/propeller-heads/tycho-execution/commit/4970c64138d1b3fcaf820224584e20b5de378be7))
+* update calldata ([c0048ca](https://github.com/propeller-heads/tycho-execution/commit/c0048ca343b2eefdc81816d2aa0a4ffeb451809e))
+* update executor addresses ([1f25382](https://github.com/propeller-heads/tycho-execution/commit/1f253824af73fc6c0008210d13e734c4eac0b016))
+
+
+### Bug Fixes
+
+* update number of executors ([f1bdee8](https://github.com/propeller-heads/tycho-execution/commit/f1bdee81e26ca960803773690efac0a4ba2fcbf8))
+
 ## [0.160.0](https://github.com/propeller-heads/tycho-execution/compare/0.159.0...0.160.0) (2026-02-19)
 
 
