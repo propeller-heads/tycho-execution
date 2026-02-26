@@ -37,10 +37,6 @@ contract RocketpoolExecutorExposed is RocketpoolExecutor {
 contract RocketpoolExecutorTest is TestUtils, Constants {
     RocketpoolExecutorExposed rocketpoolExecutor;
 
-    // v1.4 (Saturn 1) deposit pool
-    address constant ROCKET_DEPOSIT_POOL =
-        0xCE15294273CFb9D9b628F4D61636623decDF4fdC;
-
     modifier setUpFork(uint256 blockNumber) {
         vm.createSelectFork(vm.rpcUrl("mainnet"), blockNumber);
         rocketpoolExecutor =
@@ -216,7 +212,6 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         assertEq(ethBalanceAfter - ethBalanceBefore, amountOut);
         assertEq(amountOut, 2_912_504_376_202_664_754);
     }
-
 }
 
 // Rocketpool deposit and burn tests are separated into different contracts because they
