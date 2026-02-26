@@ -39,7 +39,13 @@ tokio = { version = "1.38.0", features = ["full"] }
 tycho-common = ">=0.147.1"
 typetag = { version = "0.2", optional = true }
 
-alloy = { version = "1.0.35", features = ["providers", "rpc-types-eth", "eip712", "signer-local", "node-bindings"], optional = true }
+alloy = { version = "1.0.35", features = [
+    "providers",
+    "rpc-types-eth",
+    "eip712",
+    "signer-local",
+    "node-bindings",
+], optional = true }
 async-trait = { version = "0.1.88", optional = true }
 
 [dev-dependencies]
