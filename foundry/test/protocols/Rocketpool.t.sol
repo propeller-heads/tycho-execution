@@ -217,9 +217,6 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         assertEq(amountOut, 2_912_504_376_202_664_754);
     }
 
-    function testExportContract() public {
-        exportRuntimeBytecode(address(rocketpoolExecutor), "Rocketpool");
-    }
 }
 
 // Rocketpool deposit and burn tests are separated into different contracts because they
