@@ -1,0 +1,122 @@
+[
+  {
+    "id": "SOL-001",
+    "title": "Private state variables must have a leading underscore",
+    "description": "Private state variables must be named with a leading underscore (`_varName`).",
+    "source": "OpenZeppelin GUIDELINES.md",
+    "severity": "WARN",
+    "enforcement": "ast"
+  },
+  {
+    "id": "SOL-002",
+    "title": "Internal functions and variables must have a leading underscore",
+    "description": "Internal functions and state variables must be named with a leading underscore (`_funcName`, `_varName`).",
+    "source": "OpenZeppelin GUIDELINES.md",
+    "severity": "WARN",
+    "enforcement": "ast"
+  },
+  {
+    "id": "SOL-003",
+    "title": "Interfaces must be prefixed with `I`",
+    "description": "Interface names must use a capital `I` prefix (e.g., `IFoo`, `IERC20`).",
+    "source": "OpenZeppelin GUIDELINES.md",
+    "severity": "ERROR",
+    "enforcement": "ast"
+  },
+  {
+    "id": "SOL-004",
+    "title": "Non-standalone abstract contracts must use the `abstract` keyword",
+    "description": "Contracts not intended to be deployed directly must be declared with the `abstract` keyword.",
+    "source": "OpenZeppelin GUIDELINES.md",
+    "severity": "WARN",
+    "enforcement": "manual"
+  },
+  {
+    "id": "SOL-005",
+    "title": "Unchecked blocks must be preceded by a safety comment",
+    "description": "Every `unchecked` block must have a comment immediately before it explaining why overflow cannot happen.",
+    "source": "OpenZeppelin GUIDELINES.md",
+    "severity": "WARN",
+    "enforcement": "ast"
+  },
+  {
+    "id": "SOL-006",
+    "title": "Custom errors should follow descriptive naming (no redundant `Error` suffix)",
+    "description": "Custom error names should be descriptive. Avoid a generic `Error` suffix unless domain-qualified per EIP-6093 (e.g., `ERC20InsufficientBalance` is fine).",
+    "source": "OpenZeppelin GUIDELINES.md",
+    "severity": "INFO",
+    "enforcement": "ast"
+  },
+  {
+    "id": "SOL-007",
+    "title": "Overridable functions should be marked `virtual`",
+    "description": "Functions intended to be overridden should be marked `virtual`. Exception: if A is purely an alias for B, only B needs `virtual`.",
+    "source": "OpenZeppelin GUIDELINES.md",
+    "severity": "INFO",
+    "enforcement": "manual"
+  },
+  {
+    "id": "SOL-008",
+    "title": "Order of functions within a contract",
+    "description": "Functions must follow the order: constructor, receive, fallback, external, public, internal, private. Within each group, view and pure functions go last.",
+    "source": "Solidity Style Guide",
+    "severity": "WARN",
+    "enforcement": "manual"
+  },
+  {
+    "id": "SOL-009",
+    "title": "Modifier order on function declarations",
+    "description": "Modifiers on function declarations must appear in order: visibility, mutability, virtual, override, custom modifiers.",
+    "source": "Solidity Style Guide",
+    "severity": "WARN",
+    "enforcement": "tool"
+  },
+  {
+    "id": "SOL-010",
+    "title": "Naming conventions for contracts, libraries, structs, events, enums",
+    "description": "Contracts, libraries, structs, events, and enums must use CapWords. Functions, arguments, and variables must use mixedCase. Constants must use UPPER_CASE_WITH_UNDERSCORES.",
+    "source": "Solidity Style Guide",
+    "severity": "WARN",
+    "enforcement": "tool"
+  },
+  {
+    "id": "SOL-011",
+    "title": "All import statements at top of file after pragma",
+    "description": "Import statements must appear at the top of the file, after pragma statements.",
+    "source": "Solidity Style Guide",
+    "severity": "WARN",
+    "enforcement": "tool"
+  },
+  {
+    "id": "SOL-012",
+    "title": "File-level layout order",
+    "description": "File-level elements must appear in order: pragma, imports, events, errors, interfaces, libraries, contracts.",
+    "source": "Solidity Style Guide",
+    "severity": "WARN",
+    "enforcement": "manual"
+  },
+  {
+    "id": "SOL-013",
+    "title": "Events must be emitted immediately after the state change they represent",
+    "description": "Events should be emitted immediately after the state change they represent, and named in past tense. Exception: ERC standards using present tense (Transfer, Approval).",
+    "source": "OpenZeppelin GUIDELINES.md",
+    "severity": "WARN",
+    "enforcement": "manual"
+  },
+  {
+    "id": "SOL-014",
+    "title": "All state variables must be private",
+    "description": "State variables must be private; state changes go through setters that emit events.",
+    "source": "OpenZeppelin GUIDELINES.md",
+    "severity": "WARN",
+    "enforcement": "ast"
+  },
+  {
+    "id": "SOL-015",
+    "title": "Use double quotes for strings",
+    "description": "String literals must use double quotes, not single quotes.",
+    "source": "Solidity Style Guide",
+    "severity": "WARN",
+    "enforcement": "tool"
+  }
+]

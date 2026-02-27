@@ -1,0 +1,14 @@
+{
+  "sources": [
+    {
+      "url": "https://docs.soliditylang.org/en/latest/style-guide.html",
+      "sha256": "902a24568bb27aae72b181457c62ee2bcf7cd12fad55c371b794baa6c39e14a8",
+      "fetched_at": "2026-02-27T00:00:00Z"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/master/GUIDELINES.md",
+      "sha256": "e71b30dbee5f00a6ccc826ce7dccbe934d5c1f7021010b47976da75a029bf772",
+      "fetched_at": "2026-02-27T00:00:00Z"
+    }
+  ]
+}
