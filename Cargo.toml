@@ -58,8 +58,6 @@ evm = ["alloy", "reqwest"]
 fork-tests = []
 test-utils = ["async-trait", "typetag"]
 
-[lints.clippy]
-unwrap_used = "deny"
 
 [profile.bench]
 debug = true
