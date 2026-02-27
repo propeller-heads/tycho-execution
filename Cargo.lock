@@ -5095,6 +5095,8 @@ dependencies = [
 [[package]]
 name = "tycho-common"
 version = "0.144.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c994b0a664d03a813c63f01632550e404ca063d850bf8de1aa0f86d8fedfd29c"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5127,9 +5129,7 @@ dependencies = [
  "clap",
  "dotenv",
  "hex",
- "lazy_static",
  "num-bigint",
- "num-traits",
  "once_cell",
  "reqwest",
  "rstest",
