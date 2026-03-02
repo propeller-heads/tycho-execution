@@ -21,7 +21,6 @@ import {FluidV1Executor} from "../src/executors/FluidV1Executor.sol";
 import {SlipstreamsExecutor} from "../src/executors/SlipstreamsExecutor.sol";
 import {RocketpoolExecutor} from "../src/executors/RocketpoolExecutor.sol";
 import {ERC4626Executor} from "../src/executors/ERC4626Executor.sol";
-import {LidoExecutor} from "../src/executors/LidoExecutor.sol";
 import {EtherfiExecutor} from "../src/executors/EtherfiExecutor.sol";
 
 // Test utilities and mocks
@@ -92,7 +91,6 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
     RocketpoolExecutor public rocketpoolExecutor;
 
     ERC4626Executor public erc4626Executor;
-    LidoExecutor public lidoExecutor;
     EtherfiExecutor public etherfiExecutor;
 
     function getChain() public view virtual returns (string memory) {
@@ -172,8 +170,6 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
         );
         rocketpoolExecutor = new RocketpoolExecutor(PERMIT2_ADDRESS);
         erc4626Executor = new ERC4626Executor(PERMIT2_ADDRESS);
-        lidoExecutor =
-            new LidoExecutor(STETH_ADDR, WSTETH_ADDR, PERMIT2_ADDRESS);
         ekuboV3Executor = new EkuboV3Executor(PERMIT2_ADDRESS);
         etherfiExecutor = new EtherfiExecutor(
             PERMIT2_ADDRESS,
@@ -186,7 +182,7 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
         liquoriceExecutor =
             new LiquoriceExecutor(LIQUORICE_SETTLEMENT, PERMIT2_ADDRESS);
 
-        address[] memory executors = new address[](19);
+        address[] memory executors = new address[](18);
         executors[0] = address(usv2Executor);
         executors[1] = address(usv3Executor);
         executors[2] = address(pancakev3Executor);
@@ -202,10 +198,9 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
         executors[12] = address(slipstreamsExecutor);
         executors[13] = address(rocketpoolExecutor);
         executors[14] = address(erc4626Executor);
-        executors[15] = address(lidoExecutor);
-        executors[16] = address(ekuboV3Executor);
-        executors[17] = address(etherfiExecutor);
-        executors[18] = address(liquoriceExecutor);
+        executors[15] = address(ekuboV3Executor);
+        executors[16] = address(etherfiExecutor);
+        executors[17] = address(liquoriceExecutor);
 
         return executors;
     }
