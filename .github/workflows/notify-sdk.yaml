@@ -24,19 +24,36 @@ jobs:
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "Latest release tag: $TAG"
 
-      - name: Get release author
+      - name: Find PR merger
         id: release_author
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          AUTHOR=$(curl -s \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: token $GH_TOKEN" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/latest" | \
-            jq -r '.author.login // empty')
-          AUTHOR="${AUTHOR:-${{ github.actor }}}"
+          TAG="${{ steps.get_tag.outputs.tag }}"
+          REPO="${{ github.repository }}"
+
+          # Get the object the tag points to
+          REF_INFO=$(gh api "repos/$REPO/git/ref/tags/$TAG" --jq '.object | "\(.sha) \(.type)"')
+          TAG_SHA=$(echo "$REF_INFO" | cut -d' ' -f1)
+          TAG_TYPE=$(echo "$REF_INFO" | cut -d' ' -f2)
+
+          # Dereference annotated tag to get commit SHA
+          if [ "$TAG_TYPE" = "tag" ]; then
+            COMMIT_SHA=$(gh api "repos/$REPO/git/tags/$TAG_SHA" --jq '.object.sha')
+          else
+            COMMIT_SHA="$TAG_SHA"
+          fi
+
+          # Get parent of the release commit (skip chore(release) by bot)
+          PARENT_SHA=$(gh api "repos/$REPO/commits/$COMMIT_SHA" --jq '.parents[0].sha // empty')
+
+          AUTHOR=""
+          if [ -n "$PARENT_SHA" ]; then
+            AUTHOR=$(gh api "repos/$REPO/commits/$PARENT_SHA/pulls" --jq '.[0].merged_by.login // empty' 2>/dev/null || echo "")
+          fi
+
           echo "author=$AUTHOR" >> $GITHUB_OUTPUT
-          echo "Release author: $AUTHOR"
+          echo "Release author: ${AUTHOR:-unknown}"
 
       - name: Trigger tycho-protocol-sdk update workflow
         run: |
