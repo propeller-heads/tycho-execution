@@ -1,3 +1,16 @@
+## [0.162.0](https://github.com/propeller-heads/tycho-execution/compare/0.161.0...0.162.0) (2026-03-02)
+
+
+### Features
+
+* add cargo audit pipeline ([1615769](https://github.com/propeller-heads/tycho-execution/commit/1615769716a472b186c895034989e0f28d7efc0d))
+
+
+### Bug Fixes
+
+* fix dependency versions without vulnerabilities ([4a31af7](https://github.com/propeller-heads/tycho-execution/commit/4a31af707ea66e298ecae457c68d2999455c0359))
+* remove unused dependencies ([28b2474](https://github.com/propeller-heads/tycho-execution/commit/28b2474143caf8f12f988577d90b13d0b8718dd6))
+
 ## [0.161.0](https://github.com/propeller-heads/tycho-execution/compare/0.160.0...0.161.0) (2026-02-24)
 
 
