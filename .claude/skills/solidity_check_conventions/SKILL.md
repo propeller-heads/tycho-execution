@@ -31,27 +31,28 @@ Behavior:
   - Do NOT re-ingest
   - Proceed directly to enforcement
 - If fingerprints changed:
-  - Generate proposed updates (dry run by default)
+  - Apply updates immediately (default)
 
-### Step 2: Optional re-ingestion (only if changed)
-Default: dry run (no repo changes)
+### Step 2: Re-ingestion (only if changed)
+Default: apply updates
 
-Dry run output:
-- conventions.diff.md (new/changed/removed rules)
-- summary of how many rules would change
-
-Apply mode (e.g. --apply-updates):
+Apply (default):
 - Update conventions.rules.json
 - Regenerate conventions.md
 - Update conventions.sources.json fingerprints
 - Write conventions.diff.md
+
+Dry run mode (--dry-run):
+- conventions.diff.md (new/changed/removed rules)
+- summary of how many rules would change
+- No repo changes
 
 Precedence:
 - Local overrides in conventions.rules.json win over upstream.
 - New upstream rules are added with default severity + enforcement mapping.
 
 ### Step 3: Enforce conventions against codebase
-Always runs after compare (and after apply if enabled).
+Always runs after compare (and after apply when changes were made).
 
 Pipeline:
 1) Formatting: forge fmt --check

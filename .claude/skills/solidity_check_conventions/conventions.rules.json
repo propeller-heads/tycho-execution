@@ -34,7 +34,7 @@
   {
     "id": "SOL-005",
     "title": "Unchecked blocks must be preceded by a safety comment",
-    "description": "Every `unchecked` block must have a comment immediately before it explaining why overflow cannot happen.",
+    "description": "Every `unchecked` block must have a comment explaining why overflow cannot happen. The comment may be omitted if the reason is immediately apparent from the line above the unchecked block.",
     "source": "OpenZeppelin GUIDELINES.md",
     "severity": "WARN",
     "enforcement": "ast"
@@ -42,7 +42,7 @@
   {
     "id": "SOL-006",
     "title": "Custom errors should follow descriptive naming (no redundant `Error` suffix)",
-    "description": "Custom error names should be descriptive. Avoid a generic `Error` suffix unless domain-qualified per EIP-6093 (e.g., `ERC20InsufficientBalance` is fine).",
+    "description": "Custom error names should follow EIP-6093. Domain prefix order: (1) `ERC<number>` if violating an ERC spec, (2) component name (e.g. `Governor`, `ECDSA`). Avoid a generic `Error` suffix. Declare errors in: the underlying ERC if already defined there, else the interface/library, else the implementation, else the extension. Do not declare the same custom error name twice across the inheritance chain.",
     "source": "OpenZeppelin GUIDELINES.md",
     "severity": "INFO",
     "enforcement": "ast"
@@ -74,7 +74,7 @@
   {
     "id": "SOL-010",
     "title": "Naming conventions for contracts, libraries, structs, events, enums",
-    "description": "Contracts, libraries, structs, events, and enums must use CapWords. Functions, arguments, and variables must use mixedCase. Constants must use UPPER_CASE_WITH_UNDERSCORES.",
+    "description": "Contracts, libraries, structs, events, and enums must use CapWords. Functions, modifiers, arguments, and variables must use mixedCase. Constants must use UPPER_CASE_WITH_UNDERSCORES.",
     "source": "Solidity Style Guide",
     "severity": "WARN",
     "enforcement": "tool"
@@ -118,5 +118,157 @@
     "source": "Solidity Style Guide",
     "severity": "WARN",
     "enforcement": "tool"
+  },
+  {
+    "id": "SOL-016",
+    "title": "Indentation: 4 spaces; spaces over tabs; no mixing",
+    "description": "Use 4 spaces per indentation level. Spaces only — no tabs, no mixing tabs and spaces.",
+    "source": "Solidity Style Guide",
+    "severity": "WARN",
+    "enforcement": "tool"
+  },
+  {
+    "id": "SOL-017",
+    "title": "Blank lines: 2 around top-level declarations; 1 between contract functions",
+    "description": "Surround top-level declarations with 2 blank lines. Between functions within a contract, use 1 blank line.",
+    "source": "Solidity Style Guide",
+    "severity": "WARN",
+    "enforcement": "tool"
+  },
+  {
+    "id": "SOL-018",
+    "title": "Maximum line length: 120 characters with specified wrapping format",
+    "description": "Maximum line length is 120 characters. Long lines must be wrapped at specified break points.",
+    "source": "Solidity Style Guide",
+    "severity": "WARN",
+    "enforcement": "tool"
+  },
+  {
+    "id": "SOL-019",
+    "title": "Source file encoding: UTF-8 or ASCII",
+    "description": "Source files must be encoded in UTF-8 or ASCII.",
+    "source": "Solidity Style Guide",
+    "severity": "INFO",
+    "enforcement": "manual"
+  },
+  {
+    "id": "SOL-020",
+    "title": "Whitespace in expressions: no extraneous whitespace inside parens/brackets/braces",
+    "description": "No extraneous whitespace immediately inside parentheses, brackets, or braces.",
+    "source": "Solidity Style Guide",
+    "severity": "WARN",
+    "enforcement": "tool"
+  },
+  {
+    "id": "SOL-021",
+    "title": "Whitespace: no whitespace before commas or semicolons; no alignment spaces",
+    "description": "No whitespace before a comma or semicolon. No extra spaces for alignment.",
+    "source": "Solidity Style Guide",
+    "severity": "WARN",
+    "enforcement": "tool"
+  },
+  {
+    "id": "SOL-022",
+    "title": "Control structures: opening brace on same line; `else` on same line as `}`",
+    "description": "Opening brace of control structures goes on the same line as the declaration. The `else` keyword goes on the same line as the closing brace of the `if` block.",
+    "source": "Solidity Style Guide",
+    "severity": "WARN",
+    "enforcement": "tool"
+  },
+  {
+    "id": "SOL-023",
+    "title": "Mappings: no space between `mapping` keyword and its type",
+    "description": "No space between the `mapping` keyword and its type (e.g., `mapping(address => uint256)`, not `mapping (address => uint256)`).",
+    "source": "Solidity Style Guide",
+    "severity": "WARN",
+    "enforcement": "tool"
+  },
+  {
+    "id": "SOL-024",
+    "title": "Array declarations: no space between type and brackets",
+    "description": "No space between a type and its array brackets (e.g., `uint256[]`, not `uint256 []`).",
+    "source": "Solidity Style Guide",
+    "severity": "WARN",
+    "enforcement": "tool"
+  },
+  {
+    "id": "SOL-025",
+    "title": "Operator spacing: single space around operators; consistent on both sides",
+    "description": "Single space on both sides of binary and assignment operators. Spacing must be consistent on both sides.",
+    "source": "Solidity Style Guide",
+    "severity": "WARN",
+    "enforcement": "tool"
+  },
+  {
+    "id": "SOL-026",
+    "title": "Within-contract layout order: type decls → state vars → events → errors → modifiers → functions",
+    "description": "Within a contract, declare elements in order: type declarations, state variables, events, errors, modifiers, functions.",
+    "source": "Solidity Style Guide",
+    "severity": "WARN",
+    "enforcement": "manual"
+  },
+  {
+    "id": "SOL-027",
+    "title": "Names to avoid: never use `l`, `O`, or `I` as single-letter identifiers",
+    "description": "Never use `l` (lowercase L), `O` (uppercase O), or `I` (uppercase I) as single-character identifiers — they are visually ambiguous.",
+    "source": "Solidity Style Guide",
+    "severity": "WARN",
+    "enforcement": "ast"
+  },
+  {
+    "id": "SOL-028",
+    "title": "Filename matching: contract/library name must match the filename",
+    "description": "The filename must match the name of the contract or library it defines (e.g., `Foo.sol` for `contract Foo`).",
+    "source": "Solidity Style Guide",
+    "severity": "ERROR",
+    "enforcement": "manual"
+  },
+  {
+    "id": "SOL-029",
+    "title": "Modifier naming: use mixedCase (e.g., `onlyBy`, `onlyAfter`)",
+    "description": "Modifier names must use mixedCase (e.g., `onlyBy`, `onlyAfter`).",
+    "source": "Solidity Style Guide",
+    "severity": "WARN",
+    "enforcement": "ast"
+  },
+  {
+    "id": "SOL-030",
+    "title": "Naming collision: use `name_` trailing underscore to avoid reserved word clashes",
+    "description": "When a name would clash with a reserved word, append a trailing underscore (e.g., `class_`).",
+    "source": "Solidity Style Guide",
+    "severity": "INFO",
+    "enforcement": "ast"
+  },
+  {
+    "id": "SOL-031",
+    "title": "NatSpec: fully annotate all public interfaces with `///` or `/** */`",
+    "description": "All public interfaces must be fully annotated with NatSpec using `///` single-line or `/** */` multi-line style.",
+    "source": "Solidity Style Guide",
+    "severity": "WARN",
+    "enforcement": "ast"
+  },
+  {
+    "id": "SOL-032",
+    "title": "Numeric literals: hex for memory operations, decimal for bit operations",
+    "description": "In assembly/Yul, use hexadecimal for memory locations, offsets, and lengths (e.g. `mload(0x40)`, `mstore(add(ptr, 0x20), value)`). Use decimal for shift amounts and bit positions (e.g. `shl(128, value)`). Trivially small values (1, 2) may use decimal even in memory operations.",
+    "source": "OpenZeppelin GUIDELINES.md",
+    "severity": "WARN",
+    "enforcement": "ast"
+  },
+  {
+    "id": "SOL-033",
+    "title": "Return values generally not named",
+    "description": "Return values should not be named unless they are not immediately clear from context or there are multiple return values that need disambiguation.",
+    "source": "OpenZeppelin GUIDELINES.md",
+    "severity": "INFO",
+    "enforcement": "manual"
+  },
+  {
+    "id": "SOL-034",
+    "title": "Custom error names must not be duplicated across the inheritance chain",
+    "description": "Do not declare the same custom error name more than once across contracts in an inheritance hierarchy, as this causes duplicated identifier errors when inheriting from multiple contracts.",
+    "source": "OpenZeppelin GUIDELINES.md",
+    "severity": "WARN",
+    "enforcement": "ast"
   }
 ]
