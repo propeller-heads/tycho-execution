@@ -1,3 +1,10 @@
+## [0.164.0](https://github.com/propeller-heads/tycho-execution/compare/0.163.1...0.164.0) (2026-03-03)
+
+
+### Features
+
+* make UserTransferType serde ([45acf80](https://github.com/propeller-heads/tycho-execution/commit/45acf8084e6cdc2369877e82eb4fd994d90cf38a))
+
 ## [0.163.1](https://github.com/propeller-heads/tycho-execution/compare/0.163.0...0.163.1) (2026-03-03)
 
 
