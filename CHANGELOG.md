@@ -1,3 +1,10 @@
+## [0.163.1](https://github.com/propeller-heads/tycho-execution/compare/0.163.0...0.163.1) (2026-03-03)
+
+
+### Bug Fixes
+
+* Use PR author instead of merged_by for release author ([46e2f98](https://github.com/propeller-heads/tycho-execution/commit/46e2f98cd8c008d1b8ed88306d34f05dfb0462bc))
+
 ## [0.163.0](https://github.com/propeller-heads/tycho-execution/compare/0.162.0...0.163.0) (2026-03-03)
 
 
