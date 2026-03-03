@@ -1,4 +1,4 @@
-# Encoding example
+# Encoding Example
 
 This guide enables you to:
 
