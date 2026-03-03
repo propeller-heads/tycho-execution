@@ -1,3 +1,17 @@
+## [0.163.1](https://github.com/propeller-heads/tycho-execution/compare/0.163.0...0.163.1) (2026-03-03)
+
+
+### Bug Fixes
+
+* Use PR author instead of merged_by for release author ([46e2f98](https://github.com/propeller-heads/tycho-execution/commit/46e2f98cd8c008d1b8ed88306d34f05dfb0462bc))
+
+## [0.163.0](https://github.com/propeller-heads/tycho-execution/compare/0.162.0...0.163.0) (2026-03-03)
+
+
+### Features
+
+* capitalize README heading ([eec0337](https://github.com/propeller-heads/tycho-execution/commit/eec033788e3348cf5110c3210d471a70de78ddc2))
+
 ## [0.162.0](https://github.com/propeller-heads/tycho-execution/compare/0.161.0...0.162.0) (2026-03-02)
 
 
