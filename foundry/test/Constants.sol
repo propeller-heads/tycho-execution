@@ -177,6 +177,9 @@ contract Constants is Test, BaseConstants {
     // Fluid liquidity contract on mainnet
     address FLUIDV1_LIQUIDITY = 0x52Aa899454998Be5b000Ad077a46Bbe360F4e497;
 
+    // Rocketpool v1.4 (Saturn 1) deposit pool
+    address ROCKET_DEPOSIT_POOL = 0xCE15294273CFb9D9b628F4D61636623decDF4fdC;
+
     // Angstrom hook address
     address ANGSTROM_HOOK = 0x0000000aa232009084Bd71A5797d089AA4Edfad4;
 
