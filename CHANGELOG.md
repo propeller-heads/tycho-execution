@@ -1,3 +1,13 @@
+## [0.165.0](https://github.com/propeller-heads/tycho-execution/compare/0.164.0...0.165.0) (2026-03-04)
+
+
+### Features
+
+* deploy and set rocketpool's new executor ([3f90928](https://github.com/propeller-heads/tycho-execution/commit/3f90928978ef8fe4ac8ac0f96cd92774cb20b31a))
+* update rocketpool executor and tests for Saturn v1.4 ([860aea0](https://github.com/propeller-heads/tycho-execution/commit/860aea0c80cadb2aafeed29d0456c19002519058))
+* update RocketpoolExecutor deployment and tests to accept deposit pool address ([c1e8a35](https://github.com/propeller-heads/tycho-execution/commit/c1e8a353a185d0899bc9bb769b70397139884557))
+* update RocketpoolExecutor to Saturn v4 deposit pool address ([a8a3838](https://github.com/propeller-heads/tycho-execution/commit/a8a383829c91b416545f070430cb6b80c180f0b0))
+
 ## [0.164.0](https://github.com/propeller-heads/tycho-execution/compare/0.163.1...0.164.0) (2026-03-03)
 
 
