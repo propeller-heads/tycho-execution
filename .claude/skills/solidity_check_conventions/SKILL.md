@@ -8,7 +8,6 @@ Command: conventions_bootstrap
   - https://github.com/Aboudjem/solidity-style-guide?tab=readme-ov-file#constants
 - Extract into:
   - conventions.rules.json
-  - conventions.md (rendered from rules)
   - conventions.sources.json (fingerprints + metadata)
 
 Bootstrap is run once to establish a pinned baseline.
@@ -38,13 +37,10 @@ Default: apply updates
 
 Apply (default):
 - Update conventions.rules.json
-- Regenerate conventions.md
 - Update conventions.sources.json fingerprints
-- Write conventions.diff.md
 
 Dry run mode (--dry-run):
-- conventions.diff.md (new/changed/removed rules)
-- summary of how many rules would change
+- Print summary of how many rules would change (new/changed/removed)
 - No repo changes
 
 Precedence:
@@ -71,7 +67,7 @@ Output:
 - conventions.report.md with "Confirmed findings"
 Each finding includes:
 - Severity (ERROR/WARN/INFO)
-- Rule ID + title
+- Rule ID + title + description
 - File:line
 - Code snippet
 - Fix recommendation
@@ -81,10 +77,8 @@ Each finding includes:
 ## Artifact Paths
 
 All convention artifacts live in `.claude/skills/solidity_check_conventions/` (co-located with this skill):
-- `.claude/skills/solidity_check_conventions/conventions.md`
 - `.claude/skills/solidity_check_conventions/conventions.rules.json`
 - `.claude/skills/solidity_check_conventions/conventions.sources.json`
-- `.claude/skills/solidity_check_conventions/conventions.diff.md` (only when upstream changed)
 
 The enforcement report is written to the project root's `.claude/` directory:
 - `.claude/conventions.report.md` (every run)
