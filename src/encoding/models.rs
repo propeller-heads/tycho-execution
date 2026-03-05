@@ -27,7 +27,7 @@ use crate::encoding::serde_primitives::biguint_string;
 ///       already in the router at the time of execution.
 ///     - The Tycho router is **not** designed to safely hold tokens. If tokens are not transferred
 ///       and used in the **same transaction**, they will be permanently lost.
-#[derive(Clone, Debug, PartialEq, ValueEnum)]
+#[derive(Clone, Debug, PartialEq, ValueEnum, Serialize, Deserialize)]
 pub enum UserTransferType {
     TransferFromPermit2,
     TransferFrom,
