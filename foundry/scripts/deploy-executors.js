@@ -112,9 +112,10 @@ const executors_to_deploy = {
                 "0x000000000022D473030F116dDEE9F6B43aC78BA3"
             ]
         },
-        // Args: permit2
+        // Args: deposit pool, permit2
         {
             exchange: "RocketpoolExecutor", args: [
+                "0xCE15294273CFb9D9b628F4D61636623decDF4fdC",
                 "0x000000000022D473030F116dDEE9F6B43aC78BA3"
             ]
         },
