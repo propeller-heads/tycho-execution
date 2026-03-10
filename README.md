@@ -6,8 +6,7 @@ Tycho Execution makes it easy to trade on different DEXs by handling the complex
 custom code for each DEX, you get a simple, ready-to-use tool that generates the necessary data to execute trades. It's
 designed to be safe, straightforward, and quick to set up, so anyone can start trading without extra effort.
 
-For complete documentation, see Tycho docs [here](https://docs.propellerheads.
-xyz/tycho/for-solvers/execution). 
+For complete documentation, see Tycho docs [here](https://docs.propellerheads.xyz/tycho/for-solvers/execution). 
 
 ## Examples
 
