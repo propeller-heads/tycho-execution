@@ -166,7 +166,8 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
             SLIPSTREAMS_NEW_FACTORY_BASE,
             PERMIT2_ADDRESS
         );
-        rocketpoolExecutor = new RocketpoolExecutor(PERMIT2_ADDRESS);
+        rocketpoolExecutor =
+            new RocketpoolExecutor(ROCKET_DEPOSIT_POOL, PERMIT2_ADDRESS);
         erc4626Executor = new ERC4626Executor(PERMIT2_ADDRESS);
         ekuboV3Executor = new EkuboV3Executor(PERMIT2_ADDRESS);
         etherfiExecutor = new EtherfiExecutor(

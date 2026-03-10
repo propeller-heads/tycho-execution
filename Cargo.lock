@@ -4972,7 +4972,7 @@ dependencies = [
 
 [[package]]
 name = "tycho-execution"
-version = "0.162.0"
+version = "0.165.0"
 dependencies = [
  "alloy",
  "async-trait",
