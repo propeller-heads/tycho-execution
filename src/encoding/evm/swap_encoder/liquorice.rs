@@ -137,8 +137,10 @@ impl SwapEncoder for LiquoriceSwapEncoder {
                 } else {
                     // Pad to 4 bytes if needed
                     let mut padded = vec![0u8; 4];
-                    let start = 4 - b.len();
-                    padded[start..].copy_from_slice(b);
+                    if b.len() < 4 {
+                        let start = 4 - b.len();
+                        padded[start..].copy_from_slice(b);
+                    }
                     padded
                 }
             })
