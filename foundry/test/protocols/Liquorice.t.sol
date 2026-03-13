@@ -12,9 +12,11 @@ import {
 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract LiquoriceExecutorExposed is LiquoriceExecutor {
-    constructor(address _liquoriceSettlement, address _permit2)
-        LiquoriceExecutor(_liquoriceSettlement, _permit2)
-    {}
+    constructor(
+        address _liquoriceSettlement,
+        address _liquoriceBalanceManager,
+        address _permit2       
+    ) LiquoriceExecutor(_liquoriceSettlement, _liquoriceBalanceManager, _permit2) {}
 
     function decodeData(bytes calldata data)
         external
@@ -64,10 +66,13 @@ contract LiquoriceExecutorTest is Constants, Permit2TestHelper, TestUtils {
     function setUp() public {
         vm.createSelectFork(vm.rpcUrl("mainnet"), FORK_BLOCK);
 
-        liquoriceExecutor =
-            new LiquoriceExecutorExposed(LIQUORICE_SETTLEMENT, PERMIT2_ADDRESS);
-
         liquoriceSettlement = ILiquoriceSettlement(LIQUORICE_SETTLEMENT);
+
+        liquoriceExecutor = new LiquoriceExecutorExposed(
+            LIQUORICE_SETTLEMENT,
+            LIQUORICE_BALANCE_MANAGER,
+            PERMIT2_ADDRESS            
+        );
         authenticator =
             IAllowListAuthentication(liquoriceSettlement.AUTHENTICATOR());
 
@@ -76,9 +81,8 @@ contract LiquoriceExecutorTest is Constants, Permit2TestHelper, TestUtils {
         vm.prank(AUTH_MANAGER);
         authenticator.addMaker(MAKER);
 
-        address balanceManager = liquoriceSettlement.BALANCE_MANAGER();
         vm.prank(MAKER);
-        WETH.approve(balanceManager, type(uint256).max);
+        WETH.approve(LIQUORICE_BALANCE_MANAGER, type(uint256).max);
     }
 
     function testSettleSingle() public {
@@ -418,9 +422,8 @@ contract TychoRouterForLiquoriceTest is TychoRouterTestSetup {
         authenticator.addMaker(MAKER);
 
         // MAKER approves balance manager
-        address balanceManager = settlement.BALANCE_MANAGER();
         vm.prank(MAKER);
-        IERC20(WETH_ADDR).approve(balanceManager, type(uint256).max);
+        IERC20(WETH_ADDR).approve(LIQUORICE_BALANCE_MANAGER, type(uint256).max);
     }
 
     function testSettleSingleLiquoriceIntegration() public {

@@ -25,7 +25,6 @@ interface IAllowListAuthentication {
 /// @dev Handles RFQ swaps through Liquorice settlement contracts with support for
 ///      partial fills and dynamic allowance management
 contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
-    using Math for uint256;
     using SafeERC20 for IERC20;
     using Address for address;
 
@@ -37,13 +36,22 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
     /// @notice The Liquorice settlement contract address
     address public immutable liquoriceSettlement;
 
-    constructor(address _liquoriceSettlement, address _permit2)
-        RestrictTransferFrom(_permit2)
-    {
-        if (_liquoriceSettlement == address(0)) {
+    /// @notice The Liquorice balance manager contract address
+    address public immutable liquoriceBalanceManager;
+
+    constructor(
+        address _liquoriceSettlement,
+        address _liquoriceliquoriceBalanceManager,
+        address _permit2        
+    ) RestrictTransferFrom(_permit2) {
+        if (
+            _liquoriceSettlement == address(0)
+                || _liquoriceliquoriceBalanceManager == address(0)
+        ) {
             revert LiquoriceExecutor__ZeroAddress();
         }
         liquoriceSettlement = _liquoriceSettlement;
+        liquoriceBalanceManager = _liquoriceliquoriceBalanceManager;
     }
 
     /// @notice Executes a swap through Liquorice's RFQ system
@@ -71,11 +79,8 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
 
         // Grant approval to Liquorice balance manager if needed
         if (approvalNeeded && tokenIn != address(0)) {
-            address balanceManager = address(
-                ILiquoriceSettlement(liquoriceSettlement).BALANCE_MANAGER()
-            );
             // slither-disable-next-line unused-return
-            IERC20(tokenIn).forceApprove(balanceManager, type(uint256).max);
+            IERC20(tokenIn).forceApprove(liquoriceBalanceManager, type(uint256).max);
         }
 
         givenAmount = _clampAmount(

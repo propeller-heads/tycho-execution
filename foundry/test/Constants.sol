@@ -158,6 +158,8 @@ contract Constants is Test, BaseConstants {
 
     // Liquorice Settlement
     address LIQUORICE_SETTLEMENT = 0x0448633eb8B0A42EfED924C42069E0DcF08fb552;
+    address LIQUORICE_BALANCE_MANAGER =
+        0xb87bAE43a665EB5943A5642F81B26666bC9E5C95;
 
     // Pool Code Init Hashes
     bytes32 USV2_POOL_CODE_INIT_HASH =
