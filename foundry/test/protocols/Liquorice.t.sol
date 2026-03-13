@@ -15,8 +15,12 @@ contract LiquoriceExecutorExposed is LiquoriceExecutor {
     constructor(
         address _liquoriceSettlement,
         address _liquoriceBalanceManager,
-        address _permit2       
-    ) LiquoriceExecutor(_liquoriceSettlement, _liquoriceBalanceManager, _permit2) {}
+        address _permit2
+    )
+        LiquoriceExecutor(
+            _liquoriceSettlement, _liquoriceBalanceManager, _permit2
+        )
+    {}
 
     function decodeData(bytes calldata data)
         external
@@ -69,9 +73,7 @@ contract LiquoriceExecutorTest is Constants, Permit2TestHelper, TestUtils {
         liquoriceSettlement = ILiquoriceSettlement(LIQUORICE_SETTLEMENT);
 
         liquoriceExecutor = new LiquoriceExecutorExposed(
-            LIQUORICE_SETTLEMENT,
-            LIQUORICE_BALANCE_MANAGER,
-            PERMIT2_ADDRESS            
+            LIQUORICE_SETTLEMENT, LIQUORICE_BALANCE_MANAGER, PERMIT2_ADDRESS
         );
         authenticator =
             IAllowListAuthentication(liquoriceSettlement.AUTHENTICATOR());

@@ -42,7 +42,7 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
     constructor(
         address _liquoriceSettlement,
         address _liquoriceliquoriceBalanceManager,
-        address _permit2        
+        address _permit2
     ) RestrictTransferFrom(_permit2) {
         if (
             _liquoriceSettlement == address(0)
@@ -80,7 +80,8 @@ contract LiquoriceExecutor is IExecutor, RestrictTransferFrom {
         // Grant approval to Liquorice balance manager if needed
         if (approvalNeeded && tokenIn != address(0)) {
             // slither-disable-next-line unused-return
-            IERC20(tokenIn).forceApprove(liquoriceBalanceManager, type(uint256).max);
+            IERC20(tokenIn)
+                .forceApprove(liquoriceBalanceManager, type(uint256).max);
         }
 
         givenAmount = _clampAmount(

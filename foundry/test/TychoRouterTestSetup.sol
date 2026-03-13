@@ -181,9 +181,7 @@ contract TychoRouterTestSetup is Constants, Permit2TestHelper, TestUtils {
             0xDadEf1fFBFeaAB4f68A9fD181395F68b4e4E7Ae0
         );
         liquoriceExecutor = new LiquoriceExecutor(
-            LIQUORICE_SETTLEMENT,
-            LIQUORICE_BALANCE_MANAGER,
-            PERMIT2_ADDRESS            
+            LIQUORICE_SETTLEMENT, LIQUORICE_BALANCE_MANAGER, PERMIT2_ADDRESS
         );
 
         address[] memory executors = new address[](18);
