@@ -115,7 +115,8 @@ contract EtherfiExecutor is IExecutor {
             address receiver,
             address tokenIn,
             address tokenOut,
-            bool outputToRouter
+            bool outputToRouter,
+            bool isFeeToken
         )
     {
         EtherfiDirection direction = _decodeData(data);

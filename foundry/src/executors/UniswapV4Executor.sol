@@ -172,9 +172,9 @@ contract UniswapV4Executor is IExecutor, ICallback {
         }
 
         tokenIn = address(bytes20(data[0:20]));
-        tokenOut = address(bytes20(data[20:40]));
-        zeroForOne = data[40] != 0;
-        isFoT = data[41] != 0;
+        isFoT = data[20] != 0;
+        tokenOut = address(bytes20(data[21:41]));
+        zeroForOne = data[41] != 0;
 
         bytes calldata remaining = data[42:];
 
@@ -541,17 +541,20 @@ contract UniswapV4Executor is IExecutor, ICallback {
             address receiver,
             address tokenIn,
             address tokenOut,
-            bool outputToRouter
+            bool outputToRouter,
+            bool isFeeToken
         )
     {
         tokenIn = address(bytes20(data[0:20]));
-        tokenOut = address(bytes20(data[20:40]));
+        isFeeToken = data[20] != 0;
+        tokenOut = address(bytes20(data[21:41]));
         return (
             TransferManager.TransferType.None,
             address(0),
             tokenIn,
             tokenOut,
-            false
+            false,
+            isFeeToken
         );
     }
 
@@ -562,7 +565,8 @@ contract UniswapV4Executor is IExecutor, ICallback {
             TransferManager.TransferType transferType,
             address receiver,
             address tokenIn,
-            uint256 amount
+            uint256 amount,
+            bool isFeeToken
         )
     {
         bytes calldata stripped = data[68:];

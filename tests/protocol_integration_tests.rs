@@ -300,6 +300,7 @@ fn test_single_encoding_strategy_usv4_eth_in() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "fork-tests"), ignore)]
 fn test_single_encoding_strategy_usv4_eth_out() {
     // Performs a single swap from USDC to ETH using a USV4 pool
     // Note: This test does not assert anything. It is only used to obtain integration
@@ -366,6 +367,7 @@ fn test_single_encoding_strategy_usv4_eth_out() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "fork-tests"), ignore)]
 fn test_single_encoding_strategy_usv4_grouped_swap() {
     // Performs a sequential swap from USDC to PEPE though ETH using two consecutive
     // USV4 pools
@@ -466,9 +468,9 @@ fn test_single_encoding_strategy_usv4_grouped_swap() {
         "f62849f9a0b5bf2913b396098f7c7019b51a820a", // executor address
         // Protocol data
         "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // group token in
+        "00",                                       // isFeeToken (false)
         "6982508145454ce325ddbe47a25d4ec3d2311933", // group token out
         "00",                                       // zero2one
-        "00",                                       // isFoT (false)
         // First pool params
         "0000000000000000000000000000000000000000", // intermediary token (ETH)
         "000bb8",                                   // fee
@@ -496,6 +498,7 @@ fn test_single_encoding_strategy_usv4_grouped_swap() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "fork-tests"), ignore)]
 fn test_single_encoding_strategy_usv4_and_hooks_grouped_swap() {
     // Performs a sequential swap from WETH to USDC through ETH using
     // a USV4 pool with Euler hooks followed by a USV4 pool with no hooks
@@ -748,8 +751,8 @@ fn test_single_encoding_strategy_curve_st_eth() {
         ..Default::default()
     };
 
-    let swap =
-        Swap::new(component, default_token(token_in.clone()), default_token(token_out.clone()));
+    let steth_token = Token::new(&token_out, "", 0, 0, &[], Default::default(), 75);
+    let swap = Swap::new(component, default_token(token_in.clone()), steth_token);
 
     let encoder = get_tycho_router_encoder();
 
@@ -2029,6 +2032,7 @@ fn test_sequential_encoding_strategy_etherfi_wrap_eeth() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "fork-tests"), ignore)]
 fn test_single_encoding_strategy_usv4_twif_fee_token() {
     // Encodes a single swap of TWIF (a fee-on-transfer token that
     // actually charges 6% on every transfer) to USDC through a
@@ -2102,6 +2106,7 @@ fn test_single_encoding_strategy_usv4_twif_fee_token() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "fork-tests"), ignore)]
 fn test_single_encoding_strategy_usv4_twif_fee_token_output() {
     // Encodes a swap of USDC to TWIF (a fee-on-transfer token that
     // actually charges 6% on every transfer) through a real

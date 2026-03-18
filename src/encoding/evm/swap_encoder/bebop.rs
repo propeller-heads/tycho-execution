@@ -117,6 +117,7 @@ impl SwapEncoder for BebopSwapEncoder {
         //         original_filled_taker_amount | approval_needed | bebop_calldata
         let args = (
             token_in,
+            swap.is_input_fee_token(),
             token_out,
             partial_fill_offset.to_be_bytes(),
             original_filled_taker_amount.to_be_bytes::<32>(),
@@ -208,6 +209,8 @@ mod tests {
         let expected_swap = String::from(concat!(
             // token in
             "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            // isFeeToken (false)
+            "00",
             // token out
             "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
             // partiall filled offset

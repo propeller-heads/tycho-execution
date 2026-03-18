@@ -40,7 +40,7 @@ contract UniswapV4ExecutorExposed is UniswapV4Executor {
             TransferManager.TransferType transferType,
             address receiver,
             address tokenIn,
-            uint256 amount
+            uint256 amount,
         ) = this.getCallbackTransferData(msg.data);
         if (transferType == TransferManager.TransferType.Transfer) {
             IERC20(tokenIn).safeTransfer(receiver, amount);

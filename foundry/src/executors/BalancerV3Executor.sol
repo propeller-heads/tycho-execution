@@ -39,7 +39,7 @@ contract BalancerV3Executor is IExecutor, ICallback {
         external
         payable
     {
-        if (data.length != 60) {
+        if (data.length != 61) {
             revert BalancerV3Executor__InvalidDataLength();
         }
         // slither-disable-next-line unused-return
@@ -115,9 +115,10 @@ contract BalancerV3Executor is IExecutor, ICallback {
     {
         amountGiven = uint256(bytes32(data[0:32]));
         tokenIn = IERC20(address(bytes20(data[32:52])));
-        tokenOut = IERC20(address(bytes20(data[52:72])));
-        poolId = address(bytes20(data[72:92]));
-        receiver = address(bytes20(data[92:112]));
+        // data[52] is isFeeToken, skipped here
+        tokenOut = IERC20(address(bytes20(data[53:73])));
+        poolId = address(bytes20(data[73:93]));
+        receiver = address(bytes20(data[93:113]));
     }
 
     function getTransferData(bytes calldata data)
@@ -128,19 +129,22 @@ contract BalancerV3Executor is IExecutor, ICallback {
             address receiver,
             address tokenIn,
             address tokenOut,
-            bool outputToRouter
+            bool outputToRouter,
+            bool isFeeToken
         )
     {
-        if (data.length >= 40) {
+        if (data.length >= 41) {
             tokenIn = address(bytes20(data[0:20]));
-            tokenOut = address(bytes20(data[20:40]));
+            isFeeToken = data[20] != 0;
+            tokenOut = address(bytes20(data[21:41]));
         }
         return (
             TransferManager.TransferType.None,
             address(0),
             tokenIn,
             tokenOut,
-            false
+            false,
+            isFeeToken
         );
     }
 
@@ -151,7 +155,8 @@ contract BalancerV3Executor is IExecutor, ICallback {
             TransferManager.TransferType transferType,
             address receiver,
             address tokenIn,
-            uint256 amount
+            uint256 amount,
+            bool isFeeToken
         )
     {
         receiver = address(_VAULT);

@@ -34,7 +34,7 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
 
     function testDecodeParams() public view {
         bytes memory params =
-            abi.encodePacked(WETH_ADDR, BAL_ADDR, WETH_BAL_POOL_ID);
+            abi.encodePacked(WETH_ADDR, false, BAL_ADDR, WETH_BAL_POOL_ID);
 
         (address tokenIn, address tokenOut, bytes32 poolId) =
             balancerV2Exposed.decodeParams(params);
@@ -46,18 +46,20 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
 
     function testGetTransferData() public {
         bytes memory params =
-            abi.encodePacked(WETH_ADDR, BAL_ADDR, WETH_BAL_POOL_ID);
+            abi.encodePacked(WETH_ADDR, false, BAL_ADDR, WETH_BAL_POOL_ID);
 
-        (, address receiver, address tokenIn,,) =
+        (, address receiver, address tokenIn,,, bool isFeeToken) =
             balancerV2Exposed.getTransferData(params);
 
         assertEq(address(tokenIn), WETH_ADDR);
         assertEq(receiver, VAULT);
+        assertFalse(isFeeToken);
     }
 
     function testDecodeParamsInvalidDataLength() public {
-        bytes memory invalidParams =
-            abi.encodePacked(WETH_ADDR, BAL_ADDR, WETH_BAL_POOL_ID, address(2));
+        bytes memory invalidParams = abi.encodePacked(
+            WETH_ADDR, false, BAL_ADDR, WETH_BAL_POOL_ID, address(2)
+        );
 
         vm.expectRevert(BalancerV2Executor__InvalidDataLength.selector);
         balancerV2Exposed.decodeParams(invalidParams);
@@ -66,7 +68,7 @@ contract BalancerV2ExecutorTest is Constants, TestUtils {
     function testSwap() public {
         uint256 amountIn = 10 ** 18;
         bytes memory protocolData =
-            abi.encodePacked(WETH_ADDR, BAL_ADDR, WETH_BAL_POOL_ID);
+            abi.encodePacked(WETH_ADDR, false, BAL_ADDR, WETH_BAL_POOL_ID);
 
         deal(WETH_ADDR, address(balancerV2Exposed), amountIn);
         uint256 balanceBefore = BAL.balanceOf(BOB);

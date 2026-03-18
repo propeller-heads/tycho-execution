@@ -66,7 +66,7 @@ contract UniswapV3ExecutorTest is Test, TestUtils, Constants {
     function testDecodeParams() public view {
         uint24 expectedPoolFee = 500;
         bytes memory data = abi.encodePacked(
-            WETH_ADDR, DAI_ADDR, expectedPoolFee, address(3), false
+            WETH_ADDR, false, DAI_ADDR, expectedPoolFee, address(3), false
         );
 
         (
@@ -86,11 +86,12 @@ contract UniswapV3ExecutorTest is Test, TestUtils, Constants {
 
     function testGetTransferData() public {
         bytes memory params = "";
-        (, address receiver, address tokenIn,,) =
+        (, address receiver, address tokenIn,,, bool isFeeToken) =
             uniswapV3Exposed.getTransferData(params);
 
         assertEq(receiver, address(0));
         assertEq(tokenIn, address(0));
+        assertFalse(isFeeToken);
     }
 
     function testGetCallbackTransferData() public {
@@ -110,7 +111,7 @@ contract UniswapV3ExecutorTest is Test, TestUtils, Constants {
             dataLength,
             protocolData
         );
-        (, address receiver, address tokenIn, uint256 amount) =
+        (, address receiver, address tokenIn, uint256 amount,) =
             uniswapV3Exposed.getCallbackTransferData(callbackData);
 
         assertEq(receiver, address(this));
@@ -141,6 +142,7 @@ contract UniswapV3ExecutorTest is Test, TestUtils, Constants {
     function testDecodeParamsInvalidDataLength() public {
         bytes memory invalidParams = abi.encodePacked(
             WETH_ADDR,
+            false,
             DAI_ADDR,
             uint24(500),
             TransferManager.TransferType.Transfer,
@@ -190,7 +192,9 @@ contract UniswapV3ExecutorTest is Test, TestUtils, Constants {
         bool zero2one
     ) internal view returns (bytes memory) {
         IUniswapV3Pool pool = IUniswapV3Pool(target);
-        return abi.encodePacked(tokenIn, tokenOut, pool.fee(), target, zero2one);
+        return abi.encodePacked(
+            tokenIn, false, tokenOut, pool.fee(), target, zero2one
+        );
     }
 }
 

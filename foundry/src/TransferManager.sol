@@ -133,7 +133,8 @@ contract TransferManager is Vault {
         uint256 amount,
         bool isFirstSwap,
         bool isSplitSwap,
-        bool inCallback
+        bool inCallback,
+        bool isFeeToken
     ) internal returns (uint256) {
         // Scenario 1: No transfer needed. Likely called from outside the callback,
         // when funds are only transferred in callback for this protocol (e.g.
@@ -162,7 +163,9 @@ contract TransferManager is Vault {
         if (transferType == TransferType.ProtocolWillDebit) {
             if (needsTransferFromUser) {
                 // Scenario 3: First swap with user funds - transfer to router, then approve
-                amount = _transferFromUser(tokenIn, address(this), amount);
+                amount = _transferFromUser(
+                    tokenIn, address(this), amount, isFeeToken
+                );
                 _approveIfNeeded(tokenIn, receiver, amount);
             } else {
                 // Scenario 4: Funds already in router (from vault or previous swap)
@@ -187,7 +190,8 @@ contract TransferManager is Vault {
 
             if (needsTransferFromUser) {
                 // Scenario 5: First swap with user funds - transfer directly to pool
-                amount = _transferFromUser(tokenIn, receiver, amount);
+                amount =
+                    _transferFromUser(tokenIn, receiver, amount, isFeeToken);
             } else {
                 // Scenario 6: Transfer from router balance to pool
                 // This could mean the funds come from the user's vault (first swap with vault)
@@ -242,10 +246,12 @@ contract TransferManager is Vault {
      * difference before and after the transfer. This may differ from `amount` for
      * rebasing or fee-on-transfer tokens.
      */
-    function _transferFromUser(address token, address receiver, uint256 amount)
-        internal
-        returns (uint256)
-    {
+    function _transferFromUser(
+        address token,
+        address receiver,
+        uint256 amount,
+        bool isFeeToken
+    ) internal returns (uint256) {
         // Validate and track allowance to prevent badly encoded split swaps from
         // taking more than the input amount out of the user's wallet
         address tokenInStorage;
@@ -276,8 +282,24 @@ contract TransferManager is Vault {
             tstore(_AMOUNT_ALLOWED_SLOT, amountAllowed)
         }
 
-        uint256 balanceBefore = _balanceOf(token, receiver);
-        // Perform the actual transfer
+        if (isFeeToken) {
+            uint256 balanceBefore = _balanceOf(token, receiver);
+            _doTransferFromUser(isPermit2, sender, receiver, amount, token);
+            uint256 balanceAfter = _balanceOf(token, receiver);
+            return balanceAfter - balanceBefore;
+        }
+
+        _doTransferFromUser(isPermit2, sender, receiver, amount, token);
+        return amount;
+    }
+
+    function _doTransferFromUser(
+        bool isPermit2,
+        address sender,
+        address receiver,
+        uint256 amount,
+        address token
+    ) private {
         if (isPermit2) {
             // Permit2.permit is already called from the TychoRouter
             // slither-disable-next-line calls-loop
@@ -286,8 +308,6 @@ contract TransferManager is Vault {
             // slither-disable-next-line arbitrary-send-erc20
             IERC20(token).safeTransferFrom(sender, receiver, amount);
         }
-        uint256 balanceAfter = _balanceOf(token, receiver);
-        return balanceAfter - balanceBefore;
     }
 
     /**
@@ -314,14 +334,17 @@ contract TransferManager is Vault {
         internal
         returns (uint256)
     {
-        // measuring the balance again is needed for rebase/fee tokens
         uint256 balanceBefore = _balanceOf(token, to);
+        _doTransferOut(token, to, amount);
+        uint256 balanceAfter = _balanceOf(token, to);
+        return balanceAfter - balanceBefore;
+    }
+
+    function _doTransferOut(address token, address to, uint256 amount) private {
         if (token == address(0)) {
             Address.sendValue(payable(to), amount);
         } else {
             IERC20(token).safeTransfer(to, amount);
         }
-        uint256 balanceAfter = _balanceOf(token, to);
-        return balanceAfter - balanceBefore;
     }
 }

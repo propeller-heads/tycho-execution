@@ -21,7 +21,12 @@ contract UniswapV2ExecutorExposed is UniswapV2Executor {
     function decodeParams(bytes calldata data)
         external
         pure
-        returns (address target, address tokenIn, address tokenOut, bool isFoT)
+        returns (
+            address target,
+            address tokenIn,
+            bool isFeeToken,
+            address tokenOut
+        )
     {
         return _decodeData(data);
     }
@@ -58,9 +63,9 @@ contract UniswapV2ExecutorTest is Constants, Permit2TestHelper, TestUtils {
 
     function testDecodeParams() public view {
         bytes memory params =
-            abi.encodePacked(address(2), address(3), address(4), false);
+            abi.encodePacked(address(2), address(3), false, address(4));
 
-        (address target, address tokenIn, address tokenOut,) =
+        (address target, address tokenIn,, address tokenOut) =
             uniswapV2Exposed.decodeParams(params);
 
         assertEq(target, address(2));
@@ -77,13 +82,26 @@ contract UniswapV2ExecutorTest is Constants, Permit2TestHelper, TestUtils {
 
     function testGetTransferData() public {
         bytes memory params =
-            abi.encodePacked(DAI_WETH_UNIV2_POOL, DAI_ADDR, WETH_ADDR, false);
+            abi.encodePacked(DAI_WETH_UNIV2_POOL, DAI_ADDR, false, WETH_ADDR);
 
-        (, address receiver, address tokenIn,,) =
+        (, address receiver, address tokenIn,,, bool isFeeToken) =
             uniswapV2Exposed.getTransferData(params);
 
         assertEq(tokenIn, DAI_ADDR);
         assertEq(receiver, DAI_WETH_UNIV2_POOL);
+        assertFalse(isFeeToken);
+    }
+
+    function testGetTransferDataFeeToken() public {
+        bytes memory params =
+            abi.encodePacked(DAI_WETH_UNIV2_POOL, DAI_ADDR, true, WETH_ADDR);
+
+        (, address receiver, address tokenIn,,, bool isFeeToken) =
+            uniswapV2Exposed.getTransferData(params);
+
+        assertEq(tokenIn, DAI_ADDR);
+        assertEq(receiver, DAI_WETH_UNIV2_POOL);
+        assertTrue(isFeeToken);
     }
 
     function testAmountOut() public view {
@@ -108,7 +126,7 @@ contract UniswapV2ExecutorTest is Constants, Permit2TestHelper, TestUtils {
         uint256 amountIn = 10 ** 18;
         uint256 amountOut = 1847751195973566072891;
         bytes memory protocolData =
-            abi.encodePacked(DAI_WETH_UNIV2_POOL, WETH_ADDR, DAI_ADDR, false);
+            abi.encodePacked(DAI_WETH_UNIV2_POOL, WETH_ADDR, false, DAI_ADDR);
 
         deal(WETH_ADDR, address(uniswapV2Exposed), amountIn);
         // transfer funds into the pool - this is taken cared of by the Dispatcher now
@@ -125,7 +143,7 @@ contract UniswapV2ExecutorTest is Constants, Permit2TestHelper, TestUtils {
         uint256 amountIn = 10 ** 18;
         uint256 amountOut = 1847751195973566072891;
         bytes memory protocolData =
-            abi.encodePacked(DAI_WETH_UNIV2_POOL, WETH_ADDR, DAI_ADDR, false);
+            abi.encodePacked(DAI_WETH_UNIV2_POOL, WETH_ADDR, false, DAI_ADDR);
 
         deal(WETH_ADDR, address(this), amountIn);
         IERC20(WETH_ADDR).transfer(address(DAI_WETH_UNIV2_POOL), amountIn);
@@ -136,15 +154,20 @@ contract UniswapV2ExecutorTest is Constants, Permit2TestHelper, TestUtils {
     }
 
     function testDecodeIntegration() public view {
-        bytes memory protocolData =
-            hex"88e6a0c2ddd26feeb64f039a2c41296fcb3f5640c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2a0b86991c6218b36c1d19d4a2e9eb0ce3606eb4800";
+        // pool(20) | tokenIn(20) | isFeeToken(1) | tokenOut(20) = 61 bytes
+        bytes memory protocolData = abi.encodePacked(
+            address(0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640),
+            address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2),
+            false,
+            address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48)
+        );
 
-        (address target, address tokenIn, address tokenOut,) =
+        (address target, address tokenIn,, address tokenOut) =
             uniswapV2Exposed.decodeParams(protocolData);
 
         assertEq(target, 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640);
-        assertEq(tokenIn, 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // WETH
-        assertEq(tokenOut, 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48); // USDC
+        assertEq(tokenIn, 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
+        assertEq(tokenOut, 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
     }
 
     function testSwapIntegration() public {
@@ -171,7 +194,7 @@ contract UniswapV2ExecutorTest is Constants, Permit2TestHelper, TestUtils {
         vm.rollFork(26857267);
         uint256 amountIn = 10 * 10 ** 6;
         bytes memory protocolData =
-            abi.encodePacked(USDC_MAG7_POOL, BASE_USDC, BASE_MAG7, false);
+            abi.encodePacked(USDC_MAG7_POOL, BASE_USDC, false, BASE_MAG7);
 
         deal(BASE_USDC, address(uniswapV2Exposed), amountIn);
 

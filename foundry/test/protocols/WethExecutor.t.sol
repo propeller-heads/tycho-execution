@@ -70,7 +70,8 @@ contract WethExecutorTest is TestUtils, Constants {
         (
             TransferManager.TransferType transferType,
             address receiver,
-            address tokenIn,,
+            address tokenIn,,,
+            bool isFeeToken
         ) = wethExecutor.getTransferData(params);
 
         assertEq(receiver, address(this));
@@ -79,6 +80,7 @@ contract WethExecutorTest is TestUtils, Constants {
             uint8(TransferManager.TransferType.TransferNativeInExecutor)
         );
         assertEq(tokenIn, address(0));
+        assertFalse(isFeeToken);
     }
 
     function testGetTransferDataUnwrap() public {
@@ -89,7 +91,8 @@ contract WethExecutorTest is TestUtils, Constants {
         (
             TransferManager.TransferType transferType,
             address receiver,
-            address tokenIn,,
+            address tokenIn,,,
+            bool isFeeToken
         ) = wethExecutor.getTransferData(params);
 
         assertEq(receiver, address(this));
@@ -98,6 +101,7 @@ contract WethExecutorTest is TestUtils, Constants {
             uint8(TransferManager.TransferType.ProtocolWillDebit)
         );
         assertEq(tokenIn, WETH_ADDR);
+        assertFalse(isFeeToken);
     }
 
     function testSwapWrap() public {

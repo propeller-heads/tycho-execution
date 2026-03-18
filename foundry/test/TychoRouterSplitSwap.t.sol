@@ -392,7 +392,7 @@ contract TychoRouterSplitSwapTest is TychoRouterTestSetup {
 
         // For simplicity, just use the same protocol data for both swap legs
         bytes memory protocolData =
-            abi.encodePacked(WETH_ADDR, BAL_ADDR, WETH_BAL_POOL_ID);
+            abi.encodePacked(WETH_ADDR, false, BAL_ADDR, WETH_BAL_POOL_ID);
 
         bytes[] memory swaps = new bytes[](2);
         // WETH -> BAL (60% split)

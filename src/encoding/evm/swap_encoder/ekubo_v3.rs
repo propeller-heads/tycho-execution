@@ -56,6 +56,7 @@ impl SwapEncoder for EkuboV3SwapEncoder {
 
         if encoding_context.group_token_in == *swap.token_in().address {
             encoded.extend(bytes_to_address(&swap.token_in().address)?);
+            encoded.push(u8::from(swap.is_input_fee_token()));
         }
 
         encoded.extend(bytes_to_address(&swap.token_out().address)?);
@@ -118,6 +119,8 @@ mod tests {
             concat!(
                 // group token in
                 "0000000000000000000000000000000000000000",
+                // isFeeToken (false)
+                "00",
                 // token out 1st swap
                 "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
                 // pool config 1st swap
@@ -184,6 +187,8 @@ mod tests {
             concat!(
                 // group token in
                 "0000000000000000000000000000000000000000",
+                // isFeeToken (false)
+                "00",
                 // token out 1st swap
                 "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
                 // pool config 1st swap

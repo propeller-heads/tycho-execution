@@ -94,25 +94,27 @@ contract UniswapV3Executor is IExecutor, ICallback {
             bool zeroForOne
         )
     {
-        if (data.length != 64) {
+        if (data.length != 65) {
             revert UniswapV3Executor__InvalidDataLength();
         }
         tokenIn = address(bytes20(data[0:20]));
-        tokenOut = address(bytes20(data[20:40]));
-        fee = uint24(bytes3(data[40:43]));
-        target = address(bytes20(data[43:63]));
-        zeroForOne = uint8(data[63]) > 0;
+        // data[20] is isFeeToken, skipped here
+        tokenOut = address(bytes20(data[21:41]));
+        fee = uint24(bytes3(data[41:44]));
+        target = address(bytes20(data[44:64]));
+        zeroForOne = uint8(data[64]) > 0;
     }
 
-    // This function will extract the first 43 bytes of the data,
+    // This function will extract the first 44 bytes of the data,
     // which contains the necessary Uniswap V3 callback data:
-    // tokenIn (20 bytes), tokenOut (20 bytes), fee (3 bytes)
+    // tokenIn (20 bytes), isFeeToken (1 byte), tokenOut (20 bytes),
+    // fee (3 bytes)
     function _extractV3CallbackData(bytes calldata data)
         internal
         pure
         returns (bytes calldata)
     {
-        return data[0:43];
+        return data[0:44];
     }
 
     function getTransferData(bytes calldata data)
@@ -123,19 +125,22 @@ contract UniswapV3Executor is IExecutor, ICallback {
             address receiver,
             address tokenIn,
             address tokenOut,
-            bool outputToRouter
+            bool outputToRouter,
+            bool isFeeToken
         )
     {
-        if (data.length >= 40) {
+        if (data.length >= 41) {
             tokenIn = address(bytes20(data[0:20]));
-            tokenOut = address(bytes20(data[20:40]));
+            isFeeToken = data[20] != 0;
+            tokenOut = address(bytes20(data[21:41]));
         }
         return (
             TransferManager.TransferType.None,
             address(0),
             tokenIn,
             tokenOut,
-            false
+            false,
+            isFeeToken
         );
     }
 
@@ -146,7 +151,8 @@ contract UniswapV3Executor is IExecutor, ICallback {
             TransferManager.TransferType transferType,
             address receiver,
             address tokenIn,
-            uint256 amount
+            uint256 amount,
+            bool isFeeToken
         )
     {
         (int256 amount0Delta, int256 amount1Delta) =

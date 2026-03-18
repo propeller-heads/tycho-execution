@@ -28,7 +28,7 @@ contract UniswapV4ExecutorExposed is UniswapV4Executor {
         external
         returns (bytes memory)
     {
-        (, address receiver, address tokenIn, uint256 amount) =
+        (, address receiver, address tokenIn, uint256 amount,) =
             this.getCallbackTransferData(msg.data);
         IERC20(tokenIn).safeTransfer(receiver, amount);
         bytes calldata stripped = msg.data[68:];
@@ -128,7 +128,7 @@ contract UniswapV4AngstromExecutorTest is Constants, TestUtils {
 
         // Encode data with attestations
         bytes memory data =
-            abi.encodePacked(USDC_ADDR, WETH_ADDR, true, false, firstPool);
+            abi.encodePacked(USDC_ADDR, false, WETH_ADDR, true, firstPool);
 
         angstromExecutor.swap(amountIn, data, ALICE);
 
@@ -160,7 +160,7 @@ contract UniswapV4AngstromExecutorTest is Constants, TestUtils {
         );
 
         bytes memory data =
-            abi.encodePacked(USDC_ADDR, WETH_ADDR, true, false, firstPool);
+            abi.encodePacked(USDC_ADDR, false, WETH_ADDR, true, firstPool);
 
         angstromExecutor.swap(amountIn, data, BOB);
         assertGt(WETH.balanceOf(BOB), 0);

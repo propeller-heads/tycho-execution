@@ -245,9 +245,9 @@ contract TychoRouterUsingVaultTest is TychoRouterTestSetup {
 
         bytes memory protocolData = abi.encodePacked(
             USDC_ADDR,
+            false, // isFoT
             address(0), // ETH_ADDR
             false, // zeroForOne
-            false, // isFoT
             pool
         );
 

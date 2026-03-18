@@ -121,10 +121,18 @@ contract Dispatcher is TransferManager {
             address transferReceiver,
             address tokenIn,
             address tokenOut,
-            bool outputToRouter
+            bool outputToRouter,
+            bool isFeeToken
         ) = abi.decode(
             transferData,
-            (TransferManager.TransferType, address, address, address, bool)
+            (
+                TransferManager.TransferType,
+                address,
+                address,
+                address,
+                bool,
+                bool
+            )
         );
 
         bool isCyclic = tokenIn == tokenOut && tokenIn != address(0);
@@ -143,7 +151,8 @@ contract Dispatcher is TransferManager {
             amount,
             isFirstSwap,
             isSplitSwap,
-            false
+            false,
+            isFeeToken
         );
 
         // slither-disable-next-line controlled-delegatecall,low-level-calls,calls-loop
@@ -229,10 +238,11 @@ contract Dispatcher is TransferManager {
             TransferManager.TransferType transferType,
             address receiver,
             address tokenIn,
-            uint256 amount
+            uint256 amount,
+            bool isFeeToken
         ) = abi.decode(
             transferData,
-            (TransferManager.TransferType, address, address, uint256)
+            (TransferManager.TransferType, address, address, uint256, bool)
         );
 
         _transfer(
@@ -242,7 +252,8 @@ contract Dispatcher is TransferManager {
             amount,
             isFirstSwap,
             isSplitSwap,
-            true
+            true,
+            isFeeToken
         );
 
         // slither-disable-next-line controlled-delegatecall,low-level-calls

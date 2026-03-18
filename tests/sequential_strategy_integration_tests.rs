@@ -170,15 +170,15 @@ fn test_sequential_swap_strategy_encoder_transfer_from_integration() {
         "5615deb798bb3e4dfa0139dfa1b3d433cc23b72f", // executor address
         "bb2b8038a1640196fbe3e38816f3e67cba72d940", // component id (pool address)
         "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // tokenIn (WETH)
+        "00",                                       // isFeeToken (false)
         "2260fac5e5542a773aa44fbcfedf7c193bc2c599", // tokenOut (WBTC)
-        "00",                                       // isFoT (false)
         // swap 2: WBTC -> USDC
         "0051",                                                 // swap length (81 bytes)
         "5615deb798bb3e4dfa0139dfa1b3d433cc23b72f",             // executor address
         "004375dff511095cc5a197a54140a24efef3a416",             // component id (pool address)
         "2260fac5e5542a773aa44fbcfedf7c193bc2c599",             // tokenIn (WBTC)
+        "00",                                                   // isFeeToken (false)
         "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",             // tokenOut (USDC)
-        "00",                                                   // isFoT (false)
         "0000000000000000000000000000000000000000000000000000", // padding to 32-byte boundary
     ));
 
@@ -284,25 +284,27 @@ fn test_sequential_strategy_cyclic_swap() {
     // time) it's hard to assert back
 
     let expected_swaps = [
-        "00000000000000000000000000000000000000000000000000000000000000ac", /* length of ple
+        "00000000000000000000000000000000000000000000000000000000000000ae", /* length of ple
                                                                              * encoded swaps
                                                                              * without padding
-                                                                             * (172 bytes) */
-        "0054",                                     // ple encoded swaps (84 bytes)
+                                                                             * (174 bytes) */
+        "0055",                                     // ple encoded swaps (85 bytes)
         "2e234dae75c793f67a35089c9d99245e1c58470b", // executor address
         "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // token in
+        "00",                                       // isFeeToken (false)
         "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token out
         "0001f4",                                   // pool fee
         "88e6a0c2ddd26feeb64f039a2c41296fcb3f5640", // component id
         "01",                                       // zero2one
-        "0054",                                     // ple encoded swaps (84 bytes)
+        "0055",                                     // ple encoded swaps (85 bytes)
         "2e234dae75c793f67a35089c9d99245e1c58470b", // executor address
         "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token in
+        "00",                                       // isFeeToken (false)
         "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // token out
         "000bb8",                                   // pool fee
         "8ad599c3a0ff1de082011efddc58f1908eb6e6d8", // component id
         "00",                                       // zero2one
-        "0000000000000000000000000000000000000000", // padding
+        "000000000000000000000000000000000000",     // padding
     ]
     .join("");
 
@@ -408,22 +410,24 @@ fn test_sequential_strategy_cyclic_swap_and_vault() {
         "00000000000000000000000000000000000000000000000000000000000000a0", // clientSignature offset in struct = 160
         "0000000000000000000000000000000000000000000000000000000000000000", // clientSignature length = 0
         // swapData:
-        "00000000000000000000000000000000000000000000000000000000000000ac", // length = 172 bytes
-        "0054",                                     // ple encoded swaps (84 bytes)
+        "00000000000000000000000000000000000000000000000000000000000000ae", // length = 174 bytes
+        "0055",                                     // ple encoded swaps (85 bytes)
         "2e234dae75c793f67a35089c9d99245e1c58470b", // executor address
         "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // token in
+        "00",                                       // isFeeToken (false)
         "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token out
         "0001f4",                                   // pool fee
         "88e6a0c2ddd26feeb64f039a2c41296fcb3f5640", // component id
         "01",                                       // zero2one
-        "0054",                                     // ple encoded swaps (84 bytes)
+        "0055",                                     // ple encoded swaps (85 bytes)
         "2e234dae75c793f67a35089c9d99245e1c58470b", // executor address
         "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // token in
+        "00",                                       // isFeeToken (false)
         "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // token out
         "000bb8",                                   // pool fee
         "8ad599c3a0ff1de082011efddc58f1908eb6e6d8", // component id
         "00",                                       // zero2one
-        "0000000000000000000000000000000000000000", // padding (12 bytes)
+        "000000000000000000000000000000000000", // padding
     ]
     .join("");
 

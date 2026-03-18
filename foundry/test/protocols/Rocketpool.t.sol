@@ -75,7 +75,8 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         (
             TransferManager.TransferType transferType,
             address receiver,
-            address tokenIn,,
+            address tokenIn,,,
+            bool isFeeToken
         ) = rocketpoolExecutor.getTransferData(params);
 
         // receiver is msg.sender (this test contract) since getTransferData
@@ -86,6 +87,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
             uint8(TransferManager.TransferType.TransferNativeInExecutor)
         );
         assertEq(tokenIn, address(0));
+        assertFalse(isFeeToken);
     }
 
     function testGetTransferDataBurn() public {
@@ -96,7 +98,8 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
         (
             TransferManager.TransferType transferType,
             address receiver,
-            address tokenIn,,
+            address tokenIn,,,
+            bool isFeeToken
         ) = rocketpoolExecutor.getTransferData(params);
 
         // receiver is msg.sender (this test contract) since getTransferData
@@ -107,6 +110,7 @@ contract RocketpoolExecutorTest is TestUtils, Constants {
             uint8(TransferManager.TransferType.ProtocolWillDebit)
         );
         assertEq(tokenIn, RETH_ADDR);
+        assertFalse(isFeeToken);
     }
 
     /// Test deposit

@@ -80,7 +80,8 @@ contract WethExecutor is IExecutor {
             address receiver,
             address tokenIn,
             address tokenOut,
-            bool outputToRouter
+            bool outputToRouter,
+            bool isFeeToken
         )
     {
         if (data.length != 1) {

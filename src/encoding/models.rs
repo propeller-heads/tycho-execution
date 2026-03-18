@@ -242,9 +242,11 @@ impl Swap {
         &self.estimated_amount_in
     }
 
-    /// Returns true if either token has a non-zero transfer tax.
-    pub fn has_fee_on_transfer(&self) -> bool {
-        self.token_in.tax > 0 || self.token_out.tax > 0
+    /// Returns true if the input token has low quality (quality < 100),
+    /// indicating it may be a fee-on-transfer or non-standard token
+    /// that requires balance checks during transfers.
+    pub fn is_input_fee_token(&self) -> bool {
+        self.token_in.quality < 100
     }
 }
 

@@ -83,15 +83,16 @@ contract BebopExecutor is IExecutor {
             bytes memory bebopCalldata
         )
     {
-        // Need at least 73 bytes for the minimum fixed fields
-        // 20 + 20 + 1 (offset) + 32 (original amount) = 73
-        if (data.length < 73) revert BebopExecutor__InvalidDataLength();
+        // Need at least 74 bytes for the minimum fixed fields
+        // 20 + 1 (isFeeToken) + 20 + 1 (offset) + 32 (original amount) = 74
+        if (data.length < 74) revert BebopExecutor__InvalidDataLength();
 
         tokenIn = address(bytes20(data[0:20]));
-        tokenOut = address(bytes20(data[20:40]));
-        partialFillOffset = uint8(data[40]);
-        originalFilledTakerAmount = uint256(bytes32(data[41:73]));
-        bebopCalldata = data[73:];
+        // data[20] is isFeeToken, skipped here
+        tokenOut = address(bytes20(data[21:41]));
+        partialFillOffset = uint8(data[41]);
+        originalFilledTakerAmount = uint256(bytes32(data[42:74]));
+        bebopCalldata = data[74:];
     }
 
     /// @dev Modifies the filledTakerAmount in the bebop calldata to handle slippage
@@ -152,15 +153,17 @@ contract BebopExecutor is IExecutor {
             address receiver,
             address tokenIn,
             address tokenOut,
-            bool outputToRouter
+            bool outputToRouter,
+            bool isFeeToken
         )
     {
-        if (data.length < 73) {
+        if (data.length < 74) {
             revert BebopExecutor__InvalidDataLength();
         }
 
         tokenIn = address(bytes20(data[0:20]));
-        tokenOut = address(bytes20(data[20:40]));
+        isFeeToken = data[20] != 0;
+        tokenOut = address(bytes20(data[21:41]));
         transferType = TransferManager.TransferType.ProtocolWillDebit;
         receiver = bebopSettlement;
         outputToRouter = true;

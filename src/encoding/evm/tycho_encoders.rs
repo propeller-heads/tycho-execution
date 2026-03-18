@@ -840,10 +840,10 @@ mod tests {
                     "a478c2975ab1ea89e8196811f51a7b7ade33eb11",
                     // tokenIn (WETH)
                     "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                    // isFeeToken (false)
+                    "00",
                     // tokenOut (DAI)
                     "6b175474e89094c44da98b954eedeac495271d0f",
-                    // isFoT
-                    "00",
                 ))
             );
         }
@@ -914,11 +914,11 @@ mod tests {
                 String::from(concat!(
                     // group in token
                     "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                    // isFeeToken (false)
+                    "00",
                     // group out token
                     "6982508145454ce325ddbe47a25d4ec3d2311933",
                     // zero for one
-                    "00",
-                    // isFoT (false)
                     "00",
                     // first pool intermediary token (ETH)
                     "0000000000000000000000000000000000000000",

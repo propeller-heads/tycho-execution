@@ -38,6 +38,7 @@ impl SwapEncoder for BalancerV2SwapEncoder {
 
         let args = (
             bytes_to_address(&swap.token_in().address)?,
+            swap.is_input_fee_token(),
             bytes_to_address(&swap.token_out().address)?,
             component_id,
         );
@@ -100,6 +101,8 @@ mod tests {
             String::from(concat!(
                 // token in
                 "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                // isFeeToken (false)
+                "00",
                 // token out
                 "ba100000625a3754423978a60c9317c58a424e3d",
                 // pool id

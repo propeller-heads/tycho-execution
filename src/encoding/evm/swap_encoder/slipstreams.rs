@@ -55,6 +55,7 @@ impl SwapEncoder for SlipstreamsSwapEncoder {
 
         let args = (
             token_in_address,
+            swap.is_input_fee_token(),
             token_out_address,
             tick_spacing_bytes_u24,
             component_id,

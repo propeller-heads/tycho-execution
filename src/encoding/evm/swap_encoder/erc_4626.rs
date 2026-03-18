@@ -32,7 +32,8 @@ impl SwapEncoder for ERC4626SwapEncoder {
         let component_id = AlloyBytes::from_str(&swap.component().id)
             .map_err(|_| EncodingError::FatalError("Invalid component ID".to_string()))?;
 
-        let args = (bytes_to_address(&swap.token_in().address)?, component_id);
+        let args =
+            (bytes_to_address(&swap.token_in().address)?, swap.is_input_fee_token(), component_id);
         Ok(args.abi_encode_packed())
     }
 
@@ -88,6 +89,8 @@ mod tests {
             String::from(concat!(
                 // token in
                 "C02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                // isFeeToken (false)
+                "00",
                 // target
                 "fE6eb3b609a7C8352A241f7F3A21CEA4e9209B8f",
             ))
@@ -132,6 +135,8 @@ mod tests {
             String::from(concat!(
                 // token in
                 "fE6eb3b609a7C8352A241f7F3A21CEA4e9209B8f",
+                // isFeeToken (false)
+                "00",
                 // target
                 "fE6eb3b609a7C8352A241f7F3A21CEA4e9209B8f",
             ))

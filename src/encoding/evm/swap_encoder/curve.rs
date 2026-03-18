@@ -178,6 +178,7 @@ impl SwapEncoder for CurveSwapEncoder {
 
         let args = (
             token_in,
+            swap.is_input_fee_token(),
             token_out,
             component_address,
             pool_type.to_be_bytes::<1>(),
@@ -343,6 +344,8 @@ mod tests {
             String::from(concat!(
                 // token in
                 "6b175474e89094c44da98b954eedeac495271d0f",
+                // isFeeToken (false)
+                "00",
                 // token out
                 "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
                 // pool address
@@ -403,6 +406,8 @@ mod tests {
             String::from(concat!(
                 // token in
                 "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                // isFeeToken (false)
+                "00",
                 // token out
                 "4c9edd5852cd905f086c759e8383e09bff1e68b3",
                 // pool address
@@ -473,6 +478,8 @@ mod tests {
             String::from(concat!(
                 // token in
                 "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                // isFeeToken (false)
+                "00",
                 // token out
                 "ae7ab96520de3a18e5e111b5eaab095312d7fe84",
                 // pool address

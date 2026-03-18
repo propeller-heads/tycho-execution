@@ -224,6 +224,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(not(feature = "fork-tests"), ignore)]
     fn test_get_existing_allowance() {
         let manager = Permit2::new().unwrap();
 
@@ -241,6 +242,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(not(feature = "fork-tests"), ignore)]
     fn test_get_permit() {
         let permit2 = Permit2::new().expect("Failed to create Permit2");
 

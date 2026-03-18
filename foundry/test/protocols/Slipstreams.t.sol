@@ -62,7 +62,7 @@ contract SlipstreamsExecutorTest is Test, TestUtils, Constants {
     function testDecodeParams() public view {
         int24 expectedTickSpacing = 100;
         bytes memory data = abi.encodePacked(
-            BASE_WETH, BASE_USDC, expectedTickSpacing, address(3), false
+            BASE_WETH, false, BASE_USDC, expectedTickSpacing, address(3), false
         );
 
         (
@@ -82,11 +82,12 @@ contract SlipstreamsExecutorTest is Test, TestUtils, Constants {
 
     function testGetTransferData() public {
         bytes memory params = "";
-        (, address receiver, address tokenIn,,) =
+        (, address receiver, address tokenIn,,, bool isFeeToken) =
             slipstreamsExposed.getTransferData(params);
 
         assertEq(receiver, address(0));
         assertEq(tokenIn, address(0));
+        assertFalse(isFeeToken);
     }
 
     function testGetCallbackTransferData() public {
@@ -106,7 +107,7 @@ contract SlipstreamsExecutorTest is Test, TestUtils, Constants {
             dataLength,
             protocolData
         );
-        (, address receiver, address tokenIn, uint256 amount) =
+        (, address receiver, address tokenIn, uint256 amount,) =
             slipstreamsExposed.getCallbackTransferData(callbackData);
 
         assertEq(receiver, address(this));
@@ -122,6 +123,7 @@ contract SlipstreamsExecutorTest is Test, TestUtils, Constants {
 
         bytes memory data = abi.encodePacked(
             BASE_WETH,
+            false,
             BASE_USDC,
             IUniswapV3Pool(SLIPSTREAMS_WETH_USDC_POOL).tickSpacing(),
             SLIPSTREAMS_WETH_USDC_POOL,
@@ -145,6 +147,7 @@ contract SlipstreamsExecutorTest is Test, TestUtils, Constants {
 
         bytes memory data = abi.encodePacked(
             BASE_WETH,
+            false,
             BASE_BMI,
             IUniswapV3Pool(SLIPSTREAMS_WETH_BMI_POOL).tickSpacing(),
             SLIPSTREAMS_WETH_BMI_POOL,

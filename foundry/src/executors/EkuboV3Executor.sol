@@ -47,7 +47,7 @@ contract EkuboV3Executor is IExecutor, ICallback {
     error EkuboV3Executor__CoreOnly();
     error EkuboV3Executor__UnknownCallback();
 
-    uint256 private constant _POOL_DATA_OFFSET = 56;
+    uint256 private constant _POOL_DATA_OFFSET = 57;
     uint256 private constant _HOP_BYTE_LEN = 52;
 
     uint256 private constant _SKIP_AHEAD = 0;
@@ -69,13 +69,15 @@ contract EkuboV3Executor is IExecutor, ICallback {
             address receiver,
             address tokenIn,
             address tokenOut,
-            bool outputToRouter
+            bool outputToRouter,
+            bool isFeeToken
         )
     {
         uint256 hopsLength =
             (data.length - _POOL_DATA_OFFSET + 36) / _HOP_BYTE_LEN;
-        uint256 lastHopOffset = 20 + (hopsLength - 1) * _HOP_BYTE_LEN;
+        uint256 lastHopOffset = 21 + (hopsLength - 1) * _HOP_BYTE_LEN;
         tokenIn = address(bytes20(data[0:20]));
+        isFeeToken = data[20] != 0;
         tokenOut = address(bytes20(data[lastHopOffset:lastHopOffset + 20]));
         // Ekubo uses flash accounting: no pre-swap transfer needed.
         // Tokens are paid during the callback in the Dispatcher
@@ -84,7 +86,8 @@ contract EkuboV3Executor is IExecutor, ICallback {
             address(0),
             tokenIn,
             tokenOut,
-            false
+            false,
+            isFeeToken
         );
     }
 
@@ -103,7 +106,7 @@ contract EkuboV3Executor is IExecutor, ICallback {
         external
         payable
     {
-        if (data.length < 72) revert EkuboV3Executor__InvalidDataLength();
+        if (data.length < 73) revert EkuboV3Executor__InvalidDataLength();
 
         address tokenIn = address(bytes20(data[0:20]));
         // startPayments needs to be called in CORE before we transfer the token IN (which happens during callback)
@@ -150,7 +153,8 @@ contract EkuboV3Executor is IExecutor, ICallback {
             TransferManager.TransferType transferType,
             address receiver,
             address tokenIn,
-            uint256 amount
+            uint256 amount,
+            bool isFeeToken
         )
     {
         // data[36:] skips the 4-byte selector and 32-byte locker id

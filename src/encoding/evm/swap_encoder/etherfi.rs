@@ -169,7 +169,7 @@ mod tests {
             .unwrap();
         let hex_swap = encode(&encoded_swap);
         // direction EthToEeth
-        assert_eq!(hex_swap, String::from("01",));
+        assert_eq!(hex_swap, String::from("01"));
     }
 
     #[test]
@@ -187,7 +187,7 @@ mod tests {
             .unwrap();
         let hex_swap = encode(&encoded_swap);
         // direction EethToWeeth
-        assert_eq!(hex_swap, String::from("02",));
+        assert_eq!(hex_swap, String::from("02"));
     }
 
     #[test]

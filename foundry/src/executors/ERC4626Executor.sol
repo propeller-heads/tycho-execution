@@ -56,11 +56,12 @@ contract ERC4626Executor is IExecutor {
         pure
         returns (IERC20 tokenIn, address target)
     {
-        if (data.length != 40) {
+        if (data.length != 41) {
             revert ERC4626Executor__InvalidDataLength();
         }
         tokenIn = IERC20(address(bytes20(data[0:20])));
-        target = address(bytes20(data[20:40]));
+        // data[20] is isFeeToken, skipped here
+        target = address(bytes20(data[21:41]));
     }
 
     function getTransferData(bytes calldata data)
@@ -71,14 +72,16 @@ contract ERC4626Executor is IExecutor {
             address receiver,
             address tokenIn,
             address tokenOut,
-            bool outputToRouter
+            bool outputToRouter,
+            bool isFeeToken
         )
     {
-        if (data.length != 40) {
+        if (data.length != 41) {
             revert ERC4626Executor__InvalidDataLength();
         }
         tokenIn = address(bytes20(data[0:20]));
-        address target = address(bytes20(data[20:40]));
+        isFeeToken = data[20] != 0;
+        address target = address(bytes20(data[21:41]));
         receiver = target;
         transferType = TransferManager.TransferType.ProtocolWillDebit;
         outputToRouter = false;

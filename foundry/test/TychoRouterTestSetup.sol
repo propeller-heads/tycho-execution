@@ -278,16 +278,16 @@ contract TychoRouterTestSetup is
         address tokenIn,
         address tokenOut
     ) internal pure returns (bytes memory) {
-        return abi.encodePacked(target, tokenIn, tokenOut, false);
+        return abi.encodePacked(target, tokenIn, false, tokenOut);
     }
 
     function encodeUniswapV2Swap(
         address target,
         address tokenIn,
         address tokenOut,
-        bool isFoT
+        bool isFeeToken
     ) internal pure returns (bytes memory) {
-        return abi.encodePacked(target, tokenIn, tokenOut, isFoT);
+        return abi.encodePacked(target, tokenIn, isFeeToken, tokenOut);
     }
 
     function encodeUniswapV3Swap(
@@ -297,6 +297,8 @@ contract TychoRouterTestSetup is
         bool zero2one
     ) internal view returns (bytes memory) {
         IUniswapV3Pool pool = IUniswapV3Pool(target);
-        return abi.encodePacked(tokenIn, tokenOut, pool.fee(), target, zero2one);
+        return abi.encodePacked(
+            tokenIn, false, tokenOut, pool.fee(), target, zero2one
+        );
     }
 }

@@ -27,9 +27,16 @@ interface ICallback {
      * @return receiver The address that should receive the pre swap tokens (usually a pool or the TychoRouter - depending on the protocol)
      * @return tokenIn The address of the input token to transfer.
      * @return amountIn The amount of tokens to transfer.
+     * @return isFeeToken Whether the input token is a fee-on-transfer token.
      */
     function getCallbackTransferData(bytes calldata data)
     external
     payable
-    returns (TransferManager.TransferType transferType, address receiver, address tokenIn, uint256 amountIn);
+    returns (
+        TransferManager.TransferType transferType,
+        address receiver,
+        address tokenIn,
+        uint256 amountIn,
+        bool isFeeToken
+    );
 }

@@ -207,9 +207,9 @@ impl SwapEncoder for UniswapV4SwapEncoder {
 
         let args = (
             group_token_in_address,
+            swap.is_input_fee_token(),
             group_token_out_address,
             zero_to_one,
-            swap.has_fee_on_transfer(),
             pool_params,
         );
 
@@ -300,12 +300,12 @@ mod tests {
             String::from(concat!(
                 // group token in
                 "4c9edd5852cd905f086c759e8383e09bff1e68b3",
+                // isFeeToken (false)
+                "00",
                 // group token out
                 "dac17f958d2ee523a2206206994597c13d831ec7",
                 // zero for one
                 "01",
-                // isFoT (false)
-                "00",
                 // pool params:
                 // - intermediary token
                 "dac17f958d2ee523a2206206994597c13d831ec7",
@@ -465,12 +465,12 @@ mod tests {
             String::from(concat!(
                 // group_token in
                 "4c9edd5852cd905f086c759e8383e09bff1e68b3",
+                // isFeeToken (false)
+                "00",
                 // group_token out
                 "2260fac5e5542a773aa44fbcfedf7c193bc2c599",
                 // zero for one
                 "01",
-                // isFoT (false)
-                "00",
                 // pool params:
                 // - intermediary token USDT
                 "dac17f958d2ee523a2206206994597c13d831ec7",

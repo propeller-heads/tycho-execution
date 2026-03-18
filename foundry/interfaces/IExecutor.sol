@@ -36,6 +36,10 @@ interface IExecutor {
      * @return tokenOut The address of the output token.
      * @return outputToRouter Whether the protocol sends output to msg.sender
      *  rather than accepting a receiver parameter.
+     * @return isFeeToken Whether the input token is a fee-on-transfer token.
+     *  When true, the Dispatcher measures balances before and after transfers
+     *  to determine the actual amount received. When false, the nominal
+     *  transfer amount is trusted, saving external calls.
      */
     function getTransferData(bytes calldata data)
         external
@@ -45,7 +49,8 @@ interface IExecutor {
             address receiver,
             address tokenIn,
             address tokenOut,
-            bool outputToRouter
+            bool outputToRouter,
+            bool isFeeToken
         );
 
     /**

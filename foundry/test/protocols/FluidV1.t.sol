@@ -34,7 +34,7 @@ contract FluidV1ExecutorExposed is FluidV1Executor {
             TransferManager.TransferType transferType,
             address receiver,
             address tokenIn,
-            uint256 amount
+            uint256 amount,
         ) = this.getCallbackTransferData(msg.data);
         if (transferType == TransferManager.TransferType.Transfer) {
             IERC20(tokenIn).transfer(receiver, amount);
@@ -72,11 +72,12 @@ contract FluidV1ExecutorTest is Test, Constants {
     function testGetTransferData() public {
         bytes memory params = "";
 
-        (, address receiver, address tokenIn,,) =
+        (, address receiver, address tokenIn,,, bool isFeeToken) =
             executor.getTransferData(params);
 
         assertEq(tokenIn, address(0));
         assertEq(receiver, address(0));
+        assertFalse(isFeeToken);
     }
 
     function testGetCallbackTransferData() public {
@@ -86,7 +87,7 @@ contract FluidV1ExecutorTest is Test, Constants {
         address dexAddress = 0x1DD125C32e4B5086c63CC13B3cA02C4A2a61Fa9b;
         executor.setCurrentDex(IFluidV1Dex(dexAddress));
 
-        (, address receiver, address tokenIn, uint256 amount) =
+        (, address receiver, address tokenIn, uint256 amount,) =
             executor.getCallbackTransferData(data);
 
         assertEq(receiver, FLUIDV1_LIQUIDITY);
@@ -101,7 +102,7 @@ contract FluidV1ExecutorTest is Test, Constants {
         address dexAddress = 0x1DD125C32e4B5086c63CC13B3cA02C4A2a61Fa9b;
         executor.setCurrentDex(IFluidV1Dex(dexAddress));
 
-        (, address receiver, address tokenIn, uint256 amount) =
+        (, address receiver, address tokenIn, uint256 amount,) =
             executor.getCallbackTransferData(data);
 
         assertEq(receiver, FLUIDV1_LIQUIDITY);

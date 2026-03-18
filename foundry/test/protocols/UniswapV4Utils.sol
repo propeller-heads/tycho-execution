@@ -44,9 +44,9 @@ library UniswapV4Utils {
 
         return abi.encodePacked(
             tokenIn,
+            isFoT,
             tokenOut,
             zeroForOne,
-            isFoT,
             firstPool,
             pleEncode(encodedExtraPools)
         );

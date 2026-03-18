@@ -53,6 +53,7 @@ contract EkuboExecutorTest is Constants, TestUtils {
 
         bytes memory data = abi.encodePacked(
             NATIVE_TOKEN_ADDRESS, // tokenIn
+            false, // isFeeToken
             USDC_ADDR, // tokenOut
             ORACLE_CONFIG // poolConfig
         );
@@ -99,6 +100,7 @@ contract EkuboExecutorTest is Constants, TestUtils {
     function testMultiHopSwap() public setUpFork(22082754) {
         bytes memory data = abi.encodePacked(
             NATIVE_TOKEN_ADDRESS, // tokenIn
+            false, // isFeeToken
             USDC_ADDR, // tokenOut of 1st swap
             ORACLE_CONFIG, // config of 1st swap
             USDT_ADDR, // tokenOut of 2nd swap

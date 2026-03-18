@@ -90,6 +90,7 @@ mod tests {
         "0xba12222222228d8ba445958a75a0704d566bf2c8",
         true
     )]
+    #[cfg_attr(not(feature = "fork-tests"), ignore)]
     fn test_approval_needed(#[case] spender: &str, #[case] owner: &str, #[case] expected: bool) {
         let manager = ProtocolApprovalsManager::new().unwrap();
 

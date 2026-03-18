@@ -784,7 +784,6 @@ contract TychoRouter is AccessControl, Dispatcher, EIP712 {
             if (receiver == address(this)) {
                 _creditVault(msg.sender, tokenOut, amountOut);
             } else {
-                // the amountOut might actually be lower at this point (if fee/rebasing token)
                 amountOut = _transferOut(tokenOut, receiver, amountOut);
             }
         }

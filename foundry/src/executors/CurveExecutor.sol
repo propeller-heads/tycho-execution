@@ -70,7 +70,7 @@ contract CurveExecutor is IExecutor {
         external
         payable
     {
-        if (data.length != 63) {
+        if (data.length != 64) {
             revert CurveExecutor__InvalidDataLength();
         }
         address tokenIn;
@@ -119,11 +119,12 @@ contract CurveExecutor is IExecutor {
         )
     {
         tokenIn = address(bytes20(data[0:20]));
-        tokenOut = address(bytes20(data[20:40]));
-        pool = address(bytes20(data[40:60]));
-        poolType = uint8(data[60]);
-        i = int128(uint128(uint8(data[61])));
-        j = int128(uint128(uint8(data[62])));
+        // data[20] is isFeeToken, skipped here
+        tokenOut = address(bytes20(data[21:41]));
+        pool = address(bytes20(data[41:61]));
+        poolType = uint8(data[61]);
+        i = int128(uint128(uint8(data[62])));
+        j = int128(uint128(uint8(data[63])));
     }
 
     /**
@@ -143,11 +144,13 @@ contract CurveExecutor is IExecutor {
             address receiver,
             address tokenIn,
             address tokenOut,
-            bool outputToRouter
+            bool outputToRouter,
+            bool isFeeToken
         )
     {
         tokenIn = address(bytes20(data[0:20]));
-        tokenOut = address(bytes20(data[20:40]));
+        isFeeToken = data[20] != 0;
+        tokenOut = address(bytes20(data[21:41]));
         if (tokenIn == nativeToken) {
             // ETH transfers are handled in the Executor, so we need to set the transferType to TransferNativeInExecutor
             // to update the delta accounting accordingly.
@@ -164,7 +167,7 @@ contract CurveExecutor is IExecutor {
         }
         // The receiver of the funds will be the pool contract. This is only relevant
         // for performing an approval in the case of ProtocolWillDebit.
-        receiver = address(bytes20(data[40:60]));
+        receiver = address(bytes20(data[41:61]));
         outputToRouter = true;
     }
 }

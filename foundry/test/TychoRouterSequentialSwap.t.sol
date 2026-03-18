@@ -347,6 +347,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
 
         bytes memory curveStEthData = abi.encodePacked(
             ETH_ADDR_FOR_CURVE,
+            false,
             STETH_ADDR,
             STETH_POOL,
             uint8(1), // poolType = stable
@@ -356,7 +357,7 @@ contract TychoRouterSequentialSwapTest is TychoRouterTestSetup {
 
         address stethWethV2Pool = 0x4028DAAC072e492d34a3Afdbef0ba7e35D8b55C4;
         bytes memory usv2StethWethData =
-            encodeUniswapV2Swap(stethWethV2Pool, STETH_ADDR, WETH_ADDR);
+            encodeUniswapV2Swap(stethWethV2Pool, STETH_ADDR, WETH_ADDR, true);
 
         bytes[] memory swaps = new bytes[](2);
         swaps[0] = encodeSequentialSwap(address(curveExecutor), curveStEthData);

@@ -58,7 +58,13 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
 
     function testDecodeParams() public view {
         bytes memory data = abi.encodePacked(
-            WETH_ADDR, USDC_ADDR, TRICRYPTO_POOL, uint8(3), uint8(2), uint8(0)
+            WETH_ADDR,
+            false,
+            USDC_ADDR,
+            TRICRYPTO_POOL,
+            uint8(3),
+            uint8(2),
+            uint8(0)
         );
 
         (
@@ -80,14 +86,21 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
 
     function testGetTransferData() public {
         bytes memory data = abi.encodePacked(
-            WETH_ADDR, USDC_ADDR, TRICRYPTO_POOL, uint8(3), uint8(2), uint8(0)
+            WETH_ADDR,
+            false,
+            USDC_ADDR,
+            TRICRYPTO_POOL,
+            uint8(3),
+            uint8(2),
+            uint8(0)
         );
 
-        (, address receiver, address tokenIn,,) =
+        (, address receiver, address tokenIn,,, bool isFeeToken) =
             curveExecutorExposed.getTransferData(data);
 
         assertEq(tokenIn, WETH_ADDR);
         assertEq(receiver, TRICRYPTO_POOL);
+        assertFalse(isFeeToken);
     }
 
     function testTriPool() public {
@@ -319,6 +332,7 @@ contract CurveExecutorTest is Test, TestUtils, Constants {
         (int128 i, int128 j) = _getIndexes(tokenIn, tokenOut, pool);
         data = abi.encodePacked(
             tokenIn,
+            false,
             tokenOut,
             pool,
             poolType,
@@ -364,6 +378,7 @@ contract TychoRouterForCurveTest is TychoRouterTestSetup {
 
         bytes memory curveStEthData = abi.encodePacked(
             ETH_ADDR_FOR_CURVE,
+            false,
             STETH_ADDR,
             STETH_POOL,
             uint8(1), // poolType = stable
@@ -384,9 +399,10 @@ contract TychoRouterForCurveTest is TychoRouterTestSetup {
             swap
         );
 
-        // pools reports sending 999958043830457008 stETH to msg.sender (router)
-        // router actually got 999958043830457007 stETH
-        // after the last transfer to Alice, she gets 999958043830457005 stETH
+        // Pool reports sending 999958043830457008 stETH to router.
+        // Router balance check measures 999958043830457007 received.
+        // _transferOut (router -> ALICE) balance check measures
+        // 999958043830457005 due to stETH rebasing rounding.
         assertEq(amountOut, 999958043830457005);
         assertEq(IERC20(STETH_ADDR).balanceOf(ALICE), amountOut);
         assertEq(ALICE.balance, 0);

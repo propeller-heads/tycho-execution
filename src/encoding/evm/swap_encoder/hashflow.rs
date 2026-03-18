@@ -100,6 +100,7 @@ impl SwapEncoder for HashflowSwapEncoder {
                 )))?;
             hashflow_calldata.extend_from_slice(value);
         }
+        hashflow_calldata.push(u8::from(swap.is_input_fee_token()));
         let args = (&hashflow_calldata[..],);
         Ok(args.abi_encode_packed())
     }
@@ -267,7 +268,7 @@ mod test {
             .unwrap();
         let hex_swap = encode(&encoded_swap);
 
-        let expected_swap = hashflow_calldata.to_string()[2..].to_string();
+        let expected_swap = format!("{}00", &hashflow_calldata.to_string()[2..]);
         assert_eq!(hex_swap, expected_swap);
     }
 }

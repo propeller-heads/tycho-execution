@@ -76,6 +76,7 @@ contract EkuboV3ExecutorTest is Constants, TestUtils {
 
         bytes memory data = abi.encodePacked(
             address(0), // tokenIn (native ETH = address(0))
+            false, // isFeeToken
             USDC_ADDR, // tokenOut
             ORACLE_CONFIG // poolConfig
         );
@@ -106,6 +107,7 @@ contract EkuboV3ExecutorTest is Constants, TestUtils {
 
         bytes memory data = abi.encodePacked(
             USDC_ADDR, // tokenIn
+            false, // isFeeToken
             address(0), // tokenOut (native ETH = address(0))
             ORACLE_CONFIG // config
         );
@@ -136,6 +138,7 @@ contract EkuboV3ExecutorTest is Constants, TestUtils {
 
         bytes memory data = abi.encodePacked(
             USDC_ADDR, // tokenIn
+            false, // isFeeToken
             USDT_ADDR, // tokenOut
             bytes32(
                 0x5555ff9ff2757500bf4ee020dcfd0210cffa41be000053e2d6238da480000032

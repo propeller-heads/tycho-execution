@@ -51,7 +51,12 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
 
         uint256 originalAmountIn = 200000000; // 200 USDC
         bytes memory params = abi.encodePacked(
-            USDC_ADDR, ONDO_ADDR, uint8(2), originalAmountIn, bebopCalldata
+            USDC_ADDR,
+            false,
+            ONDO_ADDR,
+            uint8(2),
+            originalAmountIn,
+            bebopCalldata
         );
 
         (
@@ -88,14 +93,20 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
 
         uint256 originalAmountIn = 200000000; // 200 USDC
         bytes memory params = abi.encodePacked(
-            USDC_ADDR, ONDO_ADDR, uint8(2), originalAmountIn, bebopCalldata
+            USDC_ADDR,
+            false,
+            ONDO_ADDR,
+            uint8(2),
+            originalAmountIn,
+            bebopCalldata
         );
 
-        (, address decodedReceiver, address tokenIn,,) =
+        (, address decodedReceiver, address tokenIn,,, bool isFeeToken) =
             bebopExecutor.getTransferData(params);
 
         assertEq(tokenIn, USDC_ADDR, "tokenIn mismatch");
         assertEq(decodedReceiver, BEBOP_SETTLEMENT, "receiver mismatch");
+        assertFalse(isFeeToken);
     }
 
     // Single Order Tests
@@ -117,7 +128,7 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
         deal(tokenIn, address(bebopExecutor), amountIn);
 
         bytes memory params = abi.encodePacked(
-            tokenIn, tokenOut, partialFillOffset, amountIn, bebopCalldata
+            tokenIn, false, tokenOut, partialFillOffset, amountIn, bebopCalldata
         );
 
         uint256 initialTokenOutBalance =
@@ -159,6 +170,7 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
 
         bytes memory params = abi.encodePacked(
             tokenIn,
+            false,
             tokenOut,
             partialFillOffset,
             amountIn * 2, // this is the original amount in
@@ -205,7 +217,7 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
         deal(tokenIn, address(bebopExecutor), amountIn);
 
         bytes memory params = abi.encodePacked(
-            tokenIn, tokenOut, partialFillOffset, amountIn, bebopCalldata
+            tokenIn, false, tokenOut, partialFillOffset, amountIn, bebopCalldata
         );
 
         uint256 initialTokenOutBalance =
@@ -249,6 +261,7 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
 
         bytes memory params = abi.encodePacked(
             tokenIn,
+            false,
             tokenOut,
             partialFillOffset,
             amountIn * 2, // this is the original amount from the quote
@@ -285,7 +298,12 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
         // Create params with correct length first
         uint256 originalAmountIn = 1e18;
         bytes memory validParams = abi.encodePacked(
-            WETH_ADDR, USDC_ADDR, uint8(2), originalAmountIn, bebopCalldata
+            WETH_ADDR,
+            false,
+            USDC_ADDR,
+            uint8(2),
+            originalAmountIn,
+            bebopCalldata
         );
 
         // Verify valid params work
@@ -299,7 +317,8 @@ contract BebopExecutorTest is Constants, Permit2TestHelper, TestUtils {
         bebopExecutor.decodeData(paramsWithExtra);
 
         // Try with insufficient data, should fail
-        bytes memory tooShortParams = abi.encodePacked(WETH_ADDR, USDC_ADDR);
+        bytes memory tooShortParams =
+            abi.encodePacked(WETH_ADDR, false, USDC_ADDR);
         // Missing rest of the data
 
         vm.expectRevert(BebopExecutor.BebopExecutor__InvalidDataLength.selector);

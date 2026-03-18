@@ -79,14 +79,15 @@ fn test_single_swap_strategy_encoder() {
     // time) it's hard to assert back
 
     let expected_swap = String::from(concat!(
-        // length of encoded swap (81 bytes: 20 pool + 20 tokenIn + 20 tokenOut + 1 isFoT)
+        // length of encoded swap (81 bytes: 20 executor + 20 pool + 20 tokenIn + 1 isFeeToken + 20
+        // tokenOut)
         "0000000000000000000000000000000000000000000000000000000000000051",
         // Swap data
         "5615deb798bb3e4dfa0139dfa1b3d433cc23b72f", // executor address
         "a478c2975ab1ea89e8196811f51a7b7ade33eb11", // component id (pool address)
         "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // tokenIn
+        "00",                                       // isFeeToken (false)
         "6b175474e89094c44da98b954eedeac495271d0f", // tokenOut
-        "00",                                       // isFoT (false)
         "000000000000000000000000000000",           // padding to 32-byte boundary
     ));
     let hex_calldata = encode(&calldata);
@@ -166,8 +167,8 @@ fn test_single_swap_strategy_encoder_transfer_from() {
         "5615deb798bb3e4dfa0139dfa1b3d433cc23b72f", // executor address
         "a478c2975ab1ea89e8196811f51a7b7ade33eb11", // component id (pool address)
         "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // tokenIn
+        "00",                                       // isFeeToken (false)
         "6b175474e89094c44da98b954eedeac495271d0f", // tokenOut
-        "00",                                       // isFoT (false)
         "000000000000000000000000000000",           // padding to 32-byte boundary
     ]
     .join("");

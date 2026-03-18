@@ -69,13 +69,14 @@ contract BalancerV2Executor is IExecutor {
         pure
         returns (address tokenIn, address tokenOut, bytes32 poolId)
     {
-        if (data.length != 72) {
+        if (data.length != 73) {
             revert BalancerV2Executor__InvalidDataLength();
         }
 
         tokenIn = address(bytes20(data[0:20]));
-        tokenOut = address(bytes20(data[20:40]));
-        poolId = bytes32(data[40:72]);
+        // data[20] is isFeeToken, skipped here
+        tokenOut = address(bytes20(data[21:41]));
+        poolId = bytes32(data[41:73]);
     }
 
     function getTransferData(bytes calldata data)
@@ -86,15 +87,17 @@ contract BalancerV2Executor is IExecutor {
             address receiver,
             address tokenIn,
             address tokenOut,
-            bool outputToRouter
+            bool outputToRouter,
+            bool isFeeToken
         )
     {
-        if (data.length != 72) {
+        if (data.length != 73) {
             revert BalancerV2Executor__InvalidDataLength();
         }
 
         tokenIn = address(bytes20(data[0:20]));
-        tokenOut = address(bytes20(data[20:40]));
+        isFeeToken = data[20] != 0;
+        tokenOut = address(bytes20(data[21:41]));
         receiver = _VAULT;
         transferType = TransferManager.TransferType.ProtocolWillDebit;
         outputToRouter = false;

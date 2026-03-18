@@ -142,7 +142,8 @@ contract FluidV1Executor is IExecutor, ICallback {
             address receiver,
             address tokenIn,
             address tokenOut,
-            bool outputToRouter
+            bool outputToRouter,
+            bool isFeeToken
         )
     {
         if (data.length >= 41) {
@@ -153,6 +154,7 @@ contract FluidV1Executor is IExecutor, ICallback {
             address(0),
             address(0),
             tokenOut,
+            false,
             false
         );
     }
@@ -164,7 +166,8 @@ contract FluidV1Executor is IExecutor, ICallback {
             TransferManager.TransferType transferType,
             address receiver,
             address tokenIn,
-            uint256 amount
+            uint256 amount,
+            bool isFeeToken
         )
     {
         (tokenIn, amount) = abi.decode(data[4:68], (address, uint256));

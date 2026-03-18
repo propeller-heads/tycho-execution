@@ -29,7 +29,7 @@ contract EkuboExecutor is IExecutor, ILocker, IPayer, ICallback {
     ICore private immutable _core;
     address private immutable _mevResist;
 
-    uint256 private constant _POOL_DATA_OFFSET = 56;
+    uint256 private constant _POOL_DATA_OFFSET = 57;
     uint256 private constant _HOP_BYTE_LEN = 52;
 
     bytes4 private constant _LOCKED_SELECTOR = 0xb45a3c0e; // locked(uint256)
@@ -62,7 +62,7 @@ contract EkuboExecutor is IExecutor, ILocker, IPayer, ICallback {
         external
         payable
     {
-        if (data.length < 72) {
+        if (data.length < 73) {
             revert EkuboExecutor__InvalidDataLength();
         }
 
@@ -254,20 +254,23 @@ contract EkuboExecutor is IExecutor, ILocker, IPayer, ICallback {
             address receiver,
             address tokenIn,
             address tokenOut,
-            bool outputToRouter
+            bool outputToRouter,
+            bool isFeeToken
         )
     {
         uint256 hopsLength =
             (data.length - _POOL_DATA_OFFSET + 36) / _HOP_BYTE_LEN;
-        uint256 lastHopOffset = 20 + (hopsLength - 1) * _HOP_BYTE_LEN;
+        uint256 lastHopOffset = 21 + (hopsLength - 1) * _HOP_BYTE_LEN;
         tokenIn = address(bytes20(data[0:20]));
+        isFeeToken = data[20] != 0;
         tokenOut = address(bytes20(data[lastHopOffset:lastHopOffset + 20]));
         return (
             TransferManager.TransferType.None,
             address(0),
             tokenIn,
             tokenOut,
-            false
+            false,
+            isFeeToken
         );
     }
 
@@ -278,7 +281,8 @@ contract EkuboExecutor is IExecutor, ILocker, IPayer, ICallback {
             TransferManager.TransferType transferType,
             address receiver,
             address tokenIn,
-            uint256 amount
+            uint256 amount,
+            bool isFeeToken
         )
     {
         bytes4 selector = bytes4(data[:4]);

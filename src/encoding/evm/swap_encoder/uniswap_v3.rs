@@ -49,7 +49,14 @@ impl SwapEncoder for UniswapV3SwapEncoder {
         let pool_fee_u24 = pad_or_truncate_to_size::<3>(&pool_fee_bytes)
             .map_err(|_| EncodingError::FatalError("Failed to extract fee bytes".to_string()))?;
 
-        let args = (token_in_address, token_out_address, pool_fee_u24, component_id, zero_to_one);
+        let args = (
+            token_in_address,
+            swap.is_input_fee_token(),
+            token_out_address,
+            pool_fee_u24,
+            component_id,
+            zero_to_one,
+        );
 
         Ok(args.abi_encode_packed())
     }
@@ -109,6 +116,8 @@ mod tests {
             String::from(concat!(
                 // in token
                 "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                // isFeeToken (false)
+                "00",
                 // out token
                 "6b175474e89094c44da98b954eedeac495271d0f",
                 // fee

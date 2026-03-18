@@ -42,15 +42,19 @@ contract UniswapV2Executor is IExecutor {
         address target;
         address tokenIn;
         address tokenOut;
-        bool isFoT;
+        bool isFeeToken;
 
-        (target, tokenIn, tokenOut, isFoT) = _decodeData(data);
+        (target, tokenIn, isFeeToken, tokenOut) = _decodeData(data);
 
         bool zeroForOne = (tokenIn < tokenOut);
 
         IUniswapV2Pair pool = IUniswapV2Pair(target);
 
-        _swap(pool, amountIn, zeroForOne, receiver);
+        if (isFeeToken) {
+            _swapFoT(pool, tokenIn, zeroForOne, receiver);
+        } else {
+            _swap(pool, amountIn, zeroForOne, receiver);
+        }
     }
 
     function _swap(
@@ -101,15 +105,20 @@ contract UniswapV2Executor is IExecutor {
     function _decodeData(bytes calldata data)
         internal
         pure
-        returns (address target, address tokenIn, address tokenOut, bool isFoT)
+        returns (
+            address target,
+            address tokenIn,
+            bool isFeeToken,
+            address tokenOut
+        )
     {
         if (data.length != 61) {
             revert UniswapV2Executor__InvalidDataLength();
         }
         target = address(bytes20(data[0:20]));
         tokenIn = address(bytes20(data[20:40]));
-        tokenOut = address(bytes20(data[40:60]));
-        isFoT = data[60] != 0;
+        isFeeToken = data[40] != 0;
+        tokenOut = address(bytes20(data[41:61]));
     }
 
     function _getAmountOut(
@@ -132,7 +141,8 @@ contract UniswapV2Executor is IExecutor {
             address receiver,
             address tokenIn,
             address tokenOut,
-            bool outputToRouter
+            bool outputToRouter,
+            bool isFeeToken
         )
     {
         if (data.length != 61) {
@@ -140,7 +150,8 @@ contract UniswapV2Executor is IExecutor {
         }
         address target = address(bytes20(data[0:20]));
         tokenIn = address(bytes20(data[20:40]));
-        tokenOut = address(bytes20(data[40:60]));
+        isFeeToken = data[40] != 0;
+        tokenOut = address(bytes20(data[41:61]));
 
         receiver = target;
         transferType = TransferManager.TransferType.Transfer;

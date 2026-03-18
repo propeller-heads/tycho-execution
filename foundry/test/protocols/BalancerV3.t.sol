@@ -23,7 +23,7 @@ contract BalancerV3ExecutorExposed is BalancerV3Executor {
     }
 
     fallback(bytes calldata data) external returns (bytes memory) {
-        (, address receiver, address tokenIn, uint256 amount) =
+        (, address receiver, address tokenIn, uint256 amount,) =
             this.getCallbackTransferData(data);
         IERC20(tokenIn).transfer(receiver, amount);
         return abi.encode(_swapCallback(data));
@@ -48,7 +48,12 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
 
     function testDecodeParams() public view {
         bytes memory params = abi.encodePacked(
-            uint256(1 ether), osETH_ADDR, waEthWETH_ADDR, WETH_osETH_pool, BOB
+            uint256(1 ether),
+            osETH_ADDR,
+            false,
+            waEthWETH_ADDR,
+            WETH_osETH_pool,
+            BOB
         );
 
         (
@@ -69,18 +74,19 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
     function testGetTransferData() public {
         bytes memory params = "";
 
-        (, address receiver, address tokenIn,,) =
+        (, address receiver, address tokenIn,,, bool isFeeToken) =
             balancerV3Exposed.getTransferData(params);
 
         assertEq(tokenIn, address(0));
         assertEq(receiver, address(0));
+        assertFalse(isFeeToken);
     }
 
     function testGetCallbackTransferData() public {
         uint256 amountOwed = 1 ether;
         bytes memory params =
             abi.encodePacked(amountOwed, WBTC_ADDR, address(0), address(0));
-        (, address receiver, address tokenIn, uint256 amount) =
+        (, address receiver, address tokenIn, uint256 amount,) =
             balancerV3Exposed.getCallbackTransferData(params);
         assertEq(receiver, 0xbA1333333333a1BA1108E8412f11850A5C319bA9);
         assertEq(tokenIn, WBTC_ADDR);
@@ -90,6 +96,7 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
     function testSwapInvalidDataLength() public {
         bytes memory invalidParams = abi.encodePacked(
             osETH_ADDR,
+            false,
             waEthWETH_ADDR,
             WETH_osETH_pool,
             TransferManager.TransferType.None
@@ -101,8 +108,9 @@ contract BalancerV3ExecutorTest is Constants, TestUtils {
 
     function testSwap() public {
         uint256 amountIn = 10 ** 18;
-        bytes memory protocolData =
-            abi.encodePacked(osETH_ADDR, waEthWETH_ADDR, WETH_osETH_pool);
+        bytes memory protocolData = abi.encodePacked(
+            osETH_ADDR, false, waEthWETH_ADDR, WETH_osETH_pool
+        );
 
         deal(osETH_ADDR, address(balancerV3Exposed), amountIn);
 

@@ -53,12 +53,13 @@ contract MaverickV2Executor is IExecutor {
         pure
         returns (address target, IERC20 inToken, address tokenOut)
     {
-        if (data.length != 60) {
+        if (data.length != 61) {
             revert MaverickV2Executor__InvalidDataLength();
         }
         target = address(bytes20(data[0:20]));
         inToken = IERC20(address(bytes20(data[20:40])));
-        tokenOut = address(bytes20(data[40:60]));
+        // data[40] is isFeeToken, skipped here
+        tokenOut = address(bytes20(data[41:61]));
     }
 
     function getTransferData(bytes calldata data)
@@ -69,15 +70,17 @@ contract MaverickV2Executor is IExecutor {
             address receiver,
             address tokenIn,
             address tokenOut,
-            bool outputToRouter
+            bool outputToRouter,
+            bool isFeeToken
         )
     {
-        if (data.length != 60) {
+        if (data.length != 61) {
             revert MaverickV2Executor__InvalidDataLength();
         }
         receiver = address(bytes20(data[0:20]));
         tokenIn = address(bytes20(data[20:40]));
-        tokenOut = address(bytes20(data[40:60]));
+        isFeeToken = data[40] != 0;
+        tokenOut = address(bytes20(data[41:61]));
         transferType = TransferManager.TransferType.Transfer;
         outputToRouter = false;
     }

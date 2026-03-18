@@ -39,6 +39,7 @@ impl SwapEncoder for MaverickV2SwapEncoder {
         let args = (
             component_id,
             bytes_to_address(&swap.token_in().address)?,
+            swap.is_input_fee_token(),
             bytes_to_address(&swap.token_out().address)?,
         );
         Ok(args.abi_encode_packed())
@@ -101,6 +102,8 @@ mod tests {
                 "14Cf6D2Fe3E1B326114b07d22A6F6bb59e346c67",
                 // token in
                 "40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f",
+                // isFeeToken (false)
+                "00",
                 // token out
                 "A0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
             ))

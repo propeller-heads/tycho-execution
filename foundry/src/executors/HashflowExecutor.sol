@@ -83,7 +83,7 @@ contract HashflowExecutor is IExecutor {
         pure
         returns (IHashflowRouter.RFQTQuote memory quote)
     {
-        if (data.length != 325) {
+        if (data.length != 326) {
             revert HashflowExecutor__InvalidDataLength();
         }
 
@@ -102,6 +102,7 @@ contract HashflowExecutor is IExecutor {
         quote.nonce = uint256(bytes32(data[196:228]));
         quote.txid = bytes32(data[228:260]);
         quote.signature = data[260:325];
+        // data[325] is isFeeToken, decoded in getTransferData
     }
 
     function getTransferData(bytes calldata data)
@@ -112,16 +113,18 @@ contract HashflowExecutor is IExecutor {
             address receiver,
             address tokenIn,
             address tokenOut,
-            bool outputToRouter
+            bool outputToRouter,
+            bool isFeeToken
         )
     {
-        if (data.length != 325) {
+        if (data.length != 326) {
             revert HashflowExecutor__InvalidDataLength();
         }
 
         transferType = TransferManager.TransferType.ProtocolWillDebit;
         tokenIn = address(bytes20(data[60:80]));
         tokenOut = address(bytes20(data[80:100]));
+        isFeeToken = data[325] != 0;
         receiver = hashflowRouter;
         outputToRouter = true;
     }

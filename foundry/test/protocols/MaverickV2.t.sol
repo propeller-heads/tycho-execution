@@ -32,7 +32,7 @@ contract MaverickV2ExecutorTest is TestUtils, Constants {
 
     function testDecodeParams() public view {
         bytes memory params =
-            abi.encodePacked(GHO_USDC_POOL, GHO_ADDR, USDC_ADDR);
+            abi.encodePacked(GHO_USDC_POOL, GHO_ADDR, false, USDC_ADDR);
 
         (address target, IERC20 tokenIn, address tokenOut) =
             maverickV2Exposed.decodeParams(params);
@@ -51,19 +51,20 @@ contract MaverickV2ExecutorTest is TestUtils, Constants {
 
     function testGetTransferData() public {
         bytes memory params =
-            abi.encodePacked(GHO_USDC_POOL, GHO_ADDR, USDC_ADDR);
+            abi.encodePacked(GHO_USDC_POOL, GHO_ADDR, false, USDC_ADDR);
 
-        (, address receiver, address tokenIn,,) =
+        (, address receiver, address tokenIn,,, bool isFeeToken) =
             maverickV2Exposed.getTransferData(params);
 
         assertEq(tokenIn, GHO_ADDR);
         assertEq(receiver, GHO_USDC_POOL);
+        assertFalse(isFeeToken);
     }
 
     function testSwap() public {
         uint256 amountIn = 10e18;
         bytes memory protocolData =
-            abi.encodePacked(GHO_USDC_POOL, GHO_ADDR, USDC_ADDR);
+            abi.encodePacked(GHO_USDC_POOL, GHO_ADDR, false, USDC_ADDR);
 
         deal(GHO_ADDR, address(maverickV2Exposed), amountIn);
         uint256 balanceBefore = USDC.balanceOf(BOB);
