@@ -36,7 +36,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.105"
 thiserror = "1.0.69"
 tokio = { version = "1.38.0", features = ["full"] }
-tycho-common = { git = "https://github.com/propeller-heads/tycho-indexer.git", rev = "ecc477d860e0371b4932c3c12747fa3256185faf" }
+tycho-common = { git = "https://github.com/propeller-heads/tycho-indexer.git", rev = "c613596572e15ac1e38085c767cc8e82f6697906" }
 typetag = { version = "0.2", optional = true }
 
 alloy = { version = "1.0.35", features = [
