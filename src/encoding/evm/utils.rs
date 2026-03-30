@@ -138,7 +138,7 @@ pub(crate) fn create_encoding_runtime() -> Result<(Handle, SafeRuntime), Encodin
 /// Unlike `tokio::task::block_in_place`, this works on any runtime flavor
 /// (including current-thread) because the spawned thread has no tokio context.
 /// Typical usage: `on_blocking_thread(|| handle.block_on(some_future))`.
-pub(crate) fn on_blocking_thread<F, T>(f: F) -> T
+pub(crate) fn on_blocking_thread<F, T>(f: F) -> Result<T, EncodingError>
 where
     F: FnOnce() -> T + Send,
     T: Send,
@@ -146,7 +146,7 @@ where
     std::thread::scope(|s| {
         s.spawn(f)
             .join()
-            .expect("blocking thread panicked")
+            .map_err(|_| EncodingError::FatalError("blocking thread panicked".to_string()))
     })
 }
 

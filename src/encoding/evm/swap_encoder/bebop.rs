@@ -89,7 +89,7 @@ impl SwapEncoder for BebopSwapEncoder {
                         .request_signed_quote(params)
                         .await
                 })
-            })?;
+            })??;
             let bebop_calldata = signed_quote
                 .quote_attributes
                 .get("calldata")

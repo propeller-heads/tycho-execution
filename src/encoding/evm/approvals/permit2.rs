@@ -101,7 +101,7 @@ impl TryFrom<&models::PermitSingle> for PermitSingle {
 impl Permit2 {
     pub fn new() -> Result<Self, EncodingError> {
         let (handle, runtime) = create_encoding_runtime()?;
-        let client = on_blocking_thread(|| handle.block_on(get_client()))?;
+        let client = on_blocking_thread(|| handle.block_on(get_client()))??;
         Ok(Self {
             address: Address::from_str("0x000000000022D473030F116dDEE9F6B43aC78BA3")
                 .map_err(|_| EncodingError::FatalError("Permit2 address not valid".to_string()))?,
@@ -129,7 +129,7 @@ impl Permit2 {
         let output = on_blocking_thread(|| {
             self.runtime_handle
                 .block_on(async { self.client.call(tx).await })
-        });
+        })?;
         match output {
             Ok(response) => {
                 let allowance: Allowance = Allowance::abi_decode(&response).map_err(|_| {
@@ -347,7 +347,8 @@ mod tests {
                 // Wait for the transaction to be mined
                 pending_tx.get_receipt().await.unwrap()
             })
-        });
+        })
+        .unwrap();
         assert!(receipt.status(), "Approve transaction failed");
 
         let spender = Bytes::from_str("0xba12222222228d8ba445958a75a0704d566bf2c8").unwrap();

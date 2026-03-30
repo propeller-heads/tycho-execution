@@ -70,7 +70,7 @@ impl SwapEncoder for HashflowSwapEncoder {
                     })
                     .await
             })
-        })?;
+        })??;
 
         // Encode packed data for the executor
         // Format: approval_needed | hashflow_calldata[..]

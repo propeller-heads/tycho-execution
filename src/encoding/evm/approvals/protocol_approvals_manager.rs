@@ -26,7 +26,7 @@ pub struct ProtocolApprovalsManager {
 impl ProtocolApprovalsManager {
     pub fn new() -> Result<Self, EncodingError> {
         let (handle, runtime) = create_encoding_runtime()?;
-        let client = on_blocking_thread(|| handle.block_on(get_client()))?;
+        let client = on_blocking_thread(|| handle.block_on(get_client()))??;
         Ok(Self { client, runtime_handle: handle, runtime })
     }
 
@@ -49,7 +49,7 @@ impl ProtocolApprovalsManager {
         let output = on_blocking_thread(|| {
             self.runtime_handle
                 .block_on(async { self.client.call(tx).await })
-        });
+        })?;
         match output {
             Ok(response) => {
                 let allowance: U256 = U256::abi_decode(&response).map_err(|_| {
