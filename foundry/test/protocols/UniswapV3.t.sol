@@ -6,6 +6,7 @@ import "@src/executors/UniswapV3Executor.sol";
 import {Constants} from "../Constants.sol";
 import {Permit2TestHelper} from "../Permit2TestHelper.sol";
 import {Test} from "../../lib/forge-std/src/Test.sol";
+import {Dispatcher__MismatchedAmount} from "../../src/Dispatcher.sol";
 
 contract UniswapV3ExecutorExposed is UniswapV3Executor {
     constructor() UniswapV3Executor() {}
@@ -188,6 +189,46 @@ contract UniswapV3ExecutorTest is Test, TestUtils, Constants {
     }
 }
 
+// Fake UniswapV3-compatible pool used as an exploit probe.
+//
+// Triggers uniswapV3SwapCallback with amount0Delta = amountIn/2 (intentionally
+// less than the declared amountIn), causing the router to transfer that partial
+// amount here.  The pool keeps the WETH and returns nothing to the recipient.
+// This tests the partial-callback drain vector patched in Dispatcher.sol.
+contract FakeMaliciousUniV3Pool {
+    using SafeERC20 for IERC20;
+
+    address public immutable tychoRouter;
+
+    constructor(address tychoRouter_) {
+        tychoRouter = tychoRouter_;
+    }
+
+    function swap(
+        address, /* recipient */
+        bool, /* zeroForOne */
+        int256 amountSpecified,
+        uint160, /* sqrtPriceLimitX96 */
+        bytes calldata data // protocolData: tokenIn|tokenOut|fee|target|zeroForOne
+    ) external returns (int256, int256) {
+        // Claim only half of amountIn so the old cyclic adjustment
+        bytes memory callbackPayload = abi.encodeWithSelector(
+            bytes4(0xfa461e33), // callback selector
+            // This must be amount / 2 in order for the exploit to work
+            // otherwise, we get an unexpected input delta
+            int256(uint256(amountSpecified / 2)), // amount0 delta
+            int256(0), // amount1 delta
+            data // protocol data
+        );
+
+        (bool success,) = tychoRouter.call(callbackPayload);
+        require(success, "callback failed");
+
+        // Pool keeps the WETH — no transfer back to recipient.
+        return (amountSpecified, 0);
+    }
+}
+
 contract TychoRouterForUniswapV3Test is TychoRouterTestSetup {
     function testSingleSwapUSV3Permit2() public {
         // Trade 1 WETH for DAI with 1 swap on Uniswap V3 using Permit2
@@ -249,5 +290,80 @@ contract TychoRouterForUniswapV3Test is TychoRouterTestSetup {
 
         // 1000 USDC ~= 0.0095 BTC -> 1 BTC ~= 105k USDC ✅
         assertEq(IERC20(BASE_cbBTC).balanceOf(BOB), 950567);
+    }
+
+    function testCyclicVaultSwapPartialCallbackDrainReverts() public {
+        // An exploit where the pool encodes exactly half of the input amount to take
+        // during the callback. Before our fix, the numbers fit together nicely,
+        // creating an expected delta amount, allowing the malicious pool to steal
+        // router funds unnoticed.
+        //
+        // The amount in is 1 ether.
+        // The pool uses 0.5 ether, and transfers nothing out.
+        // This results in delta(WETH) = - 0.5
+        // The router balance after the swap is 0.5 ether.
+        //
+        // Before the fix, our cyclic adjustment was:
+        // balanceAfterSwap = balanceAfterSwap + amountIn
+        //                  = 0.5 + 1
+        //                  = 1.5
+        //
+        // Which means:
+        // amountOut = balanceAfterSwap - balanceBeforeSwap;
+        //           = 1.5 - 1;
+        //           = 0.5
+        //
+        // Then, when transferring the output token (0.5) back to the user,
+        // this results in an input delta of 1 ether, which is allowed, since this is
+        // exactly the amount in.
+        //
+        // After our fix we use the input delta instead of amountIn, so this is no
+        // longer possible.
+        uint256 amountIn = 1 ether;
+
+        // Seed the router with WETH (simulates tokens from other users).
+        deal(WETH_ADDR, tychoRouterAddr, amountIn);
+        uint256 routerWethBefore = IERC20(WETH_ADDR).balanceOf(tychoRouterAddr);
+
+        vm.startPrank(ALICE);
+
+        FakeMaliciousUniV3Pool fakePool =
+            new FakeMaliciousUniV3Pool(tychoRouterAddr);
+
+        // protocolData layout: tokenIn (20) | tokenOut (20) | fee (3) | target
+        // (20) | zeroForOne (1). tokenOut == tokenIn triggers cyclic detection.
+        bytes memory protocolData = abi.encodePacked(
+            WETH_ADDR, WETH_ADDR, uint24(3000), address(fakePool), false
+        );
+        bytes memory swapData =
+            encodeSingleSwap(address(usv3Executor), protocolData);
+
+        // TODO: shouldn't the error be propagated actually?
+        // Innermost revert is Dispatcher__MismatchedAmount, though this isn't
+        // propagated upwards by our fake pool, so we catch "Callback failed".
+        vm.expectRevert("callback failed");
+        tychoRouter.singleSwapUsingVault(
+            amountIn,
+            WETH_ADDR,
+            WETH_ADDR,
+            1,
+            tychoRouterAddr,
+            noClientFee(),
+            swapData
+        );
+
+        vm.stopPrank();
+
+        // EVM revert rolls back the callback transfer — no WETH was stolen.
+        assertEq(
+            IERC20(WETH_ADDR).balanceOf(tychoRouterAddr),
+            routerWethBefore,
+            "router WETH must be unchanged after the reverted drain attempt"
+        );
+        assertEq(
+            IERC20(WETH_ADDR).balanceOf(address(fakePool)),
+            0,
+            "fake pool must hold nothing after the reverted drain attempt"
+        );
     }
 }

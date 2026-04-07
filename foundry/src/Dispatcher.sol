@@ -18,6 +18,7 @@ error Dispatcher__NonContractExecutor();
 error Dispatcher__InvalidDataLength();
 error Dispatcher__AddressZero();
 error Dispatcher__ExecutorAlreadyExists(address executor);
+error Dispatcher__MismatchedAmount(uint256 expectedAmount, uint256 amount);
 
 /**
  * @title Dispatcher - Dispatch execution to external contracts
@@ -44,6 +45,9 @@ contract Dispatcher is TransferManager {
     // keccak256("Dispatcher#IS_FIRST_SWAP_SLOT")
     uint256 private constant _IS_FIRST_SWAP_SLOT =
         0x8c47a7e3f4c2e1b5a6d9f0e8c7b3a2d1e4f5c6b7a8d9e0f1c2b3a4d5e6f7c8d9;
+    // keccak256("Dispatcher#SWAP_INPUT_AMOUNT_SLOT")
+    uint256 private constant _SWAP_INPUT_AMOUNT_SLOT =
+        0xce9e2e8e50d57f2d688020ea7ab16e2039bcf4dc7175eba827e178586597bb39;
 
     uint256 public constant DELAY_EXECUTOR_ACTIVATION = 3 days;
 
@@ -100,6 +104,7 @@ contract Dispatcher is TransferManager {
             tstore(_IS_FIRST_SWAP_SLOT, isFirstSwap)
             tstore(_IS_SPLIT_SWAP_SLOT, isSplitSwap)
             tstore(_INPUT_TRANSFER_PERFORMED_SLOT, 0)
+            tstore(_SWAP_INPUT_AMOUNT_SLOT, amount)
         }
 
         // slither-disable-next-line calls-loop
@@ -159,6 +164,7 @@ contract Dispatcher is TransferManager {
             tstore(_CURRENTLY_SWAPPING_EXECUTOR_SLOT, 0)
             tstore(_IS_FIRST_SWAP_SLOT, 0)
             tstore(_IS_SPLIT_SWAP_SLOT, 0)
+            tstore(_SWAP_INPUT_AMOUNT_SLOT, 0)
         }
 
         // Revoke any lingering allowance the protocol didn't consume.
@@ -248,6 +254,18 @@ contract Dispatcher is TransferManager {
             (TransferManager.TransferType, address, address, uint256)
         );
 
+        uint256 expectedAmount;
+        assembly {
+            expectedAmount := tload(_SWAP_INPUT_AMOUNT_SLOT)
+        }
+        // The amount is controller by the pool during callback and can be different than the expectedAmount
+        // (set at the beginning of the swap). The TychoRouter only supports exact_in swaps, so this should never happen.
+        if (
+            amount != expectedAmount
+                && transferType != TransferManager.TransferType.None
+        ) {
+            revert Dispatcher__MismatchedAmount(expectedAmount, amount);
+        }
         _transfer(
             receiver,
             transferType,
