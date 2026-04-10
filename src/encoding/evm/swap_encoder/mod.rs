@@ -11,6 +11,7 @@ mod hashflow;
 mod maverick_v2;
 mod rocketpool;
 mod slipstreams;
+mod supernova_v3;
 pub mod swap_encoder_registry;
 mod uniswap_v2;
 mod uniswap_v3;
