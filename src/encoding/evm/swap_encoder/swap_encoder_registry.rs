@@ -14,7 +14,8 @@ use crate::encoding::{
             hashflow::HashflowSwapEncoder, liquidity_party::LiquidityPartySwapEncoder,
             liquorice::LiquoriceSwapEncoder, maverick_v2::MaverickV2SwapEncoder,
             rocketpool::RocketpoolSwapEncoder, slipstreams::SlipstreamsSwapEncoder,
-            uniswap_v2::UniswapV2SwapEncoder, uniswap_v3::UniswapV3SwapEncoder,
+            supernova_v3::SupernovaV3SwapEncoder, uniswap_v2::UniswapV2SwapEncoder,
+            uniswap_v3::UniswapV3SwapEncoder,
             uniswap_v4::UniswapV4SwapEncoder, weth::WethSwapEncoder,
         },
     },
@@ -115,6 +116,18 @@ impl SwapEncoderRegistry {
             }
             "pancakeswap_v3" => {
                 Ok(Box::new(UniswapV3SwapEncoder::new(executor_address, self.chain, config)?))
+            }
+            // Supernova V3 is Algebra Integral 1.2.2. It deliberately
+            // shares the existing `UniswapV3Executor` (deployed at the
+            // same address as the `uniswap_v3` / `pancakeswap_v3` entries
+            // in `executor_addresses.json`) — NO new Solidity contract is
+            // needed. See the doc-block on `SupernovaV3SwapEncoder` and
+            // the fork test in
+            // `foundry/test/protocols/SupernovaV3.t.sol` for the rationale
+            // and the empirical validation. Do not "fix" this by writing
+            // a separate executor — it would only duplicate code.
+            "vm:supernova_v3" => {
+                Ok(Box::new(SupernovaV3SwapEncoder::new(executor_address, self.chain, config)?))
             }
             "uniswap_v4" => {
                 Ok(Box::new(UniswapV4SwapEncoder::new(executor_address, self.chain, config)?))
